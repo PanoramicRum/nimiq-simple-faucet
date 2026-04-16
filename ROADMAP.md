@@ -79,20 +79,64 @@ work. Shipped as point releases (1.0.1, 1.0.2, …) between 1.0.0 and 1.1.
 
 ### 1.1.2 `/readyz` endpoint
 
-**Goal:** separate liveness (restart me) from readiness (route traffic to me).
+**Status:** ✅ shipped in 1.1.0 as part of fixing #36. `/readyz`
+reflects signer-driver readiness; Fastify binds its listener
+immediately at boot, and driver-dependent routes return
+`503 Retry-After: 10` until the driver signals ready via
+`isReady()`. Helm `readinessProbe` → `/readyz` migration is a small
+follow-up (see §1.1.2b below).
+
+### 1.1.2a Expand `/readyz` to DB + Redis + wallet-balance ping
+
+**Goal:** make `/readyz` a true dependency-chain probe, not just a
+driver-readiness signal.
 
 **Scope:**
-- New handler in `apps/server/src/app.ts`
-- Checks DB connectivity, Redis (if enabled), driver `getBalance()` success within timeout
-- Returns 200 only when all green; 503 with JSON detail otherwise
-- Helm chart `readinessProbe` switches from `/healthz` to `/readyz`
+- Extend `apps/server/src/app.ts` `/readyz` handler to additionally
+  check DB connectivity (already implicitly tested by startup; add a
+  lightweight `select 1`), Redis if the feature ships, and a driver
+  `getBalance()` ping within a short timeout.
+- Return a structured JSON body listing which dependency failed.
 
-**Deliverables:**
-- Handler + unit test
-- `deploy/helm/templates/deployment.yaml` updated
-- Docs updated
+**Blocked on:** Redis dependency on server-side (ROADMAP §1.3.4).
 
 **Estimated effort:** half day.
+
+### 1.1.2b Helm chart probes migration
+
+**Goal:** `readinessProbe` uses `/readyz`; `livenessProbe` stays on
+`/healthz`.
+
+**Scope:**
+- Update `deploy/helm/templates/deployment.yaml` probes
+- Update `docs/health-observability.md`
+
+**Estimated effort:** 1 hour.
+
+### 1.1.2c Refresh bundled `@nimiq/core` to pair with current TestAlbatross
+
+**Status:** upstream-blocked. `@nimiq/core@2.2.2` (latest on npm)
+embeds `core-rs-albatross/1.2.2`, which can't peer with TestAlbatross
+nodes running the 1.4.x line — every P2P connection handshakes then
+closes; the WASM light client never reaches consensus. See
+[#35](https://github.com/PanoramicRum/nimiq-simple-faucet/issues/35)
+for the reproduction.
+
+**Scope once a compatible `@nimiq/core` ships:**
+- Bump `@nimiq/core` in `packages/driver-nimiq-wasm/package.json`.
+- Re-enable the WASM consensus path in the CI docker-smoke step (today
+  it warns-but-doesn't-fail by design — see
+  `.github/workflows/ci.yml` lines 85-89).
+- Drop the "does not currently reach claim-ready state" caveat from
+  the README smoke-test footnote.
+- Update #35 with the resolution and close it.
+
+**Why not fix in-repo:** the protocol version skew is baked into the
+WASM binary shipped by `@nimiq/core`. Neither seed-peer override nor
+sync-mode tweaks help — peers reject the handshake at the protocol
+layer. The only fix is an upstream refresh.
+
+**Estimated effort:** a few hours once upstream lands.
 
 ### 1.1.3 Grafana dashboard JSON
 

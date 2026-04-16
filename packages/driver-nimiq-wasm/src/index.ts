@@ -40,11 +40,19 @@ export class NimiqWasmDriver implements CurrencyDriver {
   #keyPair: NimiqKeyPair | null = null;
   #networkIdNum: number | null = null;
   #addressCache: Address | null = null;
+  #ready = false;
+  #readyPromise: Promise<void> | null = null;
 
   constructor(config: NimiqWasmDriverConfig) {
     this.#config = config;
   }
 
+  /**
+   * Synchronous setup: build client, derive keypair, cache address. Returns
+   * quickly so `buildApp()` can bind its HTTP listener. Consensus + network-id
+   * lookup run in the background behind `readyPromise`. Throws only on
+   * hard errors (bad key material, module load failure).
+   */
   async init(): Promise<void> {
     try {
       // Dynamic import so importing this package doesn't immediately spin up
@@ -65,13 +73,26 @@ export class NimiqWasmDriver implements CurrencyDriver {
       const addr = this.#keyPair.toAddress();
       this.#addressCache = addr.toUserFriendlyAddress() as Address;
 
-      await client.waitForConsensusEstablished();
-      this.#networkIdNum = await client.getNetworkId();
+      this.#readyPromise = this.#awaitReady(client);
     } catch (err) {
       if (err instanceof DriverError) throw err;
       const msg = err instanceof Error ? err.message : String(err);
       throw new DriverError(`init failed: ${msg}`, 'INIT_FAILED');
     }
+  }
+
+  get readyPromise(): Promise<void> | undefined {
+    return this.#readyPromise ?? undefined;
+  }
+
+  isReady(): boolean {
+    return this.#ready;
+  }
+
+  async #awaitReady(client: NimiqClient): Promise<void> {
+    await client.waitForConsensusEstablished();
+    this.#networkIdNum = await client.getNetworkId();
+    this.#ready = true;
   }
 
   parseAddress(input: string): Address {
@@ -96,6 +117,7 @@ export class NimiqWasmDriver implements CurrencyDriver {
   }
 
   async getBalance(): Promise<bigint> {
+    if (this.#readyPromise) await this.#readyPromise;
     const { client, faucet } = this.#requireReady();
     try {
       const account = await client.getAccount(faucet);
@@ -109,6 +131,7 @@ export class NimiqWasmDriver implements CurrencyDriver {
   }
 
   async send(to: Address, amount: bigint, memo?: string): Promise<TxId> {
+    if (this.#readyPromise) await this.#readyPromise;
     const { nimiq, client, keyPair, networkId } = this.#requireReady();
     try {
       const sender = keyPair.toAddress();
@@ -143,6 +166,7 @@ export class NimiqWasmDriver implements CurrencyDriver {
   }
 
   async waitForConfirmation(tx: TxId, timeoutMs = 60_000): Promise<void> {
+    if (this.#readyPromise) await this.#readyPromise;
     const { client } = this.#requireReady();
     const deadline = Date.now() + timeoutMs;
     while (Date.now() < deadline) {
@@ -166,6 +190,7 @@ export class NimiqWasmDriver implements CurrencyDriver {
   }
 
   async addressHistory(address: Address): Promise<HistorySummary> {
+    if (this.#readyPromise) await this.#readyPromise;
     const { client } = this.#requireReady();
     const parsed = this.parseAddress(address);
     let txs: PlainTransactionDetails[];

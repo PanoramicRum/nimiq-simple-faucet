@@ -64,7 +64,39 @@ export async function buildApp(
 
   const ctx: AppContext = { config, db, driver, pipeline, stream };
 
+  const isDriverReady = (): boolean => driver.isReady?.() !== false;
+
+  // 503-gate routes that must wait for the driver to finish initial sync
+  // (WASM consensus, RPC network handshake). Other routes — /healthz,
+  // /readyz, admin UI assets, /v1/config, /v1/challenge, UIs — serve
+  // from t=0 so operators can see "driver syncing" state instead of a
+  // connection-refused.
+  const driverDependentPaths = new Set<string>([
+    '/v1/claim',
+    '/admin/account',
+    '/admin/account/send',
+    '/admin/overview',
+  ]);
+
+  app.addHook('preHandler', async (req, reply) => {
+    if (isDriverReady()) return;
+    const path = req.routeOptions?.url;
+    if (path && driverDependentPaths.has(path)) {
+      reply.header('Retry-After', '10');
+      return reply.code(503).send({
+        error: 'driver_not_ready',
+        message: 'Signer driver is still establishing consensus. Retry shortly.',
+      });
+    }
+  });
+
   app.get('/healthz', async () => ({ ok: true }));
+  app.get('/readyz', async (_req, reply) => {
+    if (isDriverReady()) return { ready: true };
+    reply.header('Retry-After', '10');
+    reply.code(503);
+    return { ready: false, reason: 'driver_not_ready' };
+  });
   app.get('/llms.txt', async (_req, reply) => {
     reply.type('text/plain');
     return [

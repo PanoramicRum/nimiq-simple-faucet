@@ -36,12 +36,17 @@ interface RpcResponse<T> {
 export class NimiqRpcDriver implements CurrencyDriver {
   readonly id = 'nimiq';
   readonly networks: readonly NetworkId[] = ['main', 'test'];
+  readonly readyPromise: Promise<void> = Promise.resolve();
 
   #config: NimiqRpcDriverConfig;
   #nextId = 1;
 
   constructor(config: NimiqRpcDriverConfig) {
     this.#config = config;
+  }
+
+  isReady(): boolean {
+    return true;
   }
 
   async init(): Promise<void> {

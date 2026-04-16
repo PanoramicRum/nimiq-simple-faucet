@@ -5,6 +5,7 @@ import { useAuthStore } from './stores/auth';
 import { setUnauthorizedHandler } from './lib/api';
 import AppSidebar from './components/AppSidebar.vue';
 import AppTopBar from './components/AppTopBar.vue';
+import DriverReadinessBanner from './components/DriverReadinessBanner.vue';
 
 const auth = useAuthStore();
 const route = useRoute();
@@ -49,6 +50,7 @@ function toggleSidebar(): void {
     <AppSidebar :open="sidebarOpen" @toggle="toggleSidebar" />
     <div class="flex min-h-screen flex-1 flex-col">
       <AppTopBar @toggle-sidebar="toggleSidebar" />
+      <DriverReadinessBanner />
       <main class="flex-1 p-6" aria-live="polite">
         <RouterView />
       </main>

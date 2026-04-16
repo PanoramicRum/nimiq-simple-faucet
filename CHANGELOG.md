@@ -6,6 +6,50 @@ This project uses [changesets](https://github.com/changesets/changesets) for
 versioning. Run `pnpm changeset` to add entries, then `pnpm changeset version`
 (invoked by the release workflow) to regenerate this file.
 
+## 1.1.0 (2026-04-17)
+
+### Added
+- **`/readyz` endpoint.** `/healthz` stays pure liveness; `/readyz`
+  reflects whether the signer driver is ready (for WASM: consensus
+  established; for RPC: always ready). Probes, Helm, and the admin
+  dashboard can now distinguish "process alive, driver syncing"
+  from "process dead". Returns `200 {ready:true}` or
+  `503 {ready:false, reason:"driver_not_ready"}` with `Retry-After: 10`.
+- **`CurrencyDriver.readyPromise` + `isReady()`** — optional members on
+  the `@faucet/core` driver interface. The server uses them to gate
+  driver-dependent routes without blocking startup.
+- **`DriverReadinessBanner`** in the admin dashboard — surfaces
+  "Signer driver syncing" while `/readyz` returns 503, so operators
+  can see the state instead of getting a connection-refused error
+  or a confusing 503 from the claims table.
+- **`START.md`** — `Choose your adventure` menu extracted from README
+  so the README reads cleanly and the menu lives in one canonical
+  place. README now points AI agents at `START.md` verbatim.
+
+### Changed
+- **Fastify now listens immediately at boot, regardless of driver
+  state.** Driver-dependent routes (`POST /v1/claim`, admin account /
+  overview / send) return `503 Retry-After: 10` until the driver
+  signals ready; every other route (`/healthz`, `/readyz`,
+  `/admin/*`, `/v1/config`, `/v1/challenge`, UIs) serves from t=0.
+  Before 1.1, the WASM driver blocked `buildApp()` until consensus,
+  rendering `/admin` and `/healthz` unreachable for the entire sync
+  window (or forever if consensus never established). Fixes
+  [#36](https://github.com/PanoramicRum/nimiq-simple-faucet/issues/36).
+- Helm chart bumped to `1.1.0` / `appVersion: 1.1.0`.
+- Flutter SDK bumped to `1.1.0`.
+- ROADMAP §1.1.2 marked as shipped; new §1.1.2a (dependency-chain
+  `/readyz`), §1.1.2b (Helm probes migration), and §1.1.2c
+  (upstream `@nimiq/core` refresh, tracking #35) added.
+
+### Known
+- The bundled WASM light client cannot reach TestAlbatross consensus
+  against `@nimiq/core@2.2.2` — upstream-blocked. Tracked in
+  [#35](https://github.com/PanoramicRum/nimiq-simple-faucet/issues/35)
+  and ROADMAP §1.1.2c. Use the RPC signer driver against a local
+  `core-rs-albatross` node (`docker compose --profile local-node up -d`)
+  for a working end-to-end setup.
+
 ## 1.0.2 (2026-04-17)
 
 ### Fixed

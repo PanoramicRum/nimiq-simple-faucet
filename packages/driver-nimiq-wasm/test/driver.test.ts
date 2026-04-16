@@ -293,6 +293,77 @@ describe('NimiqWasmDriver — waitForConfirmation', () => {
   });
 });
 
+describe('NimiqWasmDriver — readiness (init/consensus split)', () => {
+  it('init() resolves without waiting for consensus', async () => {
+    // Latch consensus so it hangs until we release it.
+    let release: () => void = () => {};
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    fake.state.consensusResolve = () => {
+      /* will be overridden via Client.create */
+    };
+    const realCreate = fake.module.Client.create;
+    fake.module.Client.create = vi.fn(async (_cfg: unknown) => ({
+      waitForConsensusEstablished: vi.fn(async () => gate),
+      getNetworkId: vi.fn(async () => fake.state.networkId),
+      getAccount: vi.fn(async () => ({ balance: fake.state.balance })),
+      getHeadHeight: vi.fn(async () => fake.state.headHeight),
+      sendTransaction: vi.fn(async () => fake.state.sendResult),
+      getTransaction: vi.fn(async () => fake.state.transactionByHash),
+      getTransactionsByAddress: vi.fn(async () => fake.state.transactionsByAddress),
+    }));
+
+    try {
+      const d = newDriver();
+      const t0 = Date.now();
+      await d.init();
+      expect(Date.now() - t0).toBeLessThan(200);
+      expect(d.isReady()).toBe(false);
+
+      // Release the consensus gate and await the readiness promise.
+      release();
+      await d.readyPromise;
+      expect(d.isReady()).toBe(true);
+    } finally {
+      fake.module.Client.create = realCreate;
+    }
+  });
+
+  it('getBalance awaits readyPromise before issuing the RPC call', async () => {
+    let release: () => void = () => {};
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const getAccountMock = vi.fn(async () => ({ balance: 123 }));
+    const realCreate = fake.module.Client.create;
+    fake.module.Client.create = vi.fn(async (_cfg: unknown) => ({
+      waitForConsensusEstablished: vi.fn(async () => gate),
+      getNetworkId: vi.fn(async () => fake.state.networkId),
+      getAccount: getAccountMock,
+      getHeadHeight: vi.fn(async () => fake.state.headHeight),
+      sendTransaction: vi.fn(async () => fake.state.sendResult),
+      getTransaction: vi.fn(async () => fake.state.transactionByHash),
+      getTransactionsByAddress: vi.fn(async () => fake.state.transactionsByAddress),
+    }));
+
+    try {
+      const d = newDriver();
+      await d.init();
+      const balancePromise = d.getBalance();
+      // Give the microtask queue a tick; the RPC must NOT have fired yet.
+      await new Promise((r) => setImmediate(r));
+      expect(getAccountMock).not.toHaveBeenCalled();
+
+      release();
+      await expect(balancePromise).resolves.toBe(123n);
+      expect(getAccountMock).toHaveBeenCalledTimes(1);
+    } finally {
+      fake.module.Client.create = realCreate;
+    }
+  });
+});
+
 describe('NimiqWasmDriver — addressHistory', () => {
   it('flags sweeper pattern', async () => {
     const OTHER = 'NQ99 0000 0000 0000 0000 0000 0000 0000 0000';
