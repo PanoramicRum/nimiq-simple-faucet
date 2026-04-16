@@ -9,7 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@capacitor/core": "^7.0.0",
+    "@capacitor/core": "^8.3.0",
     "@capacitor/device": "^7.0.0",
     "@nimiq-faucet/capacitor": "workspace:*",
     "@nimiq-faucet/react": "workspace:*",

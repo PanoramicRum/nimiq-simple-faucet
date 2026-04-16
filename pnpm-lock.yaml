@@ -219,11 +219,11 @@ importers:
   examples/capacitor-mobile-app:
     dependencies:
       '@capacitor/core':
-        specifier: ^7.0.0
-        version: 7.6.1
+        specifier: ^8.3.0
+        version: 8.3.0
       '@capacitor/device':
         specifier: ^7.0.0
-        version: 7.0.5(@capacitor/core@7.6.1)
+        version: 7.0.5(@capacitor/core@8.3.0)
       '@nimiq-faucet/capacitor':
         specifier: workspace:*
         version: link:../../packages/sdk-capacitor
@@ -438,11 +438,11 @@ importers:
         version: link:../sdk-ts
     devDependencies:
       '@capacitor/core':
-        specifier: ^7.0.0
-        version: 7.6.1
+        specifier: ^8.3.0
+        version: 8.3.0
       '@capacitor/device':
         specifier: ^7.0.0
-        version: 7.0.5(@capacitor/core@7.6.1)
+        version: 7.0.5(@capacitor/core@8.3.0)
       typescript:
         specifier: ^5.6.2
         version: 5.9.3
@@ -704,8 +704,8 @@ packages:
     resolution: {integrity: sha512-LwdZHpScM4Qz8Xw2iKSzS+cfglZzJGvofQICy7W7v4caru4EaAmyUuO6BGrbyQ2mYV11W0U8j5mBhd14dd3B0A==}
     engines: {node: '>=6.9.0'}
 
-  '@capacitor/core@7.6.1':
-    resolution: {integrity: sha512-nsNouCMxgYenyemy20sZwZYMtFi93LSZVWm2KqHTYIPIDgwx24+PzwHIdRQBZdK7hpvD5jQEhWuo/QyLLnAyBQ==}
+  '@capacitor/core@8.3.0':
+    resolution: {integrity: sha512-S4ajn4G/fS3VJj8salxqH/3LO5PPWv1VxGKQ27OCajnDcLJjEg9VXwgMPnlypgkIOqCJ2fmQLtk8GT+BlI9/rw==}
 
   '@capacitor/device@7.0.5':
     resolution: {integrity: sha512-tf6BYeQMBARNLKELQq2RGsvG3z03oM/ga+aqVhvE8M4IM8+h/516eeSz07Eqm4+yySGaQFT+2rIkpJrvA7gaAA==}
@@ -4651,13 +4651,13 @@ snapshots:
       '@babel/helper-string-parser': 7.27.1
       '@babel/helper-validator-identifier': 7.28.5
 
-  '@capacitor/core@7.6.1':
+  '@capacitor/core@8.3.0':
     dependencies:
       tslib: 2.8.1
 
-  '@capacitor/device@7.0.5(@capacitor/core@7.6.1)':
+  '@capacitor/device@7.0.5(@capacitor/core@8.3.0)':
     dependencies:
-      '@capacitor/core': 7.6.1
+      '@capacitor/core': 8.3.0
 
   '@changesets/apply-release-plan@7.1.0':
     dependencies:
