@@ -13,11 +13,11 @@
     "@capacitor/device": "^7.0.0",
     "@nimiq-faucet/capacitor": "workspace:*",
     "@nimiq-faucet/react": "workspace:*",
-    "react": "^18.3.1",
+    "react": "^19.2.5",
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
-    "@types/react": "^18.3.11",
+    "@types/react": "^19.2.14",
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^4.3.2",
     "typescript": "^5.6.2",
