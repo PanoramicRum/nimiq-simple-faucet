@@ -11,7 +11,8 @@ RUN corepack enable
 WORKDIR /app
 
 FROM base AS deps
-COPY pnpm-workspace.yaml package.json tsconfig.base.json turbo.json ./
+COPY deploy/docker/pnpm-workspace.docker.yaml pnpm-workspace.yaml
+COPY package.json tsconfig.base.json turbo.json ./
 COPY apps/server/package.json apps/server/
 COPY apps/claim-ui/package.json apps/claim-ui/
 COPY apps/dashboard/package.json apps/dashboard/
