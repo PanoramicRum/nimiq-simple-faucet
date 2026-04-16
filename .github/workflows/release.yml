@@ -238,6 +238,9 @@ jobs:
       - name: Create PR with frozen spec
         uses: peter-evans/create-pull-request@v7.0.5
         with:
+          # Explicit base because the workflow runs on a tag (detached
+          # HEAD); without this, create-pull-request errors out.
+          base: main
           branch: release/openapi-${{ needs.build-and-publish.outputs.tag }}
           commit-message: "chore(openapi): freeze spec for ${{ needs.build-and-publish.outputs.tag }}"
           title: "chore(openapi): freeze spec for ${{ needs.build-and-publish.outputs.tag }}"
