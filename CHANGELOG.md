@@ -6,6 +6,34 @@ This project uses [changesets](https://github.com/changesets/changesets) for
 versioning. Run `pnpm changeset` to add entries, then `pnpm changeset version`
 (invoked by the release workflow) to regenerate this file.
 
+## 1.1.4 (2026-04-17)
+
+### Fixed
+- **WASM signer driver can now reach TestAlbatross consensus — the
+  real fix for [#35](https://github.com/PanoramicRum/nimiq-simple-faucet/issues/35).**
+  Root cause was not a wire-protocol skew or Node-target bug: the
+  bundled `@nimiq/core@2.2.2` seed list is all *mainnet* seeds
+  (`aurora.seed.nimiq.com`, `catalyst.seed.nimiq.network`, …). A
+  TestAlbatross client dialing those peers handshakes as testnet, the
+  mainnet peers reject — every connection closes immediately; consensus
+  never establishes. Nimiq maintainers confirmed this on 2026-04-16
+  and shared the correct testnet seed.
+
+  `NimiqWasmDriver` now defaults `seedPeers` to
+  `['/dns4/seed1.pos.nimiq-testnet.com/tcp/8443/wss']` when
+  `network: 'test'` and no explicit override is provided. Mainnet still
+  falls through to `@nimiq/core`'s bundled defaults. Explicit
+  `seedPeers` in `NimiqWasmDriverConfig` always wins.
+
+### Changed
+- ROADMAP §1.1.2c updated: drops the "upstream-blocked on `@nimiq/core`
+  refresh" framing. The failed `v1.3.0` publish workflow and the
+  Node-target `addEventListener` warnings are still real, but neither
+  blocks our use case. A `@nimiq/core` refresh would bring libp2p fixes
+  from v1.3.0 but isn't required to unblock #35.
+- Helm chart bumped to `1.1.4` / `appVersion: 1.1.4`.
+- Flutter SDK bumped to `1.1.4`.
+
 ## 1.1.3 (2026-04-17)
 
 ### Fixed

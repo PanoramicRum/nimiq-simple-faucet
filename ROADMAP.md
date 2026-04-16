@@ -115,8 +115,12 @@ driver-readiness signal.
 
 ### 1.1.2c Refresh bundled `@nimiq/core` + diagnose Node-target peering
 
-**Status:** upstream-blocked on an `npm` publish, plus likely a
-separate Node-target bug to localize.
+**Status:** the original #35 issue (WASM client can't reach
+TestAlbatross consensus) was **resolved in v1.1.4** — the root cause
+was wrong default seed peers (mainnet seeds used for a testnet
+handshake), not a version skew or Node-target bug. The `@nimiq/core`
+refresh and Node-target investigation below remain valuable
+housekeeping but are no longer blocking any user path.
 
 **The upstream situation** (as of 2026-04-16):
 

@@ -151,6 +151,60 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
+describe('NimiqWasmDriver — default seed peers per network', () => {
+  // Before #35's resolution, the driver fell through to @nimiq/core's
+  // bundled seed list (all mainnet) even when network was 'test',
+  // which caused TestAlbatross peers to reject the handshake. Now we
+  // default to the Nimiq maintainers' confirmed testnet seed.
+  const captured: { seeds: string[] | null } = { seeds: null };
+  const realCreate = fake.module.Client.create;
+
+  beforeEach(() => {
+    captured.seeds = null;
+    fake.module.Client.create = vi.fn(async (cfg: unknown) => {
+      captured.seeds = (cfg as { seeds: string[] }).seeds;
+      return {
+        waitForConsensusEstablished: vi.fn(async () => fake.state.consensusResolve()),
+        getNetworkId: vi.fn(async () => fake.state.networkId),
+        getAccount: vi.fn(async (_a: unknown) => ({ type: 'basic', balance: fake.state.balance })),
+        getHeadHeight: vi.fn(async () => fake.state.headHeight),
+        sendTransaction: vi.fn(async (_tx: unknown) => fake.state.sendResult),
+        getTransaction: vi.fn(async (_h: string) => fake.state.transactionByHash),
+        getTransactionsByAddress: vi.fn(async (..._a: unknown[]) => fake.state.transactionsByAddress),
+      };
+    });
+  });
+
+  afterEach(() => {
+    fake.module.Client.create = realCreate;
+  });
+
+  it("network='test' with no seedPeers override uses the Nimiq testnet seed", async () => {
+    const d = newDriver({ network: 'test' });
+    await d.init();
+    await d.readyPromise;
+    expect(captured.seeds).toEqual(['/dns4/seed1.pos.nimiq-testnet.com/tcp/8443/wss']);
+  });
+
+  it("network='main' with no seedPeers override leaves seeds empty (uses @nimiq/core defaults)", async () => {
+    const d = newDriver({ network: 'main' });
+    await d.init();
+    await d.readyPromise;
+    expect(captured.seeds).toEqual([]);
+  });
+
+  it('explicit seedPeers override wins over the per-network default', async () => {
+    const d = new NimiqWasmDriver({
+      network: 'test',
+      privateKey: HEX_KEY,
+      seedPeers: ['/dns4/custom.seed.example/tcp/443/wss'],
+    });
+    await d.init();
+    await d.readyPromise;
+    expect(captured.seeds).toEqual(['/dns4/custom.seed.example/tcp/443/wss']);
+  });
+});
+
 describe('NimiqWasmDriver — parseAddress (no init)', () => {
   it('normalises a valid address', () => {
     const d = newDriver();

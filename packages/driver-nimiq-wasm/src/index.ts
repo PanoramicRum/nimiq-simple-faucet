@@ -12,9 +12,30 @@ export interface NimiqWasmDriverConfig {
   network: NetworkId;
   /** Seed phrase or hex-encoded private key. Supplied already decrypted by the server. */
   privateKey: string;
-  /** Optional explicit peers / seed list override. Otherwise defaults from @nimiq/core are used. */
+  /**
+   * Optional explicit peers / seed list override. When omitted: on
+   * `network: 'test'` the driver defaults to the Nimiq testnet seed
+   * (`/dns4/seed1.pos.nimiq-testnet.com/tcp/8443/wss`), on `'main'` it
+   * falls through to `@nimiq/core`'s bundled mainnet defaults.
+   *
+   * The @nimiq/core 2.x bundled seeds are all mainnet
+   * (`aurora.seed.nimiq.com`, `catalyst.seed.nimiq.network`, …); a
+   * TestAlbatross client using those seeds gets rejected by the
+   * mainnet peers it dials. See #35.
+   */
   seedPeers?: string[] | undefined;
 }
+
+/**
+ * Default seed peers per network. Mainnet uses `@nimiq/core`'s bundled
+ * defaults (pass empty list → no `config.seedNodes(...)` call). Testnet
+ * overrides with the single testnet seed Nimiq's maintainers confirmed
+ * on 2026-04-16 in the context of #35.
+ */
+const DEFAULT_SEED_PEERS: Record<NetworkId, string[]> = {
+  main: [],
+  test: ['/dns4/seed1.pos.nimiq-testnet.com/tcp/8443/wss'],
+};
 
 type NimiqModule = typeof import('@nimiq/core');
 // `Client` and `KeyPair` have private/wasm-generated constructors, so `InstanceType`
@@ -62,8 +83,9 @@ export class NimiqWasmDriver implements CurrencyDriver {
 
       const config = new nimiq.ClientConfiguration();
       config.network(this.#config.network === 'main' ? 'MainAlbatross' : 'TestAlbatross');
-      if (this.#config.seedPeers && this.#config.seedPeers.length > 0) {
-        config.seedNodes(this.#config.seedPeers);
+      const seeds = this.#config.seedPeers ?? DEFAULT_SEED_PEERS[this.#config.network];
+      if (seeds.length > 0) {
+        config.seedNodes(seeds);
       }
 
       const client = await nimiq.Client.create(config.build());
