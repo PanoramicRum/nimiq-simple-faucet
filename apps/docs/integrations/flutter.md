@@ -64,4 +64,4 @@ The client reads `device_info_plus` when available and populates
 
 | Version | URL | Notes |
 | --- | --- | --- |
-| `latest` | `/snippets/flutter` | TODO: generated at release (M9). |
+| `latest` | [`examples/flutter-mobile-app`](https://github.com/PanoramicRum/nimiq-simple-faucet/tree/main/examples/flutter-mobile-app) | Working Dart CLI demo of the `nimiq_faucet` SDK with Dockerfile. |

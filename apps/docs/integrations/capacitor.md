@@ -51,4 +51,4 @@ No special entitlements needed; the bridge uses only `DeviceInfo`. Ensure your
 
 | Version | URL | Notes |
 | --- | --- | --- |
-| `latest` | `/snippets/capacitor` | TODO: generated at release (M9). |
+| `latest` | [`examples/capacitor-mobile-app`](https://github.com/PanoramicRum/nimiq-simple-faucet/tree/main/examples/capacitor-mobile-app) | Working Capacitor + `@nimiq-faucet/capacitor` demo (web preview). |
