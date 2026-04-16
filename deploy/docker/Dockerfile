@@ -43,13 +43,17 @@ RUN pnpm turbo run build --filter=@faucet/server --filter=@nimiq-faucet/claim-ui
 
 FROM build AS prune
 # Produce a self-contained production deployment for the server.
-# `pnpm deploy` walks the workspace graph for @faucet/server's prod
-# deps, writes a flat, content-free node_modules (no .pnpm store), and
-# strips everything else. This is the canonical way to get rid of
-# transitive dev tools like esbuild, drizzle-kit, tsx, vitest, vite,
-# etc. that would otherwise ship in the runtime image and trip Trivy
-# on their embedded Go/JS binaries.
-RUN pnpm --filter=@faucet/server deploy --prod --ignore-scripts /deployed-server
+# `pnpm deploy --prod` walks @faucet/server's PRODUCTION dependency
+# graph only, so dev-only tools (esbuild via vite/drizzle-kit/tsx/
+# vitest, etc.) are excluded by construction.
+#
+# Scripts MUST run here — `better-sqlite3` fetches / compiles its
+# native .node binding via its install script; without it the runtime
+# image can't open the database. Earlier attempts with
+# `--ignore-scripts + pnpm rebuild better-sqlite3` did not write the
+# binding to the deploy tree layout that `bindings` searches, so we
+# take the straightforward path instead.
+RUN pnpm --filter=@faucet/server deploy --prod /deployed-server
 
 FROM base AS runtime
 ENV NODE_ENV=production

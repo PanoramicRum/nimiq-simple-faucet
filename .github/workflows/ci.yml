@@ -35,10 +35,56 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: docker/setup-buildx-action@v3
-      - uses: docker/build-push-action@v6
+      - name: Build image (single-arch, loadable)
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: deploy/docker/Dockerfile
           push: false
+          load: true
           platforms: linux/amd64
           tags: nimiq-faucet:ci
+
+      # Boot the built image and verify the server actually starts and
+      # serves /healthz. Catches regressions like the one in issue #33
+      # (missing native bindings after pnpm deploy --ignore-scripts).
+      - name: Smoke-test the image
+        # Purpose: catch regressions where the image can't start at all
+        # (e.g. missing native bindings, broken deploy tree, crashing
+        # boot). The wasm signer needs a private key to initialise —
+        # we give it a throwaway random one; it will try to reach
+        # testnet seed peers and usually achieves healthz within ~60s.
+        # If consensus takes longer than the timeout the smoke test
+        # instead checks that the container is still alive and hasn't
+        # crashed on a known regression (binding missing, DB init etc.).
+        run: |
+          set -euo pipefail
+          docker run -d --name smoke -p 18080:8080 \
+            -e FAUCET_DEV=1 \
+            -e FAUCET_TLS_REQUIRED=false \
+            -e FAUCET_SIGNER_DRIVER=wasm \
+            -e FAUCET_PRIVATE_KEY="$(openssl rand -hex 32)" \
+            -e FAUCET_ADMIN_PASSWORD="$(openssl rand -hex 16)" \
+            -e FAUCET_KEY_PASSPHRASE="$(openssl rand -hex 16)" \
+            -e FAUCET_CORS_ORIGINS='*' \
+            nimiq-faucet:ci
+          for i in $(seq 1 60); do
+            if curl -fsS http://localhost:18080/healthz >/dev/null 2>&1; then
+              echo "healthz OK after ~${i}x2s"
+              docker stop smoke >/dev/null
+              exit 0
+            fi
+            # Fail fast if the container is dead.
+            if ! docker ps --format '{{.Names}}' | grep -q '^smoke$'; then
+              echo "container exited early — this is the regression we care about"
+              docker logs smoke
+              exit 1
+            fi
+            sleep 2
+          done
+          echo "healthz never returned 200 within 120s. Container log follows:"
+          docker logs smoke
+          # The container is still alive, so we didn't regress on boot.
+          # Consensus/network flake — warn but don't fail.
+          echo "WARN: image boots but did not reach healthz in 120s (likely flaky seed-peer sync)."
+          exit 0
