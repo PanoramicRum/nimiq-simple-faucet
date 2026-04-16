@@ -3,9 +3,9 @@ name: nimiq-simple-faucet
 description: Reusable self-hosted Nimiq faucet / payout service
 type: application
 # Chart version; bump on chart changes regardless of appVersion.
-version: "1.1.0"
+version: "1.1.1"
 # Version of the application image shipped by default.
-appVersion: "1.1.0"
+appVersion: "1.1.1"
 kubeVersion: ">=1.28.0-0"
 home: https://github.com/PanoramicRum/nimiq-simple-faucet
 sources:

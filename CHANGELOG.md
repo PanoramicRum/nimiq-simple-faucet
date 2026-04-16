@@ -6,6 +6,30 @@ This project uses [changesets](https://github.com/changesets/changesets) for
 versioning. Run `pnpm changeset` to add entries, then `pnpm changeset version`
 (invoked by the release workflow) to regenerate this file.
 
+## 1.1.1 (2026-04-17)
+
+### Fixed
+- **Compose Quick Start boots cleanly.** `deploy/compose/.env.example`
+  now includes `FAUCET_DEV=1` with a comment — local-trial mode that
+  relaxes hardening (allows plain HTTP + wildcard CORS) so the stack
+  works against http://localhost:8080. Without this the container
+  crashed on first boot with the hardening check at
+  [apps/server/src/hardening.ts:137-145](apps/server/src/hardening.ts#L137-L145).
+  Fixes [#39](https://github.com/PanoramicRum/nimiq-simple-faucet/issues/39).
+
+### Added
+- CI `compose-smoke` job that boots the compose faucet service from the
+  local-trial `.env.example` and asserts `/healthz` returns 200. Would
+  have caught #39 pre-release.
+- `docker-compose.yml` now explicitly threads
+  `FAUCET_DEV: ${FAUCET_DEV:-0}` on the faucet service environment, so
+  `.env` is the single place to flip it on (default stays `0` — a raw
+  `docker-compose.yml` still boots in production-hardening mode).
+
+### Changed
+- Helm chart bumped to `1.1.1` / `appVersion: 1.1.1`.
+- Flutter SDK bumped to `1.1.1`.
+
 ## 1.1.0 (2026-04-17)
 
 ### Added

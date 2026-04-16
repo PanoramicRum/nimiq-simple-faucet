@@ -88,3 +88,41 @@ jobs:
           # Consensus/network flake — warn but don't fail.
           echo "WARN: image boots but did not reach healthz in 120s (likely flaky seed-peer sync)."
           exit 0
+
+  compose-smoke:
+    runs-on: ubuntu-latest
+    needs: docker
+    steps:
+      - uses: actions/checkout@v4
+      # Proves the compose Quick Start from deploy/compose/.env.example
+      # actually boots the faucet service. Would have caught #39, where
+      # a missing FAUCET_DEV=1 crashed the container on first boot.
+      # Deliberately does NOT start the local-node profile — consensus
+      # + claim e2e is out of scope for this job.
+      - name: Boot compose faucet + assert /healthz
+        run: |
+          set -euo pipefail
+          cd deploy/compose
+          cp .env.example .env
+          # Fill required values that .env.example leaves as placeholders.
+          sed -i 's|^FAUCET_ADMIN_PASSWORD=.*|FAUCET_ADMIN_PASSWORD=ci-smoke-admin-pw-12|' .env
+          sed -i 's|^FAUCET_KEY_PASSPHRASE=.*|FAUCET_KEY_PASSPHRASE=ci-smoke-key-passphrase-16|' .env
+          printf '\nFAUCET_PRIVATE_KEY=%s\n' "$(openssl rand -hex 32)" >> .env
+          docker compose up -d --build faucet
+          for i in $(seq 1 30); do
+            if curl -fsS http://localhost:8080/healthz >/dev/null 2>&1; then
+              echo "healthz OK after ~${i}x2s"
+              docker compose logs faucet | tail -20
+              docker compose down
+              exit 0
+            fi
+            if ! docker compose ps faucet --format '{{.State}}' | grep -q running; then
+              echo "faucet container exited early — regression like #39"
+              docker compose logs faucet
+              exit 1
+            fi
+            sleep 2
+          done
+          echo "healthz never returned 200 within 60s"
+          docker compose logs faucet
+          exit 1

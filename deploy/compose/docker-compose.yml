@@ -24,6 +24,10 @@ services:
       # answers on `http://nimiq:8648`. Otherwise override FAUCET_RPC_URL via
       # .env to point at an external Albatross RPC endpoint.
       FAUCET_RPC_URL: ${FAUCET_RPC_URL:-http://nimiq:8648}
+      # Local-trial mode. Defaults to 0 so a raw `docker-compose.yml`
+      # without `.env` boots in production-hardening mode. Local trials
+      # opt in via `FAUCET_DEV=1` in `.env.example → .env`.
+      FAUCET_DEV: ${FAUCET_DEV:-0}
       # DATABASE_URL and REDIS_URL intentionally unset by default — the
       # server uses SQLite at /data/faucet.db and in-memory rate-limit
       # counters. Override via .env once server-side Postgres/Redis lands
