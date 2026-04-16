@@ -212,6 +212,17 @@ describe('NimiqRpcDriver — waitForConfirmation', () => {
       code: 'CONFIRM_TIMEOUT',
     });
   });
+
+  it('swallows transient "not found" errors and resolves once confirmed', async () => {
+    // First poll: node returns RPC error (tx in mempool, not yet indexed).
+    // Second poll: confirmations > 0.
+    requestMock
+      .mockResolvedValueOnce(mockRpcError(-32000, 'Transaction not found'))
+      .mockResolvedValueOnce(mockResult({ hash: '0xabc', confirmations: 1, blockNumber: 42 }));
+    const d = new NimiqRpcDriver(baseCfg);
+    await expect(d.waitForConfirmation('0xabc' as never, 10_000)).resolves.toBeUndefined();
+    expect(callsByMethod('getTransactionByHash').length).toBe(2);
+  });
 });
 
 describe('NimiqRpcDriver — addressHistory', () => {
