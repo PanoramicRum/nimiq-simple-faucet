@@ -30,3 +30,6 @@ blob-report/
 
 # Host-specific docker-compose overrides
 docker-compose.override.yml
+
+# Claude Code local tooling state (session IDs, locks, settings)
+.claude/
