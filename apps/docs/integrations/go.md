@@ -74,4 +74,4 @@ if err != nil {
 
 | Version | URL | Notes |
 | --- | --- | --- |
-| `latest` | `/snippets/go` | TODO: generated at release (M9). |
+| `latest` | [`examples/go-backend-integration`](https://github.com/PanoramicRum/nimiq-simple-faucet/tree/main/examples/go-backend-integration) | Working Go HTTP proxy + SDK demo with Dockerfile. |

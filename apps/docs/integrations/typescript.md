@@ -59,8 +59,8 @@ All failures throw `FaucetError` with `.code` and `.status`. Common codes:
 - `captcha_required` — call `client.getConfig()` for the active provider.
 - `denied` — see `error.reason`; surface it to the user or log for review.
 
-## Live snippet URL
+## Working example
 
-| Version | URL | Notes |
-| --- | --- | --- |
-| `latest` | `/snippets/typescript` | TODO: generated at release (M9). |
+See [`examples/nextjs-claim-page`](https://github.com/PanoramicRum/nimiq-simple-faucet/tree/main/examples/nextjs-claim-page)
+for a complete Next.js app using `@nimiq-faucet/react` (which wraps
+`@nimiq-faucet/sdk`). The same patterns apply to plain TS without React.

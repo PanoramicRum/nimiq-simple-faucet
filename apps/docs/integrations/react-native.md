@@ -50,4 +50,4 @@ Works with Expo 50+ managed workflow. Add the package and
 
 | Version | URL | Notes |
 | --- | --- | --- |
-| `latest` | `/snippets/react-native` | TODO: generated at release (M9). |
+| `latest` | See [AGENTS.md](../../../AGENTS.md) for an integration recipe. | Dedicated example planned — see [ROADMAP.md](../../../ROADMAP.md). |

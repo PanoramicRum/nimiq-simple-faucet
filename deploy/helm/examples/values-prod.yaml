@@ -1,0 +1,113 @@
+# Example production values for the Nimiq Simple Faucet Helm chart.
+#
+# Copy, adjust, and install with:
+#   helm install faucet oci://ghcr.io/panoramicrum/charts/nimiq-simple-faucet \
+#     --version 1.0.0 \
+#     --namespace faucet --create-namespace \
+#     -f values-prod.yaml [-f values-secrets-LOCAL.yaml]
+#
+# Assumptions:
+#   - External Secrets Operator is installed and a ClusterSecretStore is ready.
+#   - cert-manager + ingress-nginx are installed.
+#   - Postgres + Redis run inside the chart (Bitnami subcharts).
+#
+# See docs/deployment-production.md for the full walkthrough.
+
+image:
+  repository: ghcr.io/panoramicrum/nimiq-simple-faucet
+  tag: ""              # falls back to Chart.AppVersion = 1.0.0
+  pullPolicy: IfNotPresent
+
+replicaCount: 2        # safe because postgresql + redis are enabled below
+
+config:
+  network: "main"
+  signerDriver: "wasm"
+  claimAmountLuna: "100000"
+  rateLimitPerMinute: 60
+  rateLimitPerIpPerDay: 3
+  tlsRequired: true
+  helmetCsp: "relaxed-for-ui"
+  corsOrigins: "https://your-integrator.example.com"
+  extra:
+    FAUCET_GEOIP_BACKEND: "maxmind"
+    FAUCET_GEOIP_DENY_VPN: "true"
+    FAUCET_GEOIP_DENY_TOR: "true"
+    # Allowlist by country (ISO-3166-alpha-2, CSV)
+    FAUCET_GEOIP_ALLOW_COUNTRIES: "US,CA,GB,DE,FR,ES,IT,BR,AR,MX"
+
+secrets:
+  external:
+    enabled: true
+    secretStoreRef:
+      name: "cluster-secret-store"
+      kind: "ClusterSecretStore"
+    refreshInterval: "1h"
+
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/proxy-body-size: "1m"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/limit-rps: "10"
+  hosts:
+    - host: faucet.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: faucet-tls
+      hosts:
+        - faucet.example.com
+
+# SQLite disabled because we're using Postgres.
+persistence:
+  enabled: false
+
+postgresql:
+  enabled: true
+  auth:
+    username: faucet
+    database: faucet
+    existingSecret: faucet-postgres-creds
+    secretKeys:
+      adminPasswordKey: postgres-password
+      userPasswordKey: password
+  primary:
+    persistence:
+      size: 50Gi
+    resources:
+      requests:
+        cpu: 250m
+        memory: 512Mi
+
+redis:
+  enabled: true
+  architecture: standalone
+  auth:
+    existingSecret: faucet-redis-creds
+    existingSecretPasswordKey: password
+  master:
+    persistence:
+      size: 5Gi
+
+resources:
+  requests:
+    cpu: 250m
+    memory: 512Mi
+  limits:
+    cpu: 1000m
+    memory: 1Gi
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 70
+
+# Restrict egress to what the faucet actually needs.
+networkPolicy:
+  enabled: true
+  # Policy JSON omitted here — inherit from chart defaults or customize.

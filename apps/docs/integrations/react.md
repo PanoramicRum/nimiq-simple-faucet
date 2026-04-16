@@ -72,4 +72,4 @@ provider at render time.
 
 | Version | URL | Notes |
 | --- | --- | --- |
-| `latest` | `/snippets/react` | TODO: generated at release (M9). |
+| `latest` | [`examples/nextjs-claim-page`](https://github.com/PanoramicRum/nimiq-simple-faucet/tree/main/examples/nextjs-claim-page) | Working Next.js + `@nimiq-faucet/react` demo with Dockerfile. |

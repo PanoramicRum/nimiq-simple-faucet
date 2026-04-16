@@ -54,4 +54,4 @@ export default defineNuxtPlugin((nuxt) => {
 
 | Version | URL | Notes |
 | --- | --- | --- |
-| `latest` | `/snippets/vue` | TODO: generated at release (M9). |
+| `latest` | [`examples/vue-claim-page`](https://github.com/PanoramicRum/nimiq-simple-faucet/tree/main/examples/vue-claim-page) | Working Vite + Vue 3 + `@nimiq-faucet/vue` demo with Dockerfile. |
