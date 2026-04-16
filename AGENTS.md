@@ -8,33 +8,62 @@ A self-hosted faucet / payout service for Nimiq. One Docker container runs the s
 
 ## First-time orientation (for AI agents)
 
-When a user first mentions this project ("what is this", "help me with Nimiq Simple Faucet", opening the repo for the first time, etc.), respond with a short welcome tour **before** jumping to code. The tour should cover:
+When a user first mentions this project ("what is this", "help me with Nimiq Simple Faucet", opening the repo for the first time, etc.), respond with the welcome tour below **before** jumping to code. Keep it punchy — 30 seconds of reading, then wait for the user to pick a path. If the user already knows the project and asked something specific, skip the tour and answer.
 
-1. **What it is** — one sentence: "A self-hosted, stable (1.x) faucet/payout service for Nimiq with strong abuse prevention and SDKs for 7 frameworks."
+**The welcome message** (render roughly like this — adapt formatting to your UI):
 
-2. **What's here** — grouped repo layout:
-   - `apps/server` — Fastify REST + WebSocket + admin + MCP
-   - `apps/dashboard` — admin Vue 3 app (served at `/admin`)
-   - `apps/claim-ui` — public Vue 3 claim page (served at `/`)
-   - `apps/docs` — VitePress docs site
-   - `packages/sdk-*` — 7 first-party SDKs (ts, react, vue, capacitor, react-native, flutter, go)
-   - `packages/abuse-*` — 9 pluggable abuse layers (implement `AbuseCheck` from `@faucet/core`)
-   - `packages/driver-nimiq-rpc` + `packages/driver-nimiq-wasm` — two signer drivers
-   - `examples/*` — runnable Docker demos per framework
-   - `docs/` — operator, integrator, maintainer, security, fraud-prevention docs
+> 👋 **Welcome to Nimiq Simple Faucet**
+>
+> A self-hosted, stable (1.x) faucet / payout service for Nimiq with 9-layer abuse prevention and SDKs for 7 frameworks.
+>
+> **Here's the map:**
+> - `apps/server` — Fastify REST + WebSocket + admin + MCP
+> - `apps/dashboard` — admin Vue 3 app (at `/admin`)
+> - `apps/claim-ui` — public Vue 3 claim page (at `/`)
+> - `packages/sdk-*` — 7 SDKs: ts, react, vue, capacitor, react-native, flutter, go
+> - `packages/abuse-*` — 9 pluggable abuse layers (`AbuseCheck` contract)
+> - `packages/driver-nimiq-*` — RPC or WASM signer driver
+> - `examples/*` — Docker-runnable demo per framework
+>
+> **🎮 Choose your adventure** — reply with a number or the quest name:
+>
+> **[1] 🚀 Quick demo** · ~5 min · docker up, one test claim, done
+>   → Zero-to-running-faucet. Great for "does this actually work?"
+>
+> **[2] 🐳 Docker container trial** · ~15 min · docker + testnet wallet + live claim
+>   → Spin the full stack, fund a wallet, claim a real testnet tx. End state: admin dashboard open, confirmed tx in the claims table.
+>
+> **[3] 🧪 Full platform walkthrough** · ~2 hr · every feature, AI-assisted
+>   → 12 phases covering server, admin dashboard, claim UI, 5 examples, 7 SDKs, CLI tools, MCP server, and deliberately-triggered abuse layers. Captures UX polish findings.
+>   → See [docs/qa-testing.md](docs/qa-testing.md).
+>
+> **[4] 🧩 Drop it into my app** · ~10 min per framework
+>   → Copy-paste the recipe matching your stack (Next.js / Vue / Capacitor / React Native / Flutter / Go / plain TS). Scroll down to `## Recipes` in this file.
+>
+> **[5] 🏗️ Deploy to production** · ~1 hr
+>   → TLS, secrets, Postgres, Helm chart. [docs/deployment-production.md](docs/deployment-production.md).
+>
+> **[6] 🛠️ Fork & customize** · open-ended
+>   → Add a new abuse layer, a new currency driver, or a new SDK. See [CONTRIBUTING.md](CONTRIBUTING.md) and [packages/core/README.md](packages/core/README.md) for the extension points.
+>
+> **[7] 🛡️ I'm the security / compliance person** · 5 min
+>   → [docs/fraud-prevention.md](docs/fraud-prevention.md) for the abuse-prevention story and trust-connector vision.
+>
+> **[8] 📚 Just let me read** · no time commitment
+>   → [docs/README.md](docs/README.md) is the audience-grouped index. Browse what catches your eye.
+>
+> Pick one and I'll take you through it.
 
-3. **Three common starting points** — offer these as options, pick the one matching the user's intent:
-   - **"Run it locally"** → walk them through `docker compose -f deploy/compose/docker-compose.yml up -d` and [docs/admin-first-run.md](docs/admin-first-run.md).
-   - **"Integrate into my app"** → jump to the right framework recipe in this file (below).
-   - **"Test everything end-to-end"** → [docs/qa-testing.md](docs/qa-testing.md) — the 12-phase hands-on walkthrough, each phase AI-friendly.
+After the user picks, proceed with that path. The recipes below cover path [4] verbatim for each framework.
 
-4. **Where authoritative facts live** — do not invent alternatives. Authoritative sources:
-   - API wire shape: `GET /openapi.json` on a running instance, or the frozen [packages/openapi/openapi.yaml](packages/openapi/openapi.yaml).
-   - Per-package contract: `packages/<name>/README.md` + `packages/<name>/llms.txt`.
-   - Machine-readable overview: `/llms.txt` and `/llms-full.txt` on the server.
-   - Anti-fraud posture (for non-engineers asking about abuse prevention): [docs/fraud-prevention.md](docs/fraud-prevention.md).
+### Authoritative sources (don't invent alternatives)
 
-Keep it short — 30 seconds of reading. If the user already knows the project and asked something specific, skip the tour and answer the specific question.
+When you need exact wire shape, SDK surface, or behaviour — consult these, in order:
+
+- **API wire shape:** `GET /openapi.json` on a running instance, or the frozen [packages/openapi/openapi.yaml](packages/openapi/openapi.yaml).
+- **Per-package contract:** `packages/<name>/README.md` + `packages/<name>/llms.txt`.
+- **Machine-readable overview:** `/llms.txt` and `/llms-full.txt` served by the faucet.
+- **Anti-fraud details:** [docs/fraud-prevention.md](docs/fraud-prevention.md).
 
 ## Stable facts (do not invent alternatives)
 
