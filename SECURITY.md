@@ -5,7 +5,7 @@ Thank you for helping keep Nimiq Simple Faucet and its integrators safe.
 ## Supported versions
 
 This project is pre-1.0. Only the current `main` branch (and the most recent
-tagged release image `ghcr.io/nimiq/simple-faucet:latest`) receives security
+tagged release image `ghcr.io/panoramicrum/nimiq-simple-faucet:latest`) receives security
 fixes. Older tags will not be patched; upgrade to `main` or the latest tag.
 
 | Version       | Supported |

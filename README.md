@@ -22,7 +22,7 @@ docker run -d \
   -e FAUCET_KEY_PASSPHRASE=change-me-too \
   -e FAUCET_TURNSTILE_SITE_KEY=... \
   -e FAUCET_TURNSTILE_SECRET=... \
-  ghcr.io/nimiq/simple-faucet:latest
+  ghcr.io/panoramicrum/nimiq-simple-faucet:latest
 ```
 
 Open `http://localhost:8080/admin`, finish TOTP setup, fund the generated faucet address, done.
@@ -53,7 +53,7 @@ See [`deploy/compose/README.md`](deploy/compose/README.md) for the full walkthro
 | Capacitor     | `@nimiq-faucet/capacitor`         | Wraps sdk-ts, adds native device-id capture                |
 | React Native  | `@nimiq-faucet/react-native`      | RN-safe fetch / WS polyfills + `react-native-device-info`  |
 | Flutter       | `nimiq_faucet` (pub.dev)          | `FaucetClient(url: ...).claim(address)`                    |
-| Go            | `github.com/nimiq/simple-faucet-go` | `client.Claim(ctx, address)`                             |
+| Go            | `github.com/PanoramicRum/nimiq-simple-faucet/packages/sdk-go` | `client.Claim(ctx, address)`                             |
 | Any language  | `openapi.yaml`                    | `openapi-generator-cli generate …`                         |
 
 Every SDK accepts the same `hostContext` (hashed UID, cookie hash, session hash, account age, KYC level, tags, HMAC signature) so your project's own abuse signals flow into the faucet's scoring pipeline.

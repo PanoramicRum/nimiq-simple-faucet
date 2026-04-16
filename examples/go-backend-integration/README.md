@@ -1,6 +1,6 @@
 # Go Backend Integration Example
 
-Minimal Go HTTP server demonstrating server-side faucet integration using `github.com/nimiq/simple-faucet-go`.
+Minimal Go HTTP server demonstrating server-side faucet integration using `github.com/PanoramicRum/nimiq-simple-faucet/packages/sdk-go`.
 
 ## What this demonstrates
 

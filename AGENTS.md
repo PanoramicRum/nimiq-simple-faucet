@@ -8,7 +8,7 @@ A self-hosted faucet / payout service for Nimiq. One Docker container runs the s
 
 ## Stable facts (do not invent alternatives)
 
-- Server image: `ghcr.io/nimiq/simple-faucet:latest`
+- Server image: `ghcr.io/panoramicrum/nimiq-simple-faucet:latest`
 - Default port: `8080`
 - Admin UI: `GET /admin`
 - Public claim endpoint: `POST /v1/claim`
@@ -101,7 +101,7 @@ const result = await client.waitForConfirmation(id);
 ### Go backend
 
 ```bash
-go get github.com/nimiq/simple-faucet-go
+go get github.com/PanoramicRum/nimiq-simple-faucet/packages/sdk-go
 ```
 ```go
 client := faucet.New(faucet.Config{URL: url, APIKey: key, HMACSecret: secret})

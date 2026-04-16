@@ -26,7 +26,7 @@ Initial pre-release. Everything below is new.
 - `@nimiq-faucet/capacitor` — Capacitor plugin with auto device fingerprint
 - `@nimiq-faucet/react-native` — React Native wrapper with device-info integration
 - `nimiq_faucet` — Dart/Flutter SDK
-- `github.com/nimiq/simple-faucet-go` — Go SDK
+- `github.com/PanoramicRum/nimiq-simple-faucet/packages/sdk-go` — Go SDK
 
 ### UI
 - Public claim page (`apps/claim-ui`) — Vue 3 + Vite, address validation, captcha/hashcash, live status via WebSocket

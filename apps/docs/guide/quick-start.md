@@ -13,7 +13,7 @@ docker run -d --name faucet \
   -e FAUCET_KEY_PASSPHRASE=dev-only-change-me \
   -e FAUCET_ADMIN_PASSWORD=dev-only-change-me \
   -v faucet-data:/data \
-  ghcr.io/nimiq/simple-faucet:latest
+  ghcr.io/panoramicrum/nimiq-simple-faucet:latest
 ```
 
 The container listens on `:8080`:

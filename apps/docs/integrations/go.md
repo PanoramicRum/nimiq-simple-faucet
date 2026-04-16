@@ -6,7 +6,7 @@ recommended way to mint `hostContext.signature` for any frontend SDK.
 ## Install
 
 ```bash
-go get github.com/nimiq/simple-faucet-go
+go get github.com/PanoramicRum/nimiq-simple-faucet/packages/sdk-go
 ```
 
 ## Add a claim endpoint
@@ -20,7 +20,7 @@ import (
 	"net/http"
 	"os"
 
-	faucet "github.com/nimiq/simple-faucet-go"
+	faucet "github.com/PanoramicRum/nimiq-simple-faucet/packages/sdk-go"
 )
 
 func main() {

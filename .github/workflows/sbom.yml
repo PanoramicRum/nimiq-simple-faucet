@@ -14,7 +14,7 @@ permissions:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: nimiq/simple-faucet
+  IMAGE_NAME: panoramicrum/nimiq-simple-faucet
 
 jobs:
   image-sbom:
