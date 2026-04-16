@@ -243,10 +243,13 @@ work. Shipped as point releases (1.0.1, 1.0.2, …) between 1.0.0 and 1.1.
 - Client-side helper in `@nimiq-faucet/sdk` so the browser SDK knows where to attach the signature
 - New backend-only SDK method (Node + Go): `client.signHostContext(ctx)` returns `{ ...ctx, signature }` that can be forwarded to the browser
 - Update `docs/integrator-hmac.md` with the per-field flow alongside the whole-request flow
+- **Add `verifiedIdentities: string[]` to `HostContextSchema`** — SSO providers the integrator has authenticated the user against (e.g. `["apple", "google", "github"]`). Feed into `canonicalizeHostContext` so the signature covers it.
+- **Scoring bonus for signed, identity-verified claims** — either extend `packages/abuse-ai` or spin a new `packages/abuse-identity` layer. Downgrade risk on `hostContextVerified: true` with ≥1 entry in `verifiedIdentities`. Lets operators pivot rate limiting from per-IP (cheap to rotate) to per-UID (hard to rotate).
+- See [docs/fraud-prevention.md](docs/fraud-prevention.md) §2 for the user-facing pitch.
 
 **Why this is 1.4, not 1.0:** it's a real API surface change, needs migration guidance, and the whole-request flow already works for the 80% use case.
 
-**Estimated effort:** 2-3 days.
+**Estimated effort:** 2-3 days (base) + 1 day for `verifiedIdentities` scoring.
 
 ---
 

@@ -10,7 +10,7 @@
 
 A reusable, self-hosted faucet / payout service for **Nimiq**, with first-class support for web (React, Vue, plain TS) and mobile (Capacitor, React Native, Flutter) clients, strong layered abuse prevention, and native integration for AI coding agents (MCP server, `llms.txt`, `AGENTS.md`).
 
-> **Status:** pre-release (0.x). Core APIs are stable; working toward 1.0.
+> **Status:** stable (1.x). Public API, SDKs, and Docker image are released — see [CHANGELOG](./CHANGELOG.md) and [ROADMAP](./ROADMAP.md).
 
 ---
 

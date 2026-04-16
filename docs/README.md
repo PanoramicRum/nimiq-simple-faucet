@@ -18,6 +18,7 @@ the [root README](../README.md).
 
 ## Maintainers (contributing to this repo)
 
+- [qa-testing.md](./qa-testing.md) — 12-phase hands-on walkthrough of every feature (AI-assisted)
 - [release-playbook.md](./release-playbook.md) — tag → publish flow, NPM_TOKEN provisioning, rc dry-runs
 - [release-polish-plan.md](./release-polish-plan.md) — historical pre-1.0 polish plan (reference)
 - [../CONTRIBUTING.md](../CONTRIBUTING.md) — dev setup, repository layout, code style
@@ -25,6 +26,7 @@ the [root README](../README.md).
 
 ## Security
 
+- [fraud-prevention.md](./fraud-prevention.md) — one-pager on anti-abuse stack + trust connectors (for stakeholders)
 - [security/threat-model.md](./security/threat-model.md) — STRIDE analysis per component
 - [security/hardening-checklist.md](./security/hardening-checklist.md) — production hardening items
 - [security/owasp-top10.md](./security/owasp-top10.md) — OWASP Top 10 per endpoint

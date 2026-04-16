@@ -6,9 +6,9 @@ This project uses [changesets](https://github.com/changesets/changesets) for
 versioning. Run `pnpm changeset` to add entries, then `pnpm changeset version`
 (invoked by the release workflow) to regenerate this file.
 
-## 0.0.1 (unreleased)
+## 1.0.0 (2026-04-16)
 
-Initial pre-release. Everything below is new.
+Initial public release. Everything below is new.
 
 ### Server
 - Fastify API with `POST /v1/claim`, `GET /v1/claim/:id`, `POST /v1/challenge`, `GET /v1/config`, `GET /v1/stats`, `WS /v1/stream`, `GET /healthz`

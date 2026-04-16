@@ -3,14 +3,14 @@ layout: home
 
 hero:
   name: Nimiq Simple Faucet
-  tagline: Self-hosted reusable faucet and payout service for Nimiq, with a pluggable abuse stack and six first-party SDKs.
+  tagline: Self-hosted reusable faucet and payout service for Nimiq, with a pluggable abuse stack and seven first-party SDKs.
   actions:
     - theme: brand
       text: Get started
       link: /guide/quick-start
     - theme: alt
       text: View on GitHub
-      link: "#"
+      link: https://github.com/PanoramicRum/nimiq-simple-faucet
 
 features:
   - title: Self-hosted

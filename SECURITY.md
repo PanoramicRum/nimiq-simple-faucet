@@ -4,17 +4,18 @@ Thank you for helping keep Nimiq Simple Faucet and its integrators safe.
 
 ## Supported versions
 
-This project is pre-1.0. Only the current `main` branch (and the most recent
-tagged release image `ghcr.io/panoramicrum/nimiq-simple-faucet:latest`) receives security
-fixes. Older tags will not be patched; upgrade to `main` or the latest tag.
+Security fixes are backported to the current minor release only. Older
+minor lines are expected to be upgraded rather than patched.
 
-| Version       | Supported |
-| ------------- | --------- |
-| `main` (HEAD) | Yes       |
-| `< 1.0` tags  | No (upgrade to latest) |
+| Version          | Supported                           |
+| ---------------- | ----------------------------------- |
+| `main` (HEAD)    | Yes                                 |
+| Current `1.x`    | Yes (most recent minor)             |
+| Older `1.x`      | No — upgrade to the latest minor    |
+| `< 1.0` tags     | No (pre-release; upgrade to `1.x`)  |
 
-Once 1.0 ships, this table will be revised to cover the current and previous
-minor release lines.
+The recommended runtime is the most recent tag on
+`ghcr.io/panoramicrum/nimiq-simple-faucet`. The `:latest` tag tracks it.
 
 ## Reporting a vulnerability
 

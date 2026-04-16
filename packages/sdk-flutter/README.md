@@ -8,7 +8,7 @@ Dart/Flutter client for the Nimiq Simple Faucet. Mirrors `@nimiq-faucet/sdk`.
 
 ```yaml
 dependencies:
-  nimiq_faucet: ^0.0.1
+  nimiq_faucet: ^1.0.0
 ```
 
 Then `flutter pub get` (or `dart pub get`).
