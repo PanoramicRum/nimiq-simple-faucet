@@ -17,6 +17,7 @@ export async function buildDriver(config: ServerConfig): Promise<CurrencyDriver>
           : undefined,
       walletAddress: config.walletAddress,
       walletPassphrase: config.walletPassphrase,
+      privateKey: config.privateKey,
     });
     await driver.init();
     return driver;

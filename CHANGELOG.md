@@ -6,6 +6,44 @@ This project uses [changesets](https://github.com/changesets/changesets) for
 versioning. Run `pnpm changeset` to add entries, then `pnpm changeset version`
 (invoked by the release workflow) to regenerate this file.
 
+## 1.1.2 (2026-04-17)
+
+### Fixed
+- **RPC signer driver now auto-imports and unlocks the faucet wallet
+  on init.** Previously `NimiqRpcDriver.send()` called
+  `sendBasicTransaction` against a node wallet manager that was never
+  told about `FAUCET_PRIVATE_KEY` — every claim failed with
+  `RPC sendBasicTransaction error: Internal error` (`RPC_-32603`)
+  until the operator manually issued `importRawKey` + `unlockAccount`.
+  `init()` now checks `listAccounts`, calls `importRawKey` when
+  `FAUCET_PRIVATE_KEY` is supplied and the wallet isn't already known,
+  and calls `unlockAccount` idempotently. Surfaces clean
+  `WALLET_NOT_IMPORTED` / `WALLET_IMPORT_FAILED` /
+  `WALLET_UNLOCK_FAILED` errors instead of the opaque `-32603` two
+  layers deep in the claim path. Fixes
+  [#38](https://github.com/PanoramicRum/nimiq-simple-faucet/issues/38).
+
+### Changed
+- `NimiqRpcDriverConfig` gained an optional `privateKey` field. Plumbed
+  through from `FAUCET_PRIVATE_KEY` via
+  [apps/server/src/drivers.ts](apps/server/src/drivers.ts).
+- [deploy/compose/README.md](deploy/compose/README.md) Option B (local
+  node) documents the new auto-import behaviour — no more manual
+  `curl importRawKey` / `unlockAccount` step.
+- ROADMAP gained §1.1.2d (sign RPC tx locally, no key at the node —
+  long-term follow-up) and §1.1.2e (full-claim CI smoke —
+  complements the `compose-smoke` boot check from 1.1.1).
+- Helm chart `1.1.2` / `appVersion: 1.1.2`; Flutter SDK `1.1.2`.
+
+### Behaviour-preserving for externally-managed wallets
+- Operators who pre-import + pre-unlock the wallet outside the faucet
+  (and set only `FAUCET_WALLET_ADDRESS` + `FAUCET_WALLET_PASSPHRASE`
+  with no `FAUCET_PRIVATE_KEY`) still work: `init()` skips
+  `importRawKey` when `listAccounts` shows the address present, and
+  `unlockAccount` is idempotent.
+- Operators with no passphrase configured at all (assumed externally
+  unlocked) see no change — wallet ops are skipped entirely.
+
 ## 1.1.1 (2026-04-17)
 
 ### Fixed

@@ -49,8 +49,8 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-describe('NimiqRpcDriver — init', () => {
-  it('accepts a matching-network getNetworkId response', async () => {
+describe('NimiqRpcDriver — init (network sanity)', () => {
+  it('accepts a matching-network getNetworkId response (no passphrase → no wallet ops)', async () => {
     requestMock.mockResolvedValueOnce(mockResult('TestAlbatross'));
     const d = new NimiqRpcDriver({
       network: 'test',
@@ -59,6 +59,10 @@ describe('NimiqRpcDriver — init', () => {
     });
     await expect(d.init()).resolves.toBeUndefined();
     expect(callsByMethod('getNetworkId').length).toBe(1);
+    // Without a passphrase we shouldn't touch the wallet manager.
+    expect(callsByMethod('listAccounts').length).toBe(0);
+    expect(callsByMethod('importRawKey').length).toBe(0);
+    expect(callsByMethod('unlockAccount').length).toBe(0);
   });
 
   it('throws NETWORK_MISMATCH when main config meets a testnet node', async () => {
@@ -82,6 +86,84 @@ describe('NimiqRpcDriver — init', () => {
       walletAddress: VALID_ADDR,
     });
     await expect(d.init()).rejects.toMatchObject({ code: 'NETWORK_MISMATCH' });
+  });
+});
+
+describe('NimiqRpcDriver — init (wallet auto-import + unlock)', () => {
+  const baseCfg = {
+    network: 'test' as const,
+    rpcUrl: 'http://node.local',
+    walletAddress: VALID_ADDR,
+    walletPassphrase: 'test-passphrase-1234',
+  };
+  const HEX_KEY = '0'.repeat(64);
+
+  it('imports + unlocks when wallet is not in listAccounts (privateKey provided)', async () => {
+    requestMock
+      .mockResolvedValueOnce(mockResult('TestAlbatross')) // getNetworkId
+      .mockResolvedValueOnce(mockResult([])) // listAccounts — empty
+      .mockResolvedValueOnce(mockResult(VALID_ADDR)) // importRawKey
+      .mockResolvedValueOnce(mockResult(true)); // unlockAccount
+    const d = new NimiqRpcDriver({ ...baseCfg, privateKey: HEX_KEY });
+    await expect(d.init()).resolves.toBeUndefined();
+
+    expect(callsByMethod('listAccounts')[0]?.params).toEqual([]);
+    expect(callsByMethod('importRawKey')[0]?.params).toEqual([HEX_KEY, baseCfg.walletPassphrase]);
+    expect(callsByMethod('unlockAccount')[0]?.params).toEqual([
+      VALID_ADDR,
+      baseCfg.walletPassphrase,
+      null,
+    ]);
+  });
+
+  it('skips importRawKey when wallet is already in listAccounts', async () => {
+    requestMock
+      .mockResolvedValueOnce(mockResult('TestAlbatross'))
+      .mockResolvedValueOnce(mockResult([VALID_ADDR])) // already imported
+      .mockResolvedValueOnce(mockResult(true)); // unlockAccount still runs
+    const d = new NimiqRpcDriver({ ...baseCfg, privateKey: HEX_KEY });
+    await expect(d.init()).resolves.toBeUndefined();
+
+    expect(callsByMethod('importRawKey').length).toBe(0);
+    expect(callsByMethod('unlockAccount').length).toBe(1);
+  });
+
+  it('normalises casing + whitespace when matching against listAccounts', async () => {
+    requestMock
+      .mockResolvedValueOnce(mockResult('TestAlbatross'))
+      .mockResolvedValueOnce(mockResult([VALID_ADDR.toLowerCase()])) // same address, different case
+      .mockResolvedValueOnce(mockResult(true));
+    const d = new NimiqRpcDriver({ ...baseCfg, privateKey: HEX_KEY });
+    await expect(d.init()).resolves.toBeUndefined();
+    expect(callsByMethod('importRawKey').length).toBe(0);
+  });
+
+  it('throws WALLET_NOT_IMPORTED when passphrase is set but privateKey is missing', async () => {
+    requestMock
+      .mockResolvedValueOnce(mockResult('TestAlbatross'))
+      .mockResolvedValueOnce(mockResult([])); // listAccounts — empty
+    const d = new NimiqRpcDriver(baseCfg); // no privateKey
+    await expect(d.init()).rejects.toMatchObject({ code: 'WALLET_NOT_IMPORTED' });
+    expect(callsByMethod('importRawKey').length).toBe(0);
+    expect(callsByMethod('unlockAccount').length).toBe(0);
+  });
+
+  it('surfaces WALLET_IMPORT_FAILED when importRawKey RPC errors', async () => {
+    requestMock
+      .mockResolvedValueOnce(mockResult('TestAlbatross'))
+      .mockResolvedValueOnce(mockResult([]))
+      .mockResolvedValueOnce(mockRpcError(-32603, 'Internal error')); // importRawKey fails
+    const d = new NimiqRpcDriver({ ...baseCfg, privateKey: HEX_KEY });
+    await expect(d.init()).rejects.toMatchObject({ code: 'WALLET_IMPORT_FAILED' });
+  });
+
+  it('surfaces WALLET_UNLOCK_FAILED when unlockAccount RPC errors', async () => {
+    requestMock
+      .mockResolvedValueOnce(mockResult('TestAlbatross'))
+      .mockResolvedValueOnce(mockResult([VALID_ADDR]))
+      .mockResolvedValueOnce(mockRpcError(-32000, 'wrong passphrase')); // unlockAccount fails
+    const d = new NimiqRpcDriver({ ...baseCfg, privateKey: HEX_KEY });
+    await expect(d.init()).rejects.toMatchObject({ code: 'WALLET_UNLOCK_FAILED' });
   });
 });
 

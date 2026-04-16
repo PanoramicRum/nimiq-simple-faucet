@@ -175,6 +175,61 @@ WASM client can't reach TestAlbatross consensus):
 hours to consume a refreshed `@nimiq/core`; unknown for any
 Node-target fix if one is needed.
 
+### 1.1.2d Sign RPC transactions locally (no key at the node)
+
+**Goal:** remove the faucet's dependency on the Albatross node's wallet
+manager holding unlocked key material.
+
+**Today** (post-1.1.2): `NimiqRpcDriver.init()` auto-imports
+`FAUCET_PRIVATE_KEY` into the node via `importRawKey` + `unlockAccount`,
+and `send()` calls `sendBasicTransaction` which signs server-side at
+the node. The key lives in two places (faucet env + node wallet
+manager), which is an operator footgun.
+
+**Target:** sign in-process with `@nimiq/core` primitives (the same
+code paths `driver-nimiq-wasm` already uses for local signing) and
+submit with `sendRawTransaction`. The node never sees the key; rotation
+is a `.env` edit + container restart.
+
+**Scope:**
+- Extend `NimiqRpcDriver` with a local-signing path behind a config
+  flag (e.g. `signLocally: true`) or make it the default once
+  validated.
+- Reuse `TransactionBuilder` / `KeyPair` from `@nimiq/core` the same
+  way `NimiqWasmDriver.send()` already does.
+- Drop `importRawKey` + `unlockAccount` from `init()` when signing
+  locally.
+
+**Blocked on:** §1.1.2c landing — a refreshed `@nimiq/core` on npm
+would de-risk importing `@nimiq/core` purely for the signing primitives
+(no WASM worker needed for signing; much smaller surface than the full
+light-client init).
+
+**Estimated effort:** ~1 day once §1.1.2c is resolved.
+
+### 1.1.2e End-to-end CI claim smoke
+
+**Goal:** CI coverage of the actual claim path (wallet import,
+consensus, tx broadcast), not just "does the image boot."
+
+**Today** (post-1.1.1): the `compose-smoke` CI job asserts the faucet
+service starts + serves `/healthz` with `.env.example` values
+applied. Catches `#39`-class regressions but not `#38`-class ones
+(wallet not imported, -32603 on claim).
+
+**Scope:**
+- Boot the full local-node compose profile in CI.
+- Provide a funded testnet wallet via GitHub Actions secrets (rotate
+  quarterly) OR stand up a self-contained devnet with pre-funded
+  genesis.
+- After consensus, POST a claim and assert `{status:"broadcast", txId:…}`
+  comes back within ~60s.
+- Gate on a label or `workflow_dispatch` — consensus sync is slow and
+  flaky, not every PR should pay that cost.
+
+**Estimated effort:** 1 day (plus quarterly testnet-wallet refill if
+we go the shared-wallet route).
+
 ### 1.1.3 Grafana dashboard JSON
 
 **Goal:** operators get a working dashboard on import, not a TODO.

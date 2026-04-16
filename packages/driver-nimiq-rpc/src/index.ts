@@ -18,6 +18,14 @@ export interface NimiqRpcDriverConfig {
   walletAddress: string;
   /** Passphrase the node will use to unlock the wallet for sending. */
   walletPassphrase?: string | undefined;
+  /**
+   * Optional hex private key. When supplied together with
+   * `walletPassphrase`, `init()` imports the key into the node's wallet
+   * manager via `importRawKey` (gated on `listAccounts`) so the
+   * operator doesn't have to manually prep the node. Omit when the
+   * wallet is pre-imported out of band.
+   */
+  privateKey?: string | undefined;
 }
 
 interface RpcResponse<T> {
@@ -67,6 +75,54 @@ export class NimiqRpcDriver implements CurrencyDriver {
         `RPC node reports ${reported} but config says test`,
         'NETWORK_MISMATCH',
       );
+    }
+    await this.#ensureWalletReady();
+  }
+
+  async #ensureWalletReady(): Promise<void> {
+    // Without a passphrase we can't unlock the wallet; assume the
+    // operator has pre-imported + pre-unlocked it externally. This is
+    // the pre-1.1.2 behaviour, preserved for externally-managed keys.
+    if (!this.#config.walletPassphrase) return;
+
+    const accounts = await this.#rpc<string[]>('listAccounts', []);
+    const normalize = (a: string): string => a.toUpperCase().replace(/\s+/g, ' ').trim();
+    const wanted = normalize(this.#config.walletAddress);
+    const alreadyImported = accounts.some((a) => normalize(a) === wanted);
+
+    if (!alreadyImported) {
+      if (!this.#config.privateKey) {
+        throw new DriverError(
+          `Wallet ${this.#config.walletAddress} is not imported in the RPC node and no privateKey was supplied. Set FAUCET_PRIVATE_KEY or import the key manually via importRawKey.`,
+          'WALLET_NOT_IMPORTED',
+        );
+      }
+      try {
+        await this.#rpc<string>('importRawKey', [
+          this.#config.privateKey,
+          this.#config.walletPassphrase,
+        ]);
+      } catch (err) {
+        // Rewrap RPC-layer errors (including DriverError produced by
+        // `#rpc` for non-200 JSON-RPC responses) into a domain-specific
+        // code so callers don't have to pattern-match on `RPC_-NNNN`.
+        const msg = err instanceof Error ? err.message : String(err);
+        throw new DriverError(`importRawKey failed: ${msg}`, 'WALLET_IMPORT_FAILED');
+      }
+    }
+
+    // `unlockAccount` is idempotent on Albatross — returns true whether
+    // or not the account was already unlocked. Duration `null` = unlock
+    // until the node restarts (what we want for a long-running faucet).
+    try {
+      await this.#rpc<boolean>('unlockAccount', [
+        this.#config.walletAddress,
+        this.#config.walletPassphrase,
+        null,
+      ]);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      throw new DriverError(`unlockAccount failed: ${msg}`, 'WALLET_UNLOCK_FAILED');
     }
   }
 

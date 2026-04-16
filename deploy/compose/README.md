@@ -44,6 +44,11 @@ faucet reaches it via the compose-internal hostname `nimiq`. No
    ```
 4. Once consensus is established, the faucet can send transactions.
 
+On first boot the faucet's RPC driver auto-imports the configured wallet
+(`FAUCET_WALLET_ADDRESS` + `FAUCET_PRIVATE_KEY` from `.env`) into the
+node via `importRawKey` and unlocks it with `FAUCET_KEY_PASSPHRASE` — no
+manual `curl importRawKey` / `unlockAccount` required (since v1.1.2).
+
 The node's config lives in [`nimiq-node/client.toml`](nimiq-node/client.toml);
 edit it to switch to mainnet, enable basic auth on the RPC port, expose
 metrics, etc.
