@@ -115,9 +115,14 @@ export class NimiqRpcDriver implements CurrencyDriver {
   async waitForConfirmation(tx: TxId, timeoutMs = 60_000): Promise<void> {
     const deadline = Date.now() + timeoutMs;
     while (Date.now() < deadline) {
-      const receipt = await this.#rpc<{ confirmations?: number } | null>('getTransactionByHash', [tx]);
-      if (receipt && typeof receipt.confirmations === 'number' && receipt.confirmations > 0) {
-        return;
+      try {
+        const receipt = await this.#rpc<{ confirmations?: number } | null>('getTransactionByHash', [tx]);
+        if (receipt && typeof receipt.confirmations === 'number' && receipt.confirmations > 0) {
+          return;
+        }
+      } catch {
+        // Transient "transaction not found yet" errors are expected while
+        // the tx is in the mempool. Keep polling until deadline.
       }
       await new Promise((r) => setTimeout(r, 2_000));
     }
