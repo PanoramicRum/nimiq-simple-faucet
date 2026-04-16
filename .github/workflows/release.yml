@@ -97,13 +97,18 @@ jobs:
 
       - name: Publish npm packages (public @nimiq-faucet/*)
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          # Tell npm to mint an OIDC token from GitHub Actions
+          # (id-token: write is granted at the job level). Combined with
+          # the Trusted Publisher configuration on the nimiq-faucet npm
+          # org, this authenticates without a long-lived NPM_TOKEN.
+          NPM_CONFIG_PROVENANCE: "true"
         run: |
           set -euo pipefail
           # Consume pending changesets into version bumps + CHANGELOG.
           pnpm changeset version || true
           # Publish only packages under the @nimiq-faucet scope. Internal
           # @faucet/* packages carry "private": true and are skipped by npm.
+          # Auth is handled via OIDC (see Trusted Publisher on npm org).
           pnpm changeset publish --access public --tag latest
 
       - name: Package Helm chart
