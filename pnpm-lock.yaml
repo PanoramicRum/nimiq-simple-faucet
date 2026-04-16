@@ -38,9 +38,6 @@ importers:
       '@nimiq-faucet/sdk':
         specifier: workspace:*
         version: link:../../packages/sdk-ts
-      '@nimiq-faucet/vue':
-        specifier: workspace:*
-        version: link:../../packages/sdk-vue
       vue:
         specifier: ^3.5.10
         version: 3.5.32(typescript@5.9.3)
