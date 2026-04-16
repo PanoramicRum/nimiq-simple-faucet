@@ -12,6 +12,25 @@ A reusable, self-hosted faucet / payout service for **Nimiq**, with first-class 
 
 > **Status:** stable (1.x). Public API, SDKs, and Docker image are released — see [CHANGELOG](./CHANGELOG.md) and [ROADMAP](./ROADMAP.md).
 
+## 🤖 Arriving via an AI assistant?
+
+Paste **one** of these into your agent and it will take you through a guided tour of the whole project.
+
+**If the agent has your workspace** (Cursor, Claude Code with the repo cloned, etc.):
+
+```
+Help me test the faucet.
+```
+
+**If the agent is web-based** (Claude.ai, ChatGPT with web tools, etc.):
+
+```
+Help me test the project at https://github.com/PanoramicRum/nimiq-simple-faucet.
+Start by fetching AGENTS.md from that repo and follow its "First-time orientation" instructions.
+```
+
+Either way you'll get an 8-option menu (quick demo, Docker trial, full QA walkthrough, integrate into your app, deploy, fork, security review, or just read). Pick a number and you're off. See [AGENTS.md](./AGENTS.md) for what's behind the menu.
+
 ---
 
 ## Why this exists
