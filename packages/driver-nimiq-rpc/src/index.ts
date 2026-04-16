@@ -44,20 +44,41 @@ interface RpcResponse<T> {
 export class NimiqRpcDriver implements CurrencyDriver {
   readonly id = 'nimiq';
   readonly networks: readonly NetworkId[] = ['main', 'test'];
-  readonly readyPromise: Promise<void> = Promise.resolve();
 
   #config: NimiqRpcDriverConfig;
   #nextId = 1;
+  #ready = false;
+  #readyPromise: Promise<void> | null = null;
 
   constructor(config: NimiqRpcDriverConfig) {
     this.#config = config;
   }
 
-  isReady(): boolean {
-    return true;
+  /**
+   * Synchronous setup — stores nothing, returns immediately. All RPC
+   * contact (network sanity check, wallet import, wallet unlock) runs
+   * in the background behind `readyPromise` so the Fastify listener can
+   * bind before the RPC node is reachable. Without this decoupling, any
+   * node slowness / temporary unavailability at boot crashes the faucet
+   * container (or wedges it in a restart loop).
+   */
+  async init(): Promise<void> {
+    this.#readyPromise = this.#initAsync();
+    // Swallow the rejection on the stored promise — operational methods
+    // re-await it and will see the real error there. Leaving it
+    // unhandled would fire Node's `unhandledrejection`.
+    this.#readyPromise.catch(() => {});
   }
 
-  async init(): Promise<void> {
+  get readyPromise(): Promise<void> | undefined {
+    return this.#readyPromise ?? undefined;
+  }
+
+  isReady(): boolean {
+    return this.#ready;
+  }
+
+  async #initAsync(): Promise<void> {
     // `getNetworkId` is cheap and exposes the network string directly
     // (`"TestAlbatross"` / `"MainAlbatross"`). `getConsensusState` does not
     // exist on Albatross RPC; use `isConsensusEstablished` if you want the
@@ -77,6 +98,7 @@ export class NimiqRpcDriver implements CurrencyDriver {
       );
     }
     await this.#ensureWalletReady();
+    this.#ready = true;
   }
 
   async #ensureWalletReady(): Promise<void> {
@@ -139,6 +161,7 @@ export class NimiqRpcDriver implements CurrencyDriver {
   }
 
   async getBalance(): Promise<bigint> {
+    if (this.#readyPromise) await this.#readyPromise;
     const account = await this.#rpc<{ balance: string | number }>('getAccountByAddress', [
       this.#config.walletAddress,
     ]);
@@ -146,6 +169,7 @@ export class NimiqRpcDriver implements CurrencyDriver {
   }
 
   async send(to: Address, amount: bigint, memo?: string): Promise<TxId> {
+    if (this.#readyPromise) await this.#readyPromise;
     // Albatross requires an explicit validity-start-height on every tx. Using
     // the current head means the tx is valid for the next ~120 blocks.
     const validityStartHeight = await this.#rpc<number>('getBlockNumber', []);
@@ -174,6 +198,7 @@ export class NimiqRpcDriver implements CurrencyDriver {
   }
 
   async waitForConfirmation(tx: TxId, timeoutMs = 60_000): Promise<void> {
+    if (this.#readyPromise) await this.#readyPromise;
     const deadline = Date.now() + timeoutMs;
     while (Date.now() < deadline) {
       try {
@@ -191,6 +216,7 @@ export class NimiqRpcDriver implements CurrencyDriver {
   }
 
   async addressHistory(address: Address): Promise<HistorySummary> {
+    if (this.#readyPromise) await this.#readyPromise;
     // Signature: (address, max, start_at). `start_at = null` starts from the tip.
     // Requires a history-indexed node (`index_history = true` in client.toml).
     const txs = await this.#rpc<Array<{ from: string; to: string; value: number; timestamp: number }>>(

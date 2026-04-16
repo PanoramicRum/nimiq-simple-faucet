@@ -95,16 +95,23 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       # Proves the compose Quick Start from deploy/compose/.env.example
-      # actually boots the faucet service. Would have caught #39, where
-      # a missing FAUCET_DEV=1 crashed the container on first boot.
-      # Deliberately does NOT start the local-node profile — consensus
-      # + claim e2e is out of scope for this job.
+      # actually boots the faucet service cleanly. Would have caught:
+      #   - #39 (missing FAUCET_DEV=1 crashed the container on first boot)
+      #   - pre-v1.1.3 regressions where the RPC driver's init() crashed
+      #     the container if it couldn't reach the configured RPC URL.
+      #
+      # As of v1.1.3, both signer drivers decouple init() from the
+      # Fastify listener (readyPromise pattern) — so /healthz comes up
+      # immediately even if the configured RPC node is unreachable.
+      # /readyz would return 503 until RPC becomes reachable, but
+      # /healthz (liveness) doesn't care. That means we can assert the
+      # faucet service alone boots cleanly without needing the nimiq
+      # service up (end-to-end claim CI is ROADMAP §1.1.2e).
       - name: Boot compose faucet + assert /healthz
         run: |
           set -euo pipefail
           cd deploy/compose
           cp .env.example .env
-          # Fill required values that .env.example leaves as placeholders.
           sed -i 's|^FAUCET_ADMIN_PASSWORD=.*|FAUCET_ADMIN_PASSWORD=ci-smoke-admin-pw-12|' .env
           sed -i 's|^FAUCET_KEY_PASSPHRASE=.*|FAUCET_KEY_PASSPHRASE=ci-smoke-key-passphrase-16|' .env
           printf '\nFAUCET_PRIVATE_KEY=%s\n' "$(openssl rand -hex 32)" >> .env
@@ -112,17 +119,24 @@ jobs:
           for i in $(seq 1 30); do
             if curl -fsS http://localhost:8080/healthz >/dev/null 2>&1; then
               echo "healthz OK after ~${i}x2s"
+              echo "--- /readyz ---"
+              curl -sS http://localhost:8080/readyz || true
+              echo ""
+              echo "--- faucet logs (tail) ---"
               docker compose logs faucet | tail -20
               docker compose down
               exit 0
             fi
-            if ! docker compose ps faucet --format '{{.State}}' | grep -q running; then
-              echo "faucet container exited early — regression like #39"
+            state=$(docker compose ps faucet --format '{{.State}}' 2>/dev/null || echo "")
+            if [ -n "$state" ] && [ "$state" != "running" ] && [ "$state" != "restarting" ]; then
+              echo "faucet container state=$state — likely regression like #39"
               docker compose logs faucet
+              docker compose down
               exit 1
             fi
             sleep 2
           done
           echo "healthz never returned 200 within 60s"
           docker compose logs faucet
+          docker compose down
           exit 1

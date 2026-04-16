@@ -6,6 +6,47 @@ This project uses [changesets](https://github.com/changesets/changesets) for
 versioning. Run `pnpm changeset` to add entries, then `pnpm changeset version`
 (invoked by the release workflow) to regenerate this file.
 
+## 1.1.3 (2026-04-17)
+
+### Fixed
+- **RPC signer driver no longer crashes the container at boot when the
+  RPC node is unreachable.** Previously `NimiqRpcDriver.init()` awaited
+  `getNetworkId` (and in v1.1.2 also `listAccounts`/`importRawKey`/
+  `unlockAccount`) synchronously — any DNS failure, ECONNREFUSED, or
+  slow-starting node crashed the faucet container with
+  `ENOTFOUND`/unhandled `DriverError`. `init()` now returns immediately
+  after kicking off those RPC calls behind `readyPromise`, matching the
+  WASM-driver pattern introduced in v1.1.0 (#36). `/healthz` comes up
+  from t=0 regardless of RPC reachability; `/readyz` returns 503 until
+  the background init succeeds. Driver-dependent routes (`POST
+  /v1/claim`, admin account endpoints) stay gated behind the v1.1.0
+  503 preHandler hook.
+- **CI `compose-smoke` job was failing since v1.1.1** because the
+  faucet's RPC driver hit `ENOTFOUND nimiq` when booted without the
+  `local-node` profile. With the readiness decoupling above, the
+  faucet service alone boots and `/healthz` responds — the job now
+  passes without needing to run the nimiq node.
+
+### Changed
+- `NimiqRpcDriver` internal API: gained `readyPromise` (getter) and
+  `isReady()` (method). Operational methods (`getBalance`, `send`,
+  `waitForConfirmation`, `addressHistory`) each `await this.readyPromise`
+  at the top, so a caller that invokes them before init settles simply
+  blocks rather than seeing a stale/partial state.
+- `NimiqRpcDriver.init()` tests split into "init returns immediately"
+  vs "readyPromise resolves/rejects" to match the new contract.
+- Helm chart bumped to `1.1.3` / `appVersion: 1.1.3`.
+- Flutter SDK bumped to `1.1.3`.
+
+### Caller-facing behaviour
+- **Most operators see no change.** If the RPC node is reachable at
+  boot, `init()` + `readyPromise` both succeed and operational calls
+  work as before.
+- **Operators with a briefly-unreachable RPC node at boot**: the faucet
+  container stays alive and the admin UI loads; the driver-syncing
+  banner shows until RPC becomes reachable; claims return `503
+  Retry-After: 10` in the meantime.
+
 ## 1.1.2 (2026-04-17)
 
 ### Fixed
