@@ -13,6 +13,8 @@ data/
 pnpm-lock.yaml.backup
 .vite
 .nuxt
+.next
+.dart_tool
 build
 target
 
@@ -21,3 +23,10 @@ test-results/
 playwright-report/
 blob-report/
 .e2e-state.json
+
+# Generated wallet keys — never commit!
+.wallet.local.json
+.wallet.*.json
+
+# Host-specific docker-compose overrides
+docker-compose.override.yml

@@ -1,0 +1,11 @@
+name: faucet_cli_demo
+description: CLI demo of the nimiq_faucet Dart SDK.
+version: 0.0.0
+publish_to: none
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+
+dependencies:
+  nimiq_faucet:
+    path: ../../packages/sdk-flutter
