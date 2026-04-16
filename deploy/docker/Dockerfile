@@ -61,6 +61,12 @@ RUN apt-get update \
     && DEBIAN_FRONTEND=noninteractive apt-get upgrade -y \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
+# Strip the npm CLI bundled with the Node image. We use pnpm/node at
+# runtime, never npm — but npm ships its own copy of picomatch, tar,
+# etc. which drag in CVEs we can't patch (they live in upstream Node
+# releases). Deleting the dir is the cleanest fix.
+RUN rm -rf /usr/local/lib/node_modules/npm \
+    /usr/local/bin/npm /usr/local/bin/npx
 RUN mkdir -p /data && chown -R node:node /data
 # Deployed server: self-contained node_modules + package.json + dist.
 COPY --from=prune /deployed-server /app/apps/server
