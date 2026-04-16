@@ -1,5 +1,13 @@
 # Nimiq Simple Faucet
 
+[![CI](https://img.shields.io/github/actions/workflow/status/PanoramicRum/nimiq-simple-faucet/ci.yml?branch=main&label=CI)](https://github.com/PanoramicRum/nimiq-simple-faucet/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Release](https://img.shields.io/github/v/release/PanoramicRum/nimiq-simple-faucet?include_prereleases&label=release)](https://github.com/PanoramicRum/nimiq-simple-faucet/releases)
+[![CodeQL](https://img.shields.io/github/actions/workflow/status/PanoramicRum/nimiq-simple-faucet/codeql.yml?branch=main&label=CodeQL)](https://github.com/PanoramicRum/nimiq-simple-faucet/actions/workflows/codeql.yml)
+[![npm](https://img.shields.io/npm/v/@nimiq-faucet/sdk?label=%40nimiq-faucet%2Fsdk)](https://www.npmjs.com/package/@nimiq-faucet/sdk)
+
+📘 [Docs](./docs) · 🤝 [Contributing](./CONTRIBUTING.md) · 🛡️ [Security](./SECURITY.md) · 🗺️ [Roadmap](./ROADMAP.md) · 🤖 [AI agents](./AGENTS.md)
+
 A reusable, self-hosted faucet / payout service for **Nimiq**, with first-class support for web (React, Vue, plain TS) and mobile (Capacitor, React Native, Flutter) clients, strong layered abuse prevention, and native integration for AI coding agents (MCP server, `llms.txt`, `AGENTS.md`).
 
 > **Status:** pre-release (0.x). Core APIs are stable; working toward 1.0.
@@ -78,7 +86,7 @@ Each layer emits signals that can be inspected per claim in the dashboard and re
 
 ## Repository layout
 
-See the approved plan. Short version:
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for a complete tour. Short version:
 
 - `apps/server` — Fastify + TS server (REST, WS, MCP, admin API).
 - `apps/dashboard` — Vue 3 admin UI.

@@ -9,6 +9,50 @@ but themes can ship in parallel.
 
 ---
 
+## 1.0.x — Pre-1.1 polish
+
+Small items that improve the public-facing experience without feature
+work. Shipped as point releases (1.0.1, 1.0.2, …) between 1.0.0 and 1.1.
+
+### 1.0.3 — Docs directory restructure (optional, non-breaking)
+
+**Goal:** make `docs/` navigable at scale by grouping by audience.
+
+**Scope:**
+- Move operator docs to `docs/operators/`, integrator to `docs/integrators/`, maintainer to `docs/maintainers/`; keep the existing `docs/security/`.
+- Leave backward-compat redirect stubs at the old paths so external links don't break mid-1.x.
+- Update `docs/README.md` (the audience-grouped index) and any cross-links.
+
+**Why deferred:** the existing `docs/README.md` index already solves the discovery problem; physical moves add churn without immediate payoff.
+
+**Estimated effort:** half day.
+
+### 1.0.4 — Dead-weight config cleanup
+
+**Goal:** single source of truth for every config type.
+
+**Scope:**
+- Audit any split configs that accumulate during 1.0.x (e.g. the
+  `deploy/docker/pnpm-workspace.docker.yaml` narrower-workspace pattern)
+  and fold them into generators or document the exception clearly.
+- Delete orphaned `.turbo`/`.next`/`.cache` dirs that sneak past the
+  `.gitignore` if any appear.
+
+**Estimated effort:** 1–2 hours.
+
+### 1.0.5 — README / docs polish follow-ons
+
+**Goal:** catch gaps that surface once real contributors start browsing.
+
+**Scope:**
+- Screenshots / GIFs in README + admin-first-run (previously deferred)
+- Consider a `DEVELOPER.md` landing page that's more tour-oriented than `CONTRIBUTING.md`
+- Badges for npm version of each SDK once they're published
+
+**Estimated effort:** 1 day.
+
+---
+
 ## 1.1 — Observability & operator polish
 
 ### 1.1.1 Prometheus `/metrics` endpoint
@@ -308,6 +352,10 @@ people who aren't on the core team.
   (TOTP enrolment, fund wallet, first claim, explain drawer). Embed in
   [docs/admin-first-run.md](docs/admin-first-run.md). Update after any
   dashboard change.
+- **Docs-drift detection** — a weekly CI job that diffs `docs/*.md`
+  against the code it references (env var names, file paths, API
+  surface). Any stale reference files a low-priority issue. Prevents
+  documentation from silently rotting as the code evolves.
 
 ## QA
 

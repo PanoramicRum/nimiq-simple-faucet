@@ -1,3 +1,13 @@
+# Docker-only pnpm workspace definition.
+#
+# This file is intentionally narrower than the root /pnpm-workspace.yaml:
+# the Docker image only ships apps/server + claim-ui + dashboard and their
+# direct dependencies. We omit examples/*, sdk-react/vue/capacitor/etc.
+# here to keep the build context small and the deps stage fast.
+#
+# Keep this list in sync with the server's transitive deps — any new
+# package an app imports must be added here AND have its package.json
+# COPY'd in the Dockerfile's deps stage.
 packages:
   - "apps/server"
   - "apps/claim-ui"
