@@ -97,14 +97,16 @@ jobs:
 
       - name: Publish npm packages (public @nimiq-faucet/*)
         env:
-          # TEMPORARY: use NPM_TOKEN (automation or bypass-2FA granular) to
-          # bootstrap the first publish of each @nimiq-faucet/* package.
-          # Once the packages exist, configure Trusted Publishers per
-          # package on npmjs.com and switch this step back to OIDC:
-          #   - replace NODE_AUTH_TOKEN with NPM_CONFIG_PROVENANCE: "true"
-          #   - delete NPM_TOKEN from repo secrets
-          #   - revoke the bootstrap token on npm
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          # Auth handled by Trusted Publishing (npm OIDC). The job-level
+          # `id-token: write` permission lets npm mint the exchange token
+          # automatically — no NPM_TOKEN required. Provenance attestation
+          # is produced for every published tarball.
+          #
+          # Trusted Publishers are configured per-package on npmjs.com:
+          #   Package > Settings > Trusted Publishers > GitHub Actions
+          #     Organization: PanoramicRum
+          #     Repository:   nimiq-simple-faucet
+          #     Workflow:     release.yml
           NPM_CONFIG_PROVENANCE: "true"
         run: |
           set -euo pipefail
@@ -211,28 +213,27 @@ jobs:
     steps:
       - uses: actions/checkout@v4.2.2
 
-      - name: Pull released image and extract /openapi.yaml
-        shell: bash
+      - uses: pnpm/action-setup@v4.0.0
+        with:
+          version: 9.12.0
+
+      - uses: actions/setup-node@v4.1.0
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install deps
+        run: pnpm install --frozen-lockfile=false
+
+      - name: Regenerate OpenAPI spec from source
+        # The spec is derived from Zod schemas + route registrations, so
+        # we don't need a running container here — we can (re)generate it
+        # directly from TypeScript. This avoids flaky container boot +
+        # driver-init dependencies that the old image-pull approach had.
         run: |
           set -euo pipefail
-          TAG="${{ needs.build-and-publish.outputs.tag }}"
-          IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${TAG}"
-          echo "Pulling $IMAGE"
-          docker pull "$IMAGE"
-          CID=$(docker run -d --rm -p 18080:8080 \
-            -e FAUCET_ADMIN_PASSWORD="$(openssl rand -hex 16)" \
-            -e FAUCET_KEY_PASSPHRASE="$(openssl rand -hex 16)" \
-            -e FAUCET_OPENAPI_PUBLIC=true \
-            -e FAUCET_CORS_ORIGINS='*' \
-            "$IMAGE")
-          echo "cid=$CID" >> "$GITHUB_ENV"
-          # Wait for /healthz.
-          for i in $(seq 1 30); do
-            if curl -fsS http://localhost:18080/healthz >/dev/null; then break; fi
-            sleep 2
-          done
-          curl -fsS http://localhost:18080/openapi.yaml -o packages/openapi/openapi.yaml
-          docker stop "$CID" >/dev/null || true
+          pnpm turbo run build --filter=@faucet/server
+          pnpm -F @faucet/server freeze:openapi
 
       - name: Create PR with frozen spec
         uses: peter-evans/create-pull-request@v7.0.5
@@ -241,9 +242,12 @@ jobs:
           commit-message: "chore(openapi): freeze spec for ${{ needs.build-and-publish.outputs.tag }}"
           title: "chore(openapi): freeze spec for ${{ needs.build-and-publish.outputs.tag }}"
           body: |
-            Automated freeze of `packages/openapi/openapi.yaml` taken from the
-            `${{ needs.build-and-publish.outputs.tag }}` release container.
-          add-paths: packages/openapi/openapi.yaml
+            Automated regeneration of `packages/openapi/openapi.{yaml,json}`
+            from source for the `${{ needs.build-and-publish.outputs.tag }}`
+            release. Merge if the diff looks sensible; close otherwise.
+          add-paths: |
+            packages/openapi/openapi.yaml
+            packages/openapi/openapi.json
           labels: |
             release
             openapi
