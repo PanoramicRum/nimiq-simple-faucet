@@ -1,6 +1,6 @@
 # @nimiq-faucet/react
 
-React hooks for the [Nimiq Simple Faucet](https://github.com/nimiq/simple-faucet), built on `@nimiq-faucet/sdk`.
+React hooks for the [Nimiq Simple Faucet](https://github.com/PanoramicRum/nimiq-simple-faucet), built on `@nimiq-faucet/sdk`.
 
 ## Install
 

@@ -7,9 +7,9 @@
   "author": "Nimiq <richy@nimiq.com>",
   "repository": {
     "type": "git",
-    "url": "https://github.com/nimiq/simple-faucet.git"
+    "url": "https://github.com/PanoramicRum/nimiq-simple-faucet.git"
   },
-  "homepage": "https://github.com/nimiq/simple-faucet#readme",
+  "homepage": "https://github.com/PanoramicRum/nimiq-simple-faucet#readme",
   "packageManager": "pnpm@9.12.0",
   "engines": {
     "node": ">=22"

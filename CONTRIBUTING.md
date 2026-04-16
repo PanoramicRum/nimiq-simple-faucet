@@ -12,7 +12,7 @@ Thanks for your interest in contributing to Nimiq Simple Faucet!
 ## Getting started
 
 ```bash
-git clone https://github.com/nimiq/simple-faucet.git
+git clone https://github.com/PanoramicRum/nimiq-simple-faucet.git
 cd simple-faucet
 pnpm install
 pnpm build

@@ -1,6 +1,6 @@
 # @nimiq-faucet/sdk
 
-Framework-agnostic TypeScript client for the [Nimiq Simple Faucet](https://github.com/nimiq/simple-faucet). Works in browsers and Node.js.
+Framework-agnostic TypeScript client for the [Nimiq Simple Faucet](https://github.com/PanoramicRum/nimiq-simple-faucet). Works in browsers and Node.js.
 
 ## Install
 
