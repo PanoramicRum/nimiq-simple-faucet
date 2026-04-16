@@ -6,6 +6,35 @@ This project uses [changesets](https://github.com/changesets/changesets) for
 versioning. Run `pnpm changeset` to add entries, then `pnpm changeset version`
 (invoked by the release workflow) to regenerate this file.
 
+## 1.0.1 (2026-04-17)
+
+### Fixed
+- **Published Docker image now starts.** `better-sqlite3`'s native
+  binding is produced in the prune stage before being copied to the
+  runtime, fixing a startup crash that affected 100% of "Quick start"
+  users. Fixes [#33](https://github.com/PanoramicRum/nimiq-simple-faucet/issues/33).
+- **Compose stack no longer advertises an unsupported Postgres backend
+  by default.** `DATABASE_URL` is unset; the server falls back to
+  SQLite at `/data/faucet.db`. The `postgres` and `redis` services are
+  kept in docker-compose.yml behind a new `postgres` profile for when
+  server-side support lands (tracked in ROADMAP §1.3.4). Fixes
+  [#34](https://github.com/PanoramicRum/nimiq-simple-faucet/issues/34).
+
+### Changed
+- Clearer error message when a Postgres `DATABASE_URL` is supplied
+  today — points at ROADMAP and the SQLite default path.
+- Helm chart values.yaml and examples/values-prod.yaml document
+  `postgresql.enabled=true` / `redis.enabled=true` as **not yet
+  functional** on 1.0.x; defaults remain `enabled: false`.
+- Helm chart bumped to `1.0.1` / `appVersion: 1.0.1`.
+- Flutter SDK bumped to `1.0.1`.
+
+### Added
+- CI smoke-test step that boots the just-built Docker image and asserts
+  `/healthz` returns 200 — would have caught #33 pre-release.
+- ROADMAP §1.3.4 "Server-side Postgres storage backend" with concrete
+  scope and an estimated effort.
+
 ## 1.0.0 (2026-04-16)
 
 Initial public release. Everything below is new.
