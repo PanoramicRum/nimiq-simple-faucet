@@ -61,7 +61,10 @@ jobs:
       - name: Build
         run: pnpm turbo run build
 
-      - name: Test
+      - name: Install Playwright browsers
+        run: pnpm test:e2e:install
+
+      - name: Test (unit + e2e)
         run: pnpm turbo run test
 
       - uses: docker/setup-qemu-action@v3.2.0
