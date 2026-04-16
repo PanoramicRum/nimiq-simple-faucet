@@ -41,6 +41,14 @@ COPY apps/claim-ui apps/claim-ui
 COPY apps/dashboard apps/dashboard
 RUN pnpm turbo run build --filter=@faucet/server --filter=@nimiq-faucet/claim-ui --filter=@nimiq-faucet/dashboard
 
+FROM build AS prune
+# Strip dev dependencies from the installed tree before copying into
+# the runtime image. Without this, transitive dev tools (esbuild,
+# drizzle-kit, tsx, vitest, vite, etc.) ship in the runtime node_modules
+# and trip Trivy on their embedded Go/JS binaries even though they're
+# never executed at runtime.
+RUN pnpm prune --prod --ignore-scripts
+
 FROM base AS runtime
 ENV NODE_ENV=production
 ENV FAUCET_DATA_DIR=/data
@@ -52,8 +60,10 @@ RUN apt-get update \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 RUN mkdir -p /data && chown -R node:node /data
-COPY --from=build /app/node_modules /app/node_modules
-COPY --from=build /app/packages /app/packages
+# Runtime node_modules comes from the pruned stage (prod deps only);
+# built server/UI output comes from the build stage.
+COPY --from=prune /app/node_modules /app/node_modules
+COPY --from=prune /app/packages /app/packages
 COPY --from=build /app/apps/server /app/apps/server
 COPY --from=build /app/apps/claim-ui/dist /app/apps/claim-ui/dist
 COPY --from=build /app/apps/dashboard/dist /app/apps/dashboard/dist
