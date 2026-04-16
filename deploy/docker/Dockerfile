@@ -11,6 +11,11 @@ RUN corepack enable
 WORKDIR /app
 
 FROM base AS deps
+# Python + build tools so pnpm can compile optional native bindings
+# (bufferutil, utf-8-validate) under multi-arch buildx/QEMU.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends python3 make g++ \
+    && rm -rf /var/lib/apt/lists/*
 COPY deploy/docker/pnpm-workspace.docker.yaml pnpm-workspace.yaml
 COPY package.json tsconfig.base.json turbo.json ./
 COPY apps/server/package.json apps/server/
