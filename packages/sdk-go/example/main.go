@@ -7,7 +7,7 @@ import (
 	"log"
 	"time"
 
-	faucet "github.com/nimiq/simple-faucet-go"
+	faucet "github.com/PanoramicRum/nimiq-simple-faucet/packages/sdk-go"
 )
 
 func main() {

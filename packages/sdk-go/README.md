@@ -5,7 +5,7 @@ Go client for the Nimiq Simple Faucet. Zero external dependencies; standard libr
 ## Install
 
 ```
-go get github.com/nimiq/simple-faucet-go
+go get github.com/PanoramicRum/nimiq-simple-faucet/packages/sdk-go
 ```
 
 Requires Go 1.22+.
@@ -17,7 +17,7 @@ import (
     "context"
     "time"
 
-    faucet "github.com/nimiq/simple-faucet-go"
+    faucet "github.com/PanoramicRum/nimiq-simple-faucet/packages/sdk-go"
 )
 
 client := faucet.New(faucet.Config{URL: "https://faucet.example.com"})

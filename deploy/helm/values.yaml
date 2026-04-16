@@ -2,7 +2,7 @@
 # Override with `-f my-values.yaml` or `--set key=value`.
 
 image:
-  repository: ghcr.io/nimiq/simple-faucet
+  repository: ghcr.io/panoramicrum/nimiq-simple-faucet
   # When empty, the chart falls back to .Chart.AppVersion.
   tag: ""
   pullPolicy: IfNotPresent

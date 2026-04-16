@@ -1,7 +1,7 @@
-module github.com/nimiq/simple-faucet/examples/go-backend-integration
+module github.com/PanoramicRum/nimiq-simple-faucet/examples/go-backend-integration
 
 go 1.22
 
-require github.com/nimiq/simple-faucet-go v0.0.0
+require github.com/PanoramicRum/nimiq-simple-faucet/packages/sdk-go v0.0.0
 
-replace github.com/nimiq/simple-faucet-go => ../../packages/sdk-go
+replace github.com/PanoramicRum/nimiq-simple-faucet/packages/sdk-go => ../../packages/sdk-go

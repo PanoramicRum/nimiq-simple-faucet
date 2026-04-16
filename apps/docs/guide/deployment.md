@@ -10,7 +10,7 @@ docker run -d --name faucet \
   --env-file /etc/faucet/.env \
   -v faucet-data:/data \
   --restart unless-stopped \
-  ghcr.io/nimiq/simple-faucet:latest
+  ghcr.io/panoramicrum/nimiq-simple-faucet:latest
 ```
 
 Mount the keyring directory read-write; everything else can be read-only.
@@ -22,7 +22,7 @@ Minimal `compose.yaml`:
 ```yaml
 services:
   faucet:
-    image: ghcr.io/nimiq/simple-faucet:latest
+    image: ghcr.io/panoramicrum/nimiq-simple-faucet:latest
     env_file: .env
     ports:
       - "8080:8080"

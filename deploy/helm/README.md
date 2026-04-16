@@ -76,7 +76,7 @@ See [`values.yaml`](./values.yaml) for the full annotated list. Highlights:
 
 | Key | Default | Notes |
 | --- | --- | --- |
-| `image.repository` | `ghcr.io/nimiq/simple-faucet` | Published on release. |
+| `image.repository` | `ghcr.io/panoramicrum/nimiq-simple-faucet` | Published on release. |
 | `image.tag` | `""` → `.Chart.AppVersion` | Pin to a tag for reproducibility. |
 | `replicaCount` | `1` | Scale >1 only with `postgresql.enabled && redis.enabled`. |
 | `config.network` | `test` | `main` for production. |

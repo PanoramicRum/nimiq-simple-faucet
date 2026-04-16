@@ -14,7 +14,7 @@ hero:
 
 features:
   - title: Self-hosted
-    details: One container, one binary. Ships as `ghcr.io/nimiq/simple-faucet:latest` with SQLite defaults; scales to Postgres and Redis when you need it.
+    details: One container, one binary. Ships as `ghcr.io/panoramicrum/nimiq-simple-faucet:latest` with SQLite defaults; scales to Postgres and Redis when you need it.
   - title: Pluggable abuse stack
     details: Turnstile, hCaptcha, hashcash, GeoIP/ASN, on-chain Nimiq heuristics, and optional LLM scoring combine into a single decision pipeline.
   - title: AI-agent integration (MCP)

@@ -1,4 +1,4 @@
-# github.com/nimiq/simple-faucet-go
+# github.com/PanoramicRum/nimiq-simple-faucet/packages/sdk-go
 
 Go client for the Nimiq Simple Faucet. Standard library only; Go 1.22+.
 
