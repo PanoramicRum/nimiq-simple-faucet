@@ -243,6 +243,151 @@ but themes can ship in parallel.
 
 ---
 
+## 1.6 — Dependency sweep
+
+**Goal:** burn down the deferred major-version bumps from the initial
+Dependabot burst as a single coordinated upgrade, with full regression
+coverage across SDKs + examples.
+
+**Deferred upgrades to handle:**
+
+| Package | From | To | Risk |
+|---------|------|-----|------|
+| `react`, `@types/react` (examples/nextjs, capacitor) | 18 | 19 | medium — verify Next.js + Capacitor examples |
+| `zod` (server, core, all SDKs) | 3 | 4 | **high** — v4 is a breaking rewrite; biggest item |
+| `@asteasolutions/zod-to-openapi` (server) | 7 | 8 | follows zod 4 |
+| `fastify-type-provider-zod` (server) | 4 | 6 | follows zod 4 |
+| `vite` (examples, apps) | 5 | 8 | medium — skip-major, config changes |
+| `@capacitor/core`, `@capacitor/device` (sdk-capacitor, example) | 7 | 8 | medium |
+| `vue-router` (dashboard) | 4 | 5 | medium — breaking API |
+| `vue-tsc` (apps) | 2 | 3 | low — build-time only |
+| `docker/setup-buildx-action` | 3 | 4 | low — CI action |
+| `docker/setup-qemu-action` | 3 | 4 | low — CI action |
+| `actions/checkout` | 4 | 6 | low — CI action |
+| `actions/setup-node` | 4 | 6 | low — CI action |
+
+**Approach:** branch per major-bump group, rebase-merge to `deps-sweep`
+integration branch, run the full suite + all 5 examples + testnet smoke
+before merging to main.
+
+**Gate criteria (before tagging the release):**
+- `pnpm test` — all unit + integration green
+- `pnpm test:e2e` — Playwright green on chromium/firefox/webkit
+- All 5 examples build + Docker-compose stack boots
+- Live testnet smoke (`pnpm smoke:testnet`) passes end-to-end
+- Trivy scan clean (no new HIGH/CRITICAL)
+- At least one real integrator runs their app against a built image
+
+**Estimated effort:** 3–5 days concentrated work.
+
+**Note:** Dependabot's weekly cadence will keep re-opening patch/minor
+PRs in the interim. Merge those as they come; queue the majors for this
+sweep.
+
+---
+
+# Beyond 1.x — Ongoing quality programs
+
+These are continuous investments rather than a single release. They
+start post-1.0 and run indefinitely.
+
+## User testing
+
+**Goal:** validate that the SDKs, recipes, and docs actually work for
+people who aren't on the core team.
+
+- **Beta integrator program** — recruit 3–5 Nimiq-ecosystem projects to
+  build against the faucet pre-release. Feedback on SDK ergonomics,
+  error messages, docs gaps. Track via GitHub Discussions.
+- **Agent-assisted onboarding tests** — pair-test with Claude / Cursor /
+  Copilot through AGENTS.md + `llms.txt`. Confirm an AI agent can take
+  "add a faucet" from zero to working claim in under 5 minutes.
+- **Public hosted demo** (see 1.2.5) doubles as a user-testing fixture —
+  watch the claim rate, capture support requests, iterate.
+- **Admin dashboard walkthroughs** — record the full first-run flow
+  (TOTP enrolment, fund wallet, first claim, explain drawer). Embed in
+  [docs/admin-first-run.md](docs/admin-first-run.md). Update after any
+  dashboard change.
+
+## QA
+
+**Goal:** the test suite catches everything we expect it to catch — not
+just the happy path we wrote tests for.
+
+- **Mutation testing** — wire `stryker-mutator` into CI on a monthly
+  cadence. Any survived mutant is a gap in test intent; file issues.
+- **Contract tests for every SDK** — parameterised suite that runs each
+  SDK against a reference server fixture, asserting identical behaviour.
+  Prevents SDK drift from the canonical TypeScript client.
+- **Fuzz testing** — `fast-check` or similar on `POST /v1/claim` and
+  `POST /v1/challenge`. Generate malformed JSON, unicode tricks, size
+  edge cases, prototype pollution attempts. Integrate into nightly CI.
+- **CI matrix expansion** — Node 20/22/24 × Postgres 14/15/16 × Redis
+  7/8. Catches regressions when ecosystems drift.
+- **Load test baseline** — run `tests/load/claim.js` on a fixed cloud
+  runner weekly, graph results. Alert on >20% regression.
+- **Visual regression** — `axe-playwright` already runs a11y checks;
+  add screenshot diffs for the admin dashboard so UI regressions don't
+  ship unnoticed.
+- **Test coverage gate** — track `c8`/`v8` coverage; enforce no
+  regression per PR.
+
+## Security audits
+
+**Goal:** move from "we followed OWASP" to "third parties verified we
+did." A faucet holding real NIM deserves serious security hygiene.
+
+### Internal (recurring)
+
+- **Monthly dependency audit** — `pnpm audit --prod` + `cargo audit`
+  (when Rust SDK lands) + `govulncheck` for Go SDK. Follow up on every
+  HIGH/CRITICAL.
+- **Quarterly OWASP Top 10 walkthrough** — file-by-file review mapping
+  each endpoint to OWASP categories. Already scaffolded in
+  [docs/security/owasp-top10.md](docs/security/owasp-top10.md); turn
+  into a recurring ritual.
+- **CodeQL + Gitleaks + Trivy** — already wired; keep action versions
+  current and triage findings weekly.
+- **Fuzz the abuse pipeline** specifically — mutate captcha tokens,
+  hashcash solutions, host contexts. Score-drift bugs are silent in
+  normal testing.
+
+### External (pre-1.1 and then annually)
+
+- **Third-party security audit** — engage one of:
+  - Trail of Bits — full-code review, typical $30–80k
+  - NCC Group — broad scope, similar pricing
+  - Cure53 — web-app focused, fast turnaround
+  - Least Authority — crypto-specific, good fit for the key-at-rest work
+
+  Scope: server + signer drivers + abuse pipeline + admin auth.
+  Publish the report post-fix as
+  `docs/security/audit-<year>-<vendor>.md`.
+- **Coordinated disclosure program** — publish `.well-known/security.txt`
+  on the docs site; consider HackerOne or direct-mailbox bounty.
+  Reference from [SECURITY.md](SECURITY.md).
+- **Pen test of the hosted demo** — after 1.2.5 lands. Budget a week
+  with a small firm or an internal red-team.
+
+### Crypto-specific review
+
+- **Argon2id parameters** — revisit annually against OWASP cheat sheet
+  recommendations. Current: memory=64MiB, time=3, parallelism=4.
+- **HMAC usage** — confirm `timingSafeEqual` on every comparison path,
+  confirm body-byte-exactness in `signRequest`.
+- **TOTP implementation** — `otplib` default params are fine today;
+  reconfirm if the library rev-bumps.
+- **Key-at-rest encryption** — `@noble/ciphers` XChaCha20-Poly1305 +
+  Argon2id KDF. Re-review nonce strategy and KDF salts during audits.
+
+### Bug bounty (optional, post external audit)
+
+Only worth standing up once the external audit has cleaned the
+low-hanging fruit. Budget $2–5k per valid HIGH finding as a starting
+bounty pool. Host on HackerOne or Bugcrowd, or direct.
+
+---
+
 ## Guiding principles
 
 When picking what to do next, optimize for:
