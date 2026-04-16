@@ -24,7 +24,7 @@
     "@faucet/core": "workspace:*",
     "@faucet/driver-nimiq-rpc": "workspace:*",
     "@faucet/driver-nimiq-wasm": "workspace:*",
-    "@asteasolutions/zod-to-openapi": "^7.3.0",
+    "@asteasolutions/zod-to-openapi": "^8.5.0",
     "@fastify/cookie": "^11.0.1",
     "@fastify/cors": "^10.0.1",
     "@fastify/helmet": "^12.0.1",

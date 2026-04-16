@@ -113,8 +113,8 @@ importers:
   apps/server:
     dependencies:
       '@asteasolutions/zod-to-openapi':
-        specifier: ^7.3.0
-        version: 7.3.4(zod@3.25.76)
+        specifier: ^8.5.0
+        version: 8.5.0(zod@3.25.76)
       '@fastify/cookie':
         specifier: ^11.0.1
         version: 11.0.2
@@ -526,10 +526,10 @@ packages:
     resolution: {integrity: sha512-UrcABB+4bUrFABwbluTIBErXwvbsU/V7TZWfmbgJfbkwiBuziS9gxdODUyuiecfdGQ85jglMW6juS3+z5TsKLw==}
     engines: {node: '>=10'}
 
-  '@asteasolutions/zod-to-openapi@7.3.4':
-    resolution: {integrity: sha512-/2rThQ5zPi9OzVwes6U7lK1+Yvug0iXu25olp7S0XsYmOqnyMfxH7gdSQjn/+DSOHRg7wnotwGJSyL+fBKdnEA==}
+  '@asteasolutions/zod-to-openapi@8.5.0':
+    resolution: {integrity: sha512-SABbKiObg5dLRiTFnqiW1WWwGcg1BJfmHtT2asIBnBHg6Smy/Ms2KHc650+JI4Hw7lSkdiNebEGXpwoxfben8Q==}
     peerDependencies:
-      zod: ^3.20.2
+      zod: ^4.0.0
 
   '@axe-core/playwright@4.11.1':
     resolution: {integrity: sha512-mKEfoUIB1MkVTht0BGZFXtSAEKXMJoDkyV5YZ9jbBmZCcWDz71tegNsdTkIN8zc/yMi5Gm2kx7Z5YQ9PfWNAWw==}
@@ -4283,7 +4283,7 @@ snapshots:
 
   '@alloc/quick-lru@5.2.0': {}
 
-  '@asteasolutions/zod-to-openapi@7.3.4(zod@3.25.76)':
+  '@asteasolutions/zod-to-openapi@8.5.0(zod@3.25.76)':
     dependencies:
       openapi3-ts: 4.5.0
       zod: 3.25.76
