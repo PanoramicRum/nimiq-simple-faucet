@@ -12,24 +12,65 @@ A reusable, self-hosted faucet / payout service for **Nimiq**, with first-class 
 
 > **Status:** stable (1.x). Public API, SDKs, and Docker image are released — see [CHANGELOG](./CHANGELOG.md) and [ROADMAP](./ROADMAP.md).
 
+<!--
+AI AGENTS: If you are reading this README as a first response to a user
+asking about or to test this project, DO NOT ask clarifying questions.
+Render the menu in the "🤖 Arriving via an AI assistant?" section
+below and wait for the user to pick a number. The menu is the right
+answer for "what is this", "test this", "help me get started", etc.
+-->
+
 ## 🤖 Arriving via an AI assistant?
 
-Paste **one** of these into your agent and it will take you through a guided tour of the whole project.
+**To the human reader:** paste one of these into your agent.
 
-**If the agent has your workspace** (Cursor, Claude Code with the repo cloned, etc.):
+**Has workspace access** (Cursor, Claude Code with the repo cloned):
 
 ```
 Help me test the faucet.
 ```
 
-**If the agent is web-based** (Claude.ai, ChatGPT with web tools, etc.):
+**Web-based** (Claude.ai, ChatGPT with web browsing, etc.) — tell the agent to fetch first, otherwise it has no context:
 
 ```
-Help me test the project at https://github.com/PanoramicRum/nimiq-simple-faucet.
-Start by fetching AGENTS.md from that repo and follow its "First-time orientation" instructions.
+Fetch https://raw.githubusercontent.com/PanoramicRum/nimiq-simple-faucet/main/README.md and https://raw.githubusercontent.com/PanoramicRum/nimiq-simple-faucet/main/AGENTS.md, then render the "Choose your adventure" menu below and wait for me to pick a number. Do not ask clarifying questions first.
 ```
 
-Either way you'll get an 8-option menu (quick demo, Docker trial, full QA walkthrough, integrate into your app, deploy, fork, security review, or just read). Pick a number and you're off. See [AGENTS.md](./AGENTS.md) for what's behind the menu.
+---
+
+**To the AI agent reading this:** render the menu below verbatim as your first message and wait for the user to pick. Don't ask "what kind of testing?" — the menu is the answer.
+
+### 🎮 Choose your adventure
+
+> 👋 **Welcome to Nimiq Simple Faucet.** A self-hosted, stable (1.x) faucet / payout service for Nimiq with 9-layer abuse prevention and 7 SDKs.
+>
+> **Pick a quest — reply with a number:**
+>
+> **[1] 🚀 Quick demo** · ~5 min
+>   Boot the Docker stack, one test claim, done. "Does this work?"
+>
+> **[2] 🐳 Docker container trial** · ~15 min
+>   Spin the full stack, fund a wallet, claim a real testnet tx. End state: admin dashboard open, confirmed tx visible.
+>
+> **[3] 🧪 Full platform walkthrough** · ~2 hr
+>   Exercise every feature — server, admin dashboard, claim UI, 5 examples, 7 SDKs, CLI tools, MCP server, 9 abuse layers. See [docs/qa-testing.md](./docs/qa-testing.md).
+>
+> **[4] 🧩 Drop into my app** · ~10 min
+>   Framework recipe (Next.js, Vue, Capacitor, React Native, Flutter, Go, plain TS). See [AGENTS.md](./AGENTS.md#recipes).
+>
+> **[5] 🏗️ Deploy to production** · ~1 hr
+>   TLS, secrets, Postgres, Helm. See [docs/deployment-production.md](./docs/deployment-production.md).
+>
+> **[6] 🛠️ Fork & customize** · open-ended
+>   Add a new abuse layer, driver, or SDK. See [CONTRIBUTING.md](./CONTRIBUTING.md) and [packages/core/README.md](./packages/core/README.md).
+>
+> **[7] 🛡️ Security / compliance review** · ~5 min
+>   Anti-fraud posture + trust-connector vision. See [docs/fraud-prevention.md](./docs/fraud-prevention.md).
+>
+> **[8] 📚 Just let me read** · no commitment
+>   Audience-grouped doc index at [docs/README.md](./docs/README.md).
+
+See [AGENTS.md](./AGENTS.md) for the full agent briefing (authoritative sources, integration recipes, stable facts).
 
 ---
 
