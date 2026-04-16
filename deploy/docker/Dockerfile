@@ -25,8 +25,6 @@ COPY packages/abuse-fingerprint/package.json packages/abuse-fingerprint/
 COPY packages/abuse-onchain-nimiq/package.json packages/abuse-onchain-nimiq/
 COPY packages/abuse-ai/package.json packages/abuse-ai/
 COPY packages/sdk-ts/package.json packages/sdk-ts/
-COPY packages/sdk-react/package.json packages/sdk-react/
-COPY packages/sdk-vue/package.json packages/sdk-vue/
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
     pnpm install --frozen-lockfile=false
 
