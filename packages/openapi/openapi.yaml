@@ -1,7 +1,1137 @@
-# Generated at release time from GET /openapi.json; do not hand-edit.
-# Placeholder — populated by a future release script (see M7.x follow-ups).
 openapi: 3.1.0
 info:
   title: Nimiq Simple Faucet
-  version: 0.0.0-placeholder
-paths: {}
+  version: 0.0.1
+  description: Public, admin, and MCP surfaces for the Nimiq Simple Faucet
+    (testnet). See /SECURITY.md for the threat model.
+  license:
+    name: MIT
+    identifier: MIT
+  contact:
+    name: Security
+    url: https://github.com/onmax/Nimiq-Simple-Faucet/blob/main/SECURITY.md
+servers:
+  - url: /
+    description: This instance
+tags:
+  - name: Public
+    description: Open endpoints (rate-limited).
+  - name: Admin
+    description: Session-authenticated dashboard API.
+  - name: MCP
+    description: Model Context Protocol transport + discovery.
+components:
+  securitySchemes:
+    integratorHmac:
+      type: apiKey
+      in: header
+      name: X-Faucet-Api-Key
+      description: "Integrator HMAC auth: include `X-Faucet-Api-Key`,
+        `X-Faucet-Timestamp`, `X-Faucet-Nonce`, and `X-Faucet-Signature`
+        (base64-HMAC-SHA256 over
+        `method\\npath\\ntimestamp\\nnonce\\nbodyHash`)."
+    adminSession:
+      type: apiKey
+      in: cookie
+      name: faucet_session
+      description: Session cookie issued by POST /admin/auth/login. Mutating calls
+        also require the `X-Faucet-Csrf` double-submit header matching the
+        `faucet_csrf` cookie.
+    adminMcpToken:
+      type: apiKey
+      in: header
+      name: X-Faucet-Admin-Token
+      description: Required to invoke admin-scoped MCP tools over POST /mcp.
+  schemas:
+    HostContext:
+      type: object
+      properties:
+        uid:
+          type: string
+          maxLength: 256
+        cookieHash:
+          type: string
+          maxLength: 256
+        sessionHash:
+          type: string
+          maxLength: 256
+        accountAgeDays:
+          type: integer
+          minimum: 0
+        emailDomainHash:
+          type: string
+          maxLength: 256
+        kycLevel:
+          type: string
+          enum:
+            - none
+            - email
+            - phone
+            - id
+        tags:
+          type: array
+          items:
+            type: string
+            maxLength: 64
+          maxItems: 32
+        signature:
+          type: string
+          maxLength: 512
+    Fingerprint:
+      type: object
+      properties:
+        visitorId:
+          type: string
+        confidence:
+          type: number
+          minimum: 0
+          maximum: 1
+        components:
+          type: object
+          additionalProperties: {}
+    ClaimRequest:
+      type: object
+      properties:
+        address:
+          type: string
+          minLength: 1
+          description: Target address in native chain format
+        captchaToken:
+          type: string
+        hashcashSolution:
+          type: string
+        powSolution:
+          type: string
+          description: Deprecated alias for hashcashSolution
+        fingerprint:
+          $ref: "#/components/schemas/Fingerprint"
+        hostContext:
+          $ref: "#/components/schemas/HostContext"
+      required:
+        - address
+    ClaimResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        status:
+          type: string
+          enum:
+            - broadcast
+            - confirmed
+            - rejected
+            - challenged
+            - manual-allow
+        decision:
+          type: string
+          enum:
+            - allow
+            - deny
+            - review
+            - challenge
+        txId:
+          type: string
+        reason:
+          type: string
+      required:
+        - id
+        - status
+    ClaimStatus:
+      type: object
+      properties:
+        id:
+          type: string
+        status:
+          type: string
+        address:
+          type: string
+        amountLuna:
+          type: string
+        txId:
+          type:
+            - string
+            - "null"
+        createdAt:
+          anyOf:
+            - type: string
+            - type: number
+        decision:
+          type:
+            - string
+            - "null"
+        rejectionReason:
+          type:
+            - string
+            - "null"
+      required:
+        - id
+        - status
+        - address
+        - amountLuna
+        - txId
+        - createdAt
+        - decision
+        - rejectionReason
+    FaucetConfig:
+      type: object
+      properties:
+        network:
+          type: string
+          enum:
+            - main
+            - test
+        claimAmountLuna:
+          type: string
+        abuseLayers:
+          type: object
+          properties:
+            turnstile:
+              type: boolean
+            hcaptcha:
+              type: boolean
+            hashcash:
+              type: boolean
+            geoip:
+              type: boolean
+            fingerprint:
+              type: boolean
+            onchain:
+              type: boolean
+            ai:
+              type: boolean
+          required:
+            - turnstile
+            - hcaptcha
+            - hashcash
+            - geoip
+            - fingerprint
+            - onchain
+            - ai
+        captcha:
+          type:
+            - object
+            - "null"
+          properties:
+            provider:
+              type: string
+              enum:
+                - turnstile
+                - hcaptcha
+            siteKey:
+              type: string
+          required:
+            - provider
+            - siteKey
+        hashcash:
+          type:
+            - object
+            - "null"
+          properties:
+            difficulty:
+              type: integer
+            ttlMs:
+              type: integer
+          required:
+            - difficulty
+            - ttlMs
+      required:
+        - network
+        - claimAmountLuna
+        - abuseLayers
+        - captcha
+        - hashcash
+    HashcashChallenge:
+      type: object
+      properties:
+        challenge:
+          type: string
+        difficulty:
+          type: integer
+        expiresAt:
+          type: integer
+          description: Unix ms timestamp
+      required:
+        - challenge
+        - difficulty
+        - expiresAt
+    ChallengeRequest:
+      type: object
+      properties:
+        uid:
+          type: string
+          maxLength: 128
+    StatsResponse:
+      type: object
+      properties:
+        total:
+          type: integer
+        byStatus:
+          type: object
+          additionalProperties:
+            type: integer
+        byDecision:
+          type: object
+          additionalProperties:
+            type: integer
+      required:
+        - total
+        - byStatus
+        - byDecision
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        code:
+          type: string
+        message:
+          type: string
+        issues:
+          type: array
+          items: {}
+      required:
+        - error
+    LoginRequest:
+      type: object
+      properties:
+        password:
+          type: string
+          minLength: 1
+          maxLength: 512
+        totp:
+          type: string
+          minLength: 1
+          maxLength: 16
+      required:
+        - password
+    LoginResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+          enum:
+            - true
+        expiresAt:
+          type: string
+        totpProvisioningUri:
+          type: string
+        totpSecret:
+          type: string
+      required:
+        - ok
+        - expiresAt
+    OverviewResponse:
+      type: object
+      properties:
+        balance:
+          type: string
+        claimsLastHour:
+          type: integer
+        claimsLast24h:
+          type: integer
+        successRate:
+          type: number
+          minimum: 0
+          maximum: 1
+        topRejectionReasons:
+          type: array
+          items:
+            type: object
+            properties:
+              reason:
+                type: string
+              count:
+                type: integer
+            required:
+              - reason
+              - count
+      required:
+        - balance
+        - claimsLastHour
+        - claimsLast24h
+        - successRate
+        - topRejectionReasons
+    ClaimListItem:
+      type: object
+      properties:
+        id:
+          type: string
+        createdAt:
+          anyOf:
+            - type: string
+            - type: number
+        address:
+          type: string
+        status:
+          type: string
+        decision:
+          type:
+            - string
+            - "null"
+        txId:
+          type:
+            - string
+            - "null"
+        ip:
+          type:
+            - string
+            - "null"
+        integratorId:
+          type:
+            - string
+            - "null"
+        abuseScore:
+          type:
+            - integer
+            - "null"
+        rejectionReason:
+          type:
+            - string
+            - "null"
+      required:
+        - id
+        - createdAt
+        - address
+        - status
+        - decision
+        - txId
+        - ip
+        - integratorId
+        - abuseScore
+        - rejectionReason
+    ClaimListResponse:
+      type: object
+      properties:
+        total:
+          type: integer
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ClaimListItem"
+      required:
+        - total
+        - items
+    BlocklistEntry:
+      type: object
+      properties:
+        id:
+          type: string
+        kind:
+          type: string
+          enum:
+            - ip
+            - address
+            - uid
+            - asn
+            - country
+        value:
+          type: string
+        reason:
+          type:
+            - string
+            - "null"
+        createdAt:
+          anyOf:
+            - type: string
+            - type: number
+        expiresAt:
+          anyOf:
+            - type: string
+            - type: number
+            - type: "null"
+      required:
+        - id
+        - kind
+        - value
+        - reason
+        - createdAt
+        - expiresAt
+    BlocklistCreateRequest:
+      type: object
+      properties:
+        kind:
+          type: string
+          enum:
+            - ip
+            - address
+            - uid
+            - asn
+            - country
+        value:
+          type: string
+          minLength: 1
+          maxLength: 128
+        reason:
+          type: string
+          maxLength: 256
+        expiresAt:
+          anyOf:
+            - type: string
+            - type: number
+      required:
+        - kind
+        - value
+    IntegratorRecord:
+      type: object
+      properties:
+        id:
+          type: string
+        createdAt:
+          anyOf:
+            - type: string
+            - type: number
+        lastUsedAt:
+          anyOf:
+            - type: string
+            - type: number
+            - type: "null"
+        revokedAt:
+          anyOf:
+            - type: string
+            - type: number
+            - type: "null"
+      required:
+        - id
+        - createdAt
+        - lastUsedAt
+        - revokedAt
+    IntegratorCreateRequest:
+      type: object
+      properties:
+        id:
+          type: string
+          minLength: 1
+          maxLength: 64
+          pattern: ^[a-zA-Z0-9_-]+$
+      required:
+        - id
+    IntegratorCredential:
+      type: object
+      properties:
+        id:
+          type: string
+        apiKey:
+          type: string
+        hmacSecret:
+          type: string
+      required:
+        - id
+        - apiKey
+        - hmacSecret
+    AuditEntry:
+      type: object
+      properties:
+        id:
+          type: string
+        ts:
+          anyOf:
+            - type: string
+            - type: number
+        actor:
+          type: string
+        action:
+          type: string
+        target:
+          type:
+            - string
+            - "null"
+        signals:
+          type: object
+          additionalProperties: {}
+      required:
+        - id
+        - ts
+        - actor
+        - action
+        - target
+        - signals
+    AuditListResponse:
+      type: object
+      properties:
+        total:
+          type: integer
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/AuditEntry"
+      required:
+        - total
+        - items
+    AdminConfigPatch:
+      type: object
+      properties:
+        claimAmountLuna:
+          type: string
+          pattern: ^\d+$
+        rateLimitPerIpPerDay:
+          type: integer
+          minimum: 1
+          maximum: 10000
+        abuseDenyThreshold:
+          type: number
+          minimum: 0
+          maximum: 1
+        abuseReviewThreshold:
+          type: number
+          minimum: 0
+          maximum: 1
+        layers:
+          type: object
+          properties:
+            turnstile:
+              type: boolean
+            hcaptcha:
+              type: boolean
+            hashcash:
+              type: boolean
+            geoip:
+              type: boolean
+            fingerprint:
+              type: boolean
+            onchain:
+              type: boolean
+            ai:
+              type: boolean
+      additionalProperties: false
+    AdminConfigResponse:
+      type: object
+      properties:
+        base:
+          type: object
+          properties:
+            claimAmountLuna:
+              type: string
+            rateLimitPerIpPerDay:
+              type: integer
+            abuseDenyThreshold:
+              type: number
+            abuseReviewThreshold:
+              type: number
+            layers:
+              type: object
+              additionalProperties:
+                type: boolean
+          required:
+            - claimAmountLuna
+            - rateLimitPerIpPerDay
+            - abuseDenyThreshold
+            - abuseReviewThreshold
+            - layers
+        overrides:
+          type: object
+          additionalProperties: {}
+      required:
+        - base
+        - overrides
+    AdminAccount:
+      type: object
+      properties:
+        address:
+          type: string
+        balance:
+          type: string
+        recentPayouts:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              address:
+                type: string
+              amountLuna:
+                type: string
+              txId:
+                type:
+                  - string
+                  - "null"
+              createdAt:
+                anyOf:
+                  - type: string
+                  - type: number
+              status:
+                type: string
+            required:
+              - id
+              - address
+              - amountLuna
+              - txId
+              - createdAt
+              - status
+      required:
+        - address
+        - balance
+        - recentPayouts
+    AdminSendRequest:
+      type: object
+      properties:
+        to:
+          type: string
+          minLength: 1
+        amountLuna:
+          anyOf:
+            - type: string
+              pattern: ^\d+$
+            - type: integer
+              minimum: 1
+        memo:
+          type: string
+          maxLength: 256
+      required:
+        - to
+        - amountLuna
+    OkResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+          enum:
+            - true
+      required:
+        - ok
+    McpDiscovery:
+      type: object
+      properties:
+        name:
+          type: string
+        version:
+          type: string
+        transport:
+          type: string
+          enum:
+            - streamable-http
+        tools:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              admin:
+                type: boolean
+            required:
+              - name
+              - admin
+      required:
+        - name
+        - version
+        - transport
+        - tools
+  parameters: {}
+paths:
+  /v1/config:
+    get:
+      tags:
+        - Public
+      summary: Public faucet config
+      description: Network, claim amount, enabled abuse layers, captcha site keys.
+      responses:
+        "200":
+          description: Config snapshot
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FaucetConfig"
+  /v1/challenge:
+    post:
+      tags:
+        - Public
+      summary: Mint a hashcash challenge
+      description: Returns a fresh proof-of-work challenge bound to the caller IP.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChallengeRequest"
+      responses:
+        "200":
+          description: Challenge
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HashcashChallenge"
+        "404":
+          description: Hashcash not enabled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /v1/claim:
+    post:
+      tags:
+        - Public
+      summary: Submit a faucet claim
+      description: Evaluates the abuse pipeline and, on `allow`, broadcasts a
+        transaction. Optional integrator HMAC headers are verified when
+        `X-Faucet-Api-Key` is present.
+      security:
+        - {}
+        - integratorHmac: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ClaimRequest"
+      responses:
+        "200":
+          description: Broadcast
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClaimResponse"
+        "202":
+          description: Challenge or review
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClaimResponse"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Integrator auth failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Denied
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClaimResponse"
+  /v1/claim/{id}:
+    get:
+      tags:
+        - Public
+      summary: Claim status by id
+      parameters:
+        - schema:
+            type: string
+          required: true
+          name: id
+          in: path
+      responses:
+        "200":
+          description: Status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClaimStatus"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /v1/stats:
+    get:
+      tags:
+        - Public
+      summary: Recent aggregate stats
+      responses:
+        "200":
+          description: Stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StatsResponse"
+  /admin/auth/login:
+    post:
+      tags:
+        - Admin
+      summary: Password (+ TOTP) login
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Session issued
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoginResponse"
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /admin/auth/logout:
+    post:
+      tags:
+        - Admin
+      summary: Revoke the current admin session
+      security:
+        - adminSession: []
+      responses:
+        "200":
+          description: Logged out
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+  /admin/overview:
+    get:
+      tags:
+        - Admin
+      summary: Dashboard overview
+      security:
+        - adminSession: []
+      responses:
+        "200":
+          description: Overview
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OverviewResponse"
+  /admin/claims:
+    get:
+      tags:
+        - Admin
+      summary: List claims
+      security:
+        - adminSession: []
+      parameters:
+        - schema:
+            type:
+              - integer
+              - "null"
+          required: false
+          name: limit
+          in: query
+        - schema:
+            type:
+              - integer
+              - "null"
+          required: false
+          name: offset
+          in: query
+        - schema:
+            type: string
+          required: false
+          name: status
+          in: query
+        - schema:
+            type: string
+          required: false
+          name: decision
+          in: query
+        - schema:
+            type: string
+          required: false
+          name: address
+          in: query
+      responses:
+        "200":
+          description: List
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClaimListResponse"
+  /admin/blocklist:
+    get:
+      tags:
+        - Admin
+      summary: List blocklist entries
+      security:
+        - adminSession: []
+      responses:
+        "200":
+          description: Entries
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total:
+                    type: integer
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/BlocklistEntry"
+                required:
+                  - total
+                  - items
+    post:
+      tags:
+        - Admin
+      summary: Add a blocklist entry
+      security:
+        - adminSession: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BlocklistCreateRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                required:
+                  - id
+  /admin/integrators:
+    get:
+      tags:
+        - Admin
+      summary: List integrator keys
+      security:
+        - adminSession: []
+      responses:
+        "200":
+          description: List
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/IntegratorRecord"
+                required:
+                  - items
+    post:
+      tags:
+        - Admin
+      summary: Provision an integrator (one-time credential return)
+      security:
+        - adminSession: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/IntegratorCreateRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IntegratorCredential"
+        "409":
+          description: Exists
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /admin/config:
+    get:
+      tags:
+        - Admin
+      summary: Effective config + overrides
+      security:
+        - adminSession: []
+      responses:
+        "200":
+          description: Config
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminConfigResponse"
+    patch:
+      tags:
+        - Admin
+      summary: Persist runtime config overrides
+      description: "NOTE(M3): persisted but not yet hot-reloaded into live traffic."
+      security:
+        - adminSession: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminConfigPatch"
+      responses:
+        "200":
+          description: Persisted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+  /admin/account:
+    get:
+      tags:
+        - Admin
+      summary: Faucet wallet account info
+      security:
+        - adminSession: []
+      responses:
+        "200":
+          description: Account
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminAccount"
+  /admin/account/send:
+    post:
+      tags:
+        - Admin
+      summary: Manual send (requires TOTP step-up)
+      security:
+        - adminSession: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminSendRequest"
+      responses:
+        "200":
+          description: Sent
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  txId:
+                    type: string
+                required:
+                  - txId
+  /admin/audit-log:
+    get:
+      tags:
+        - Admin
+      summary: Admin audit log
+      security:
+        - adminSession: []
+      responses:
+        "200":
+          description: Entries
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuditListResponse"
+  /mcp:
+    get:
+      tags:
+        - MCP
+      summary: MCP discovery (tool catalogue)
+      responses:
+        "200":
+          description: Discovery
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/McpDiscovery"
+    post:
+      tags:
+        - MCP
+      summary: MCP streamable HTTP transport (JSON-RPC)
+      description: Admin-scoped tools require `X-Faucet-Admin-Token`.
+      security:
+        - {}
+        - adminMcpToken: []
+      responses:
+        "200":
+          description: JSON-RPC response (stream)
+webhooks: {}
