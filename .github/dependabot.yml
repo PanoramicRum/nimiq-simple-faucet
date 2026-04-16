@@ -35,3 +35,8 @@ updates:
     labels:
       - dependencies
       - docker
+    # Stay on Node 22 LTS. Major bumps need manual review — LTS branch
+    # matters for production faucet operators; we opt in deliberately.
+    ignore:
+      - dependency-name: "node"
+        update-types: [ "version-update:semver-major" ]
