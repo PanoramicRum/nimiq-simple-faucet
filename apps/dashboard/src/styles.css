@@ -1,0 +1,116 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-card-bg: #ffffff;
+  --color-card-border: rgba(15, 12, 7, 0.08);
+  --color-text: #1f1b13;
+  --color-muted: #6b6355;
+  --color-input-bg: #ffffff;
+  --color-input-border: rgba(15, 12, 7, 0.16);
+  --color-danger: #b3261e;
+  --color-success: #1f6a3f;
+  --color-warning: #8a5a00;
+  --color-row-hover: rgba(233, 178, 19, 0.08);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-card-bg: #1d1a14;
+    --color-card-border: rgba(255, 240, 200, 0.08);
+    --color-text: #f3ead7;
+    --color-muted: #a79f8c;
+    --color-input-bg: #14110c;
+    --color-input-border: rgba(255, 240, 200, 0.14);
+    --color-danger: #f2a39b;
+    --color-success: #8fd6a6;
+    --color-warning: #f6cd6b;
+    --color-row-hover: rgba(249, 191, 38, 0.08);
+  }
+}
+
+html,
+body,
+#app {
+  height: 100%;
+}
+
+body {
+  @apply bg-surface-muted text-[color:var(--color-text)] antialiased;
+}
+
+@media (prefers-color-scheme: dark) {
+  body {
+    @apply bg-surface-dark;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+.focus-ring {
+  @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nimiq-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--color-card-bg)];
+}
+
+.card {
+  background-color: var(--color-card-bg);
+  border: 1px solid var(--color-card-border);
+  @apply rounded-lg shadow-sm;
+}
+
+.input {
+  background-color: var(--color-input-bg);
+  border: 1px solid var(--color-input-border);
+  color: var(--color-text);
+  @apply rounded-md px-3 py-2 text-sm focus-ring;
+}
+
+.btn {
+  @apply inline-flex items-center justify-center rounded-md px-3 py-2 text-sm font-medium focus-ring disabled:opacity-60 disabled:cursor-not-allowed;
+}
+.btn-primary {
+  @apply btn bg-nimiq-500 text-[#1f1b13] hover:bg-nimiq-400;
+}
+.btn-secondary {
+  @apply btn border border-[color:var(--color-input-border)] text-[color:var(--color-text)] hover:bg-[color:var(--color-row-hover)];
+}
+.btn-danger {
+  @apply btn bg-[color:var(--color-danger)] text-white hover:opacity-90;
+}
+
+.muted {
+  color: var(--color-muted);
+}
+.table th,
+.table td {
+  @apply px-3 py-2 text-left align-top;
+  border-bottom: 1px solid var(--color-card-border);
+}
+.table tbody tr:hover {
+  background-color: var(--color-row-hover);
+  cursor: pointer;
+}
+.badge {
+  @apply inline-block rounded px-2 py-0.5 text-xs font-medium;
+  background-color: var(--color-row-hover);
+  color: var(--color-text);
+}
+.badge-allow {
+  background-color: rgba(31, 106, 63, 0.16);
+  color: var(--color-success);
+}
+.badge-deny {
+  background-color: rgba(179, 38, 30, 0.16);
+  color: var(--color-danger);
+}
+.badge-review {
+  background-color: rgba(138, 90, 0, 0.16);
+  color: var(--color-warning);
+}

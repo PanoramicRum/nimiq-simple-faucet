@@ -1,0 +1,17 @@
+# @nimiq-faucet/vue
+
+Vue 3 composables over `@nimiq-faucet/sdk`.
+
+```vue
+<script setup lang="ts">
+import { useFaucetClaim } from '@nimiq-faucet/vue';
+
+const { claim, status, txId, isPending, error } = useFaucetClaim({
+  client: { url: import.meta.env.VITE_FAUCET_URL },
+  address: props.address,
+  hostContext: { uid: hashedUid, kycLevel: 'email' },
+});
+</script>
+```
+
+Also exports `useFaucetStatus(client, idRef)` and `useFaucetStream(client, onEvent)`.

@@ -1,0 +1,31 @@
+{
+  "name": "@faucet/abuse-geoip",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Geo-IP / ASN / VPN / datacenter abuse check with pluggable resolvers (MaxMind GeoLite2 and IPinfo).",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": ["dist", "llms.txt"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@faucet/core": "workspace:*",
+    "maxmind": "^4.3.22",
+    "undici": "^6.19.8"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.2",
+    "vitest": "^2.1.2"
+  }
+}

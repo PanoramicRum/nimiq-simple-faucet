@@ -1,0 +1,12 @@
+# @faucet/driver-nimiq-wasm
+
+CurrencyDriver for Nimiq using the Nimiq Web Client (WASM) in-process. No external Nimiq node needed.
+
+Config:
+- `network`: "main" | "test"
+- `privateKey`: seed phrase or hex; server is expected to pass this already decrypted.
+- `seedPeers` (optional): override default seed peers.
+
+Implements `parseAddress` (enforces `NQxx XXXX XXXX ...` format). Other methods require `init()` first.
+
+Use this driver when you want a single container with no external dependencies. For separation of concerns or existing Nimiq infrastructure, use `@faucet/driver-nimiq-rpc`.

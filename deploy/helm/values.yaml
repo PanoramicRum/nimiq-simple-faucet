@@ -1,0 +1,244 @@
+# Default values for nimiq-simple-faucet.
+# Override with `-f my-values.yaml` or `--set key=value`.
+
+image:
+  repository: ghcr.io/nimiq/simple-faucet
+  # When empty, the chart falls back to .Chart.AppVersion.
+  tag: ""
+  pullPolicy: IfNotPresent
+  pullSecrets: []
+
+# Scale >1 only with postgresql.enabled=true AND redis.enabled=true.
+# SQLite mode (default persistence.enabled=true) is single-replica only.
+replicaCount: 1
+
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+podLabels: {}
+
+# Non-secret configuration. These render into a ConfigMap mounted as envFrom.
+config:
+  network: "test"                 # FAUCET_NETWORK (main|test)
+  signerDriver: "rpc"             # FAUCET_SIGNER_DRIVER (wasm|rpc)
+  claimAmountLuna: "100000"       # FAUCET_CLAIM_AMOUNT_LUNA
+  rateLimitPerMinute: 30          # FAUCET_RATE_LIMIT_PER_MINUTE
+  rateLimitPerIpPerDay: 5         # FAUCET_RATE_LIMIT_PER_IP_PER_DAY
+  tlsRequired: true               # FAUCET_TLS_REQUIRED
+  helmetCsp: "relaxed-for-ui"     # FAUCET_HELMET_CSP (strict|relaxed-for-ui|off)
+  # Explicit CSV of allowed origins. Empty string is rejected by this chart;
+  # caller MUST set either a CSV list or the wildcard "*".
+  corsOrigins: ""
+  # Optional: FAUCET_RPC_URL (non-sensitive), override network specifics, etc.
+  extra: {}
+    # FAUCET_RPC_URL: "https://nimiq-testnet-rpc.example.com"
+    # FAUCET_GEOIP_BACKEND: "maxmind"
+
+# Secrets are intentionally NOT hand-maintained at the chart level.
+#
+# Default: use External Secrets Operator. Each key below references a remote
+# secret store entry; the chart renders an ExternalSecret that materialises a
+# Kubernetes Secret for the pod to envFrom.
+#
+# For clusters without ESO, set `secrets.external.enabled: false` and provide
+# plain values under `secrets.values:` in a LOCAL override file (never commit).
+secrets:
+  external:
+    enabled: true
+    # Name of the ClusterSecretStore or SecretStore to read from.
+    secretStoreRef:
+      name: "default-cluster-secret-store"
+      kind: "ClusterSecretStore"
+    # How often ESO refreshes the target Secret.
+    refreshInterval: "1h"
+    # Map of env-var-name -> remote key path. These are FAUCET_* names that
+    # mirror apps/server/src/config.ts ENV_KEYS.
+    data:
+      FAUCET_ADMIN_PASSWORD:
+        remoteRef:
+          key: "faucet/admin"
+          property: "password"
+      FAUCET_ADMIN_TOTP_SECRET:
+        remoteRef:
+          key: "faucet/admin"
+          property: "totp"
+      FAUCET_KEY_PASSPHRASE:
+        remoteRef:
+          key: "faucet/wallet"
+          property: "key-passphrase"
+      FAUCET_WALLET_PASSPHRASE:
+        remoteRef:
+          key: "faucet/wallet"
+          property: "wallet-passphrase"
+      FAUCET_PRIVATE_KEY:
+        remoteRef:
+          key: "faucet/wallet"
+          property: "private-key"
+      FAUCET_RPC_USERNAME:
+        remoteRef:
+          key: "faucet/rpc"
+          property: "username"
+      FAUCET_RPC_PASSWORD:
+        remoteRef:
+          key: "faucet/rpc"
+          property: "password"
+      FAUCET_TURNSTILE_SECRET:
+        remoteRef:
+          key: "faucet/captcha"
+          property: "turnstile-secret"
+      FAUCET_TURNSTILE_SITE_KEY:
+        remoteRef:
+          key: "faucet/captcha"
+          property: "turnstile-site-key"
+      FAUCET_HCAPTCHA_SECRET:
+        remoteRef:
+          key: "faucet/captcha"
+          property: "hcaptcha-secret"
+      FAUCET_HCAPTCHA_SITE_KEY:
+        remoteRef:
+          key: "faucet/captcha"
+          property: "hcaptcha-site-key"
+      FAUCET_HASHCASH_SECRET:
+        remoteRef:
+          key: "faucet/abuse"
+          property: "hashcash-secret"
+      FAUCET_INTEGRATOR_KEYS:
+        remoteRef:
+          key: "faucet/integrators"
+          property: "keys"
+  # Fallback: inline secret values. ONLY provide these via a local,
+  # git-ignored override file. Leave empty in committed values.yaml.
+  values: {}
+    # FAUCET_ADMIN_PASSWORD: ""
+    # FAUCET_KEY_PASSPHRASE: ""
+
+service:
+  type: ClusterIP
+  port: 8080
+  annotations: {}
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+    # kubernetes.io/ingress.class: "nginx"
+    # cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    # nginx.ingress.kubernetes.io/proxy-body-size: "1m"
+  hosts:
+    - host: faucet.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+    # - secretName: faucet-tls
+    #   hosts:
+    #     - faucet.example.com
+
+# SQLite persistence. Ignored when postgresql.enabled=true.
+persistence:
+  enabled: true
+  size: 10Gi
+  storageClass: ""
+  accessModes:
+    - ReadWriteOnce
+  annotations: {}
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 3
+  targetCPUUtilizationPercentage: 70
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  runAsGroup: 1000
+  fsGroup: 1000
+  seccompProfile:
+    type: RuntimeDefault
+
+containerSecurityContext:
+  readOnlyRootFilesystem: true
+  allowPrivilegeEscalation: false
+  runAsNonRoot: true
+  runAsUser: 1000
+  capabilities:
+    drop:
+      - ALL
+
+livenessProbe:
+  httpGet:
+    path: /healthz
+    port: http
+  initialDelaySeconds: 20
+  periodSeconds: 15
+  timeoutSeconds: 3
+  failureThreshold: 3
+
+readinessProbe:
+  httpGet:
+    path: /healthz
+    port: http
+  initialDelaySeconds: 5
+  periodSeconds: 10
+  timeoutSeconds: 3
+  failureThreshold: 3
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+# Set enabled=true and the chart renders a NetworkPolicy. Commented block
+# below is a starting point for Nimiq RPC + captcha CDNs egress.
+networkPolicy:
+  enabled: false
+  # egress:
+  #   - to:
+  #       - ipBlock:
+  #           cidr: 0.0.0.0/0
+  #           except:
+  #             - 10.0.0.0/8
+  #             - 172.16.0.0/12
+  #             - 192.168.0.0/16
+  #     ports:
+  #       - protocol: TCP
+  #         port: 443    # Nimiq RPC (https) + challenges.cloudflare.com + hcaptcha.com
+  #       - protocol: TCP
+  #         port: 8648   # Nimiq JSON-RPC (self-hosted node)
+  # ingress:
+  #   - from: []
+  #     ports:
+  #       - protocol: TCP
+  #         port: 8080
+
+# Bitnami subchart passthrough. See their docs for full values.
+postgresql:
+  enabled: false
+  auth:
+    username: faucet
+    database: faucet
+    # password: set via ExternalSecret / --set when enabling.
+  primary:
+    persistence:
+      size: 10Gi
+
+redis:
+  enabled: false
+  architecture: standalone
+  auth:
+    enabled: true
+    # password: set via ExternalSecret / --set when enabling.

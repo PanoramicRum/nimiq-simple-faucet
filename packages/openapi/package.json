@@ -1,0 +1,11 @@
+{
+  "name": "@faucet/openapi",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Published OpenAPI snapshot for the Nimiq Simple Faucet. Regenerated at release time from GET /openapi.json.",
+  "license": "MIT",
+  "files": ["openapi.yaml"],
+  "scripts": {
+    "build": "node -e \"require('node:fs').accessSync('openapi.yaml')\""
+  }
+}

@@ -1,0 +1,3 @@
+# @faucet/abuse-hcaptcha
+
+hCaptcha token verifier. Config: `{ secret, verifyUrl? }`. Denies when the server-side verify returns `success: false` or the token is missing. When hCaptcha enterprise returns a `score`, it is used directly as the check score (0 = clean, 1 = abusive).

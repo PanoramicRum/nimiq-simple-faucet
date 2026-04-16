@@ -1,0 +1,44 @@
+# Nimiq Simple Faucet
+
+A self-hosted Nimiq faucet / payout service. Single Docker image. SDKs for TS, React, Vue, Go, Capacitor, React Native, Flutter. Pluggable abuse pipeline. MCP server for AI agents.
+
+## Install (Docker, SQLite)
+
+```
+docker run -d -p 8080:8080 -v faucet-data:/data \
+  -e FAUCET_NETWORK=test \
+  -e FAUCET_SIGNER_DRIVER=rpc \
+  -e FAUCET_RPC_URL=https://... \
+  -e FAUCET_WALLET_ADDRESS="NQ12 ..." \
+  -e FAUCET_ADMIN_PASSWORD=change-me \
+  ghcr.io/nimiq/simple-faucet:latest
+```
+
+## Integrate (any framework)
+
+```
+POST /v1/claim
+Content-Type: application/json
+
+{
+  "address": "NQ12 ...",
+  "captchaToken": "<turnstile or hcaptcha response>",
+  "hostContext": { "uid": "<hashed>", "kycLevel": "email" }
+}
+```
+
+Response: `{ id, status, txId?, decision?, reason? }`. Poll `GET /v1/claim/:id` or subscribe to `WS /v1/stream` for confirmation.
+
+## Integration recipes
+
+- TS / Node / browser: [/snippets/typescript](./snippets/typescript)
+- React: [/snippets/react](./snippets/react)
+- Vue 3: [/snippets/vue](./snippets/vue)
+- Capacitor: [/snippets/capacitor](./snippets/capacitor)
+- React Native: [/snippets/react-native](./snippets/react-native)
+- Flutter: [/snippets/flutter](./snippets/flutter)
+- Go backend: [/snippets/go](./snippets/go)
+
+## Full reference
+
+Fetch `/openapi.json` for the authoritative schema or `/llms-full.txt` for an LLM-ready flat dump of docs, snippets and decisions.

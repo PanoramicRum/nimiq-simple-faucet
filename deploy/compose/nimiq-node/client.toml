@@ -1,0 +1,33 @@
+# Minimal `core-rs-albatross` config used by the optional local Nimiq node
+# in docker-compose (see `docker compose --profile local-node up`).
+#
+# The RPC server binds to 0.0.0.0 inside the container, which is reachable
+# from the `faucet` service via the hostname `nimiq`. It is NOT published to
+# the host by default — if you need to poke at it from the host, uncomment
+# the port mapping for the `nimiq` service in docker-compose.yml.
+
+[consensus]
+network = "test-albatross"
+sync_mode = "full"
+# Transaction indexing is required for `getTransactionByHash` and
+# `getTransactionsByAddress`, which the faucet's RPC driver uses for
+# confirmation polling and on-chain abuse heuristics. The default on a
+# `full` node is false; flip it on.
+index_history = true
+
+[network]
+seed_nodes = [
+  { address = "/dns4/seed1.pos.nimiq-testnet.com/tcp/8443/wss" },
+  { address = "/dns4/seed2.pos.nimiq-testnet.com/tcp/8443/wss" },
+  { address = "/dns4/seed3.pos.nimiq-testnet.com/tcp/8443/wss" },
+  { address = "/dns4/seed4.pos.nimiq-testnet.com/tcp/8443/wss" },
+]
+
+[rpc-server]
+bind = "0.0.0.0"
+port = 8648
+# No basic auth: the RPC port is reachable only on the compose-internal
+# network. If you publish the port to the host or expose it externally,
+# enable auth here:
+#   username = "faucet"
+#   password = "change-me"

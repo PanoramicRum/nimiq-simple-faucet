@@ -1,0 +1,18 @@
+# @faucet/abuse-fingerprint
+
+Correlates client fingerprint visitor IDs (e.g. FingerprintJS / OpenFPCAM) with the host-provided `uid` and `cookieHash` from `HostContext`. Catches two common farming patterns: one account hopping between many browsers, and one browser claiming into many accounts.
+
+- `fingerprintCheck({ store, windowMs?, maxVisitorsPerUid?, maxUidsPerVisitor?, unsignedContextPenalty?, weight? })` → `AbuseCheck`.
+- `FingerprintStore` — interface the server implements (Drizzle/SQLite, Postgres, Redis, …). Storage is NOT this package's job.
+- `InMemoryFingerprintStore` — zero-dep O(n) implementation for tests and tiny deployments.
+
+Behaviour:
+- No visitor ID and no uid → soft-skip (`signals.skipped = 'no-signals'`).
+- Unsigned `hostContext` → add `unsignedContextPenalty` (default 0.3). Signed contexts get full trust.
+- `> maxVisitorsPerUid` distinct visitors in window → `decision: 'review'`, score ≥ 0.75.
+- `> maxUidsPerVisitor` distinct uids in window → `decision: 'deny'`, score 1. (A single browser claiming many identities is a stronger signal than one user on many browsers.)
+- Any store error → soft-skip, score 0. Never block the pipeline on a storage hiccup.
+
+Defaults: 24 h window, 3 visitors per uid, 3 uids per visitor.
+
+For production, implement `FingerprintStore` against Drizzle with an index on `(uid, seen_at)` and `(visitor_id, seen_at)`.

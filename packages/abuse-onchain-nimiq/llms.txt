@@ -1,0 +1,14 @@
+# @faucet/abuse-onchain-nimiq
+
+On-chain heuristics for the claim destination. Reads `CurrencyDriver.addressHistory(address)` and turns the resulting `HistorySummary` into an `AbuseCheck` verdict. Works with any driver that implements `addressHistory` (Nimiq reference driver today, but nothing in this package is Nimiq-specific).
+
+- `onchainNimiqCheck(config)` → `AbuseCheck`. Config:
+  - `driver`: the `CurrencyDriver`. If `addressHistory` is missing, the check soft-skips (score 0).
+  - `denyIfSweeper` (default true): deny addresses flagged by the driver's sweeper heuristic.
+  - `denyIfRecentDust` (default true): deny when inbound count > 10 and outbound count ≥ inbound, i.e. dust-in / sweep-out.
+  - `softScoreFreshAddress` (default true): add `freshAddressBoostScore` (default 0.3) to the aggregate when `firstSeenAt === null`. Not deny-worthy on its own.
+  - `claimHistorySourceAddresses`: known sibling-faucet addresses. If set and the destination has any incoming history, deny with score 0.7 — intended to stop users cycling claims across a multi-tenant install. Keep the list small; the driver's `HistorySummary` has no per-tx source breakdown, so this is a coarse signal.
+
+Any `addressHistory` throw is a soft-skip (score 0, reason set) — an RPC outage must not block claims.
+
+Signals always include `firstSeenAt`, `incomingCount`, `outgoingCount`, `totalReceived`, `totalSent`, `isSweeper` (bigints stringified for JSON). Default weight 2. Pairs well with `@faucet/abuse-geoip` and `@faucet/abuse-hashcash`.

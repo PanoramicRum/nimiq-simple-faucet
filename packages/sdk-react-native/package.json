@@ -1,0 +1,32 @@
+{
+  "name": "@nimiq-faucet/react-native",
+  "version": "0.0.1",
+  "description": "React Native integration for the Nimiq Simple Faucet. Auto-populates fingerprint from react-native-device-info.",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": ["dist", "llms.txt"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "dev": "tsc -p tsconfig.json --watch"
+  },
+  "peerDependencies": {
+    "react-native": ">=0.74",
+    "react-native-device-info": ">=11"
+  },
+  "dependencies": {
+    "@nimiq-faucet/sdk": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.2"
+  },
+  "keywords": ["nimiq", "faucet", "react-native", "mobile"]
+}

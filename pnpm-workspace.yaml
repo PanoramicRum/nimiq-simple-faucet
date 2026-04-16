@@ -1,0 +1,8 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+  - "examples/nextjs-claim-page"
+  - "examples/vue-claim-page"
+  - "examples/capacitor-mobile-app"
+  - "examples/react-native-claim-app"
+  - "tests/*"
