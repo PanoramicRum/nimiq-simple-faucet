@@ -1,0 +1,12 @@
+# @faucet/driver-nimiq-rpc
+
+CurrencyDriver that talks to an external Nimiq Albatross JSON-RPC node.
+
+Config:
+- `network`: "main" | "test"
+- `rpcUrl`: full URL of the JSON-RPC endpoint
+- `auth` (optional): `{ username, password }` for basic auth
+- `walletAddress`: faucet wallet address already unlocked on the node
+- `walletPassphrase` (optional): passed through for node-side unlocking flows
+
+Sweeper heuristic in `addressHistory`: ≥3 incoming, ≥1 outgoing, ≥90% of received funds already sent → `isSweeper = true`. Use the `@faucet/abuse-onchain-nimiq` check to apply it.

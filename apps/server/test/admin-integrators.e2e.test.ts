@@ -1,0 +1,229 @@
+import { createHmac, randomUUID } from 'node:crypto';
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import type { CurrencyDriver } from '@faucet/core';
+import { buildApp } from '../src/app.js';
+import { ServerConfigSchema } from '../src/config.js';
+
+const FAUCET_ADDR = 'NQ00 0000 0000 0000 0000 0000 0000 0000 0000';
+const USER_ADDR = 'NQ00 1111 1111 1111 1111 1111 1111 1111 1111';
+
+class FakeDriver implements CurrencyDriver {
+  readonly id = 'nimiq';
+  readonly networks = ['test'] as const;
+  public sends: Array<{ to: string; amount: bigint }> = [];
+  async init(): Promise<void> {}
+  parseAddress(s: string): string {
+    const n = s.trim().toUpperCase().replace(/\s+/g, ' ');
+    if (!/^NQ[0-9]{2}(?: ?[0-9A-Z]{4}){8}$/.test(n)) throw new Error(`bad address: ${s}`);
+    return n;
+  }
+  async getFaucetAddress() { return FAUCET_ADDR; }
+  async getBalance() { return 10_000_000n; }
+  async send(to: string, amount: bigint) {
+    this.sends.push({ to, amount });
+    return `tx_${this.sends.length}`;
+  }
+  async waitForConfirmation() {}
+}
+
+function parseCookie(setCookie: string | string[] | undefined, name: string): string | null {
+  if (!setCookie) return null;
+  const arr = Array.isArray(setCookie) ? setCookie : [setCookie];
+  for (const line of arr) {
+    const m = line.match(new RegExp(`(?:^|;\\s*)${name}=([^;]+)`));
+    if (m) return decodeURIComponent(m[1]!);
+  }
+  return null;
+}
+
+function signHmac(secret: string, parts: string[]): string {
+  return createHmac('sha256', secret).update(parts.join('\n')).digest('hex');
+}
+
+let sharedAuth: { session: string; csrf: string } | undefined;
+async function login(app: Awaited<ReturnType<typeof buildApp>>['app']): Promise<{ session: string; csrf: string }> {
+  if (sharedAuth) return sharedAuth;
+  const seed = await app.inject({
+    method: 'POST',
+    url: '/admin/auth/login',
+    payload: { password: 'test-password-123' },
+    headers: { 'content-type': 'application/json' },
+  });
+  sharedAuth = {
+    session: parseCookie(seed.headers['set-cookie'], 'faucet_session')!,
+    csrf: parseCookie(seed.headers['set-cookie'], 'faucet_csrf')!,
+  };
+  return sharedAuth;
+}
+
+describe('admin integrators', () => {
+  let tmp: string;
+  let app: Awaited<ReturnType<typeof buildApp>>['app'];
+
+  beforeAll(async () => {
+    tmp = mkdtempSync(join(tmpdir(), 'faucet-admin-ints-'));
+    const config = ServerConfigSchema.parse({
+      network: 'test',
+      dataDir: tmp,
+      signerDriver: 'rpc',
+      rpcUrl: 'http://unused',
+      walletAddress: FAUCET_ADDR,
+      claimAmountLuna: '100000',
+      rateLimitPerIpPerDay: '100',
+      adminPassword: 'test-password-123',
+      dev: 'true',
+    });
+    const built = await buildApp(config, { driverOverride: new FakeDriver(), quietLogs: true });
+    app = built.app;
+    await app.ready();
+  });
+
+  afterAll(async () => {
+    await app.close();
+    rmSync(tmp, { recursive: true, force: true });
+  });
+
+  it('creates an integrator and the new key works on /v1/claim', async () => {
+    const { session, csrf } = await login(app);
+    const create = await app.inject({
+      method: 'POST',
+      url: '/admin/integrators',
+      payload: { id: 'partner-a' },
+      headers: { 'content-type': 'application/json', 'x-faucet-csrf': csrf },
+      cookies: { faucet_session: session, faucet_csrf: csrf },
+    });
+    expect(create.statusCode).toBe(201);
+    const body = create.json();
+    expect(body.id).toBe('partner-a');
+    expect(typeof body.apiKey).toBe('string');
+    expect(typeof body.hmacSecret).toBe('string');
+
+    const payload = JSON.stringify({ address: USER_ADDR });
+    const ts = Date.now().toString();
+    const nonce = randomUUID();
+    const sig = signHmac(body.hmacSecret, ['POST', '/v1/claim', ts, nonce, payload]);
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/claim',
+      payload,
+      headers: {
+        'content-type': 'application/json',
+        'x-faucet-api-key': body.apiKey,
+        'x-faucet-timestamp': ts,
+        'x-faucet-nonce': nonce,
+        'x-faucet-signature': sig,
+      },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.json().status).toBe('broadcast');
+    (globalThis as Record<string, unknown>).__lastApiKey = body.apiKey;
+    (globalThis as Record<string, unknown>).__lastHmac = body.hmacSecret;
+  });
+
+  it('rotate replaces the key, old key stops working', async () => {
+    const { session, csrf } = await login(app);
+    const oldKey = (globalThis as Record<string, unknown>).__lastApiKey as string;
+    const oldSecret = (globalThis as Record<string, unknown>).__lastHmac as string;
+
+    const rot = await app.inject({
+      method: 'POST',
+      url: '/admin/integrators/partner-a/rotate',
+      payload: {},
+      headers: { 'content-type': 'application/json', 'x-faucet-csrf': csrf },
+      cookies: { faucet_session: session, faucet_csrf: csrf },
+    });
+    expect(rot.statusCode).toBe(200);
+    const rotBody = rot.json();
+    expect(rotBody.apiKey).not.toBe(oldKey);
+
+    // Old key should now fail auth (unknown api key).
+    const payload = JSON.stringify({ address: USER_ADDR });
+    const ts = Date.now().toString();
+    const nonce = randomUUID();
+    const sig = signHmac(oldSecret, ['POST', '/v1/claim', ts, nonce, payload]);
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/claim',
+      payload,
+      headers: {
+        'content-type': 'application/json',
+        'x-faucet-api-key': oldKey,
+        'x-faucet-timestamp': ts,
+        'x-faucet-nonce': nonce,
+        'x-faucet-signature': sig,
+      },
+    });
+    expect(res.statusCode).toBe(401);
+
+    // New key works.
+    const ts2 = Date.now().toString();
+    const nonce2 = randomUUID();
+    const sig2 = signHmac(rotBody.hmacSecret, ['POST', '/v1/claim', ts2, nonce2, payload]);
+    const ok = await app.inject({
+      method: 'POST',
+      url: '/v1/claim',
+      payload,
+      headers: {
+        'content-type': 'application/json',
+        'x-faucet-api-key': rotBody.apiKey,
+        'x-faucet-timestamp': ts2,
+        'x-faucet-nonce': nonce2,
+        'x-faucet-signature': sig2,
+      },
+    });
+    expect(ok.statusCode).toBe(200);
+    (globalThis as Record<string, unknown>).__lastApiKey = rotBody.apiKey;
+    (globalThis as Record<string, unknown>).__lastHmac = rotBody.hmacSecret;
+  });
+
+  it('list does not leak secrets', async () => {
+    const { session } = await login(app);
+    const res = await app.inject({
+      method: 'GET',
+      url: '/admin/integrators',
+      cookies: { faucet_session: session },
+    });
+    expect(res.statusCode).toBe(200);
+    const items = res.json().items as Array<Record<string, unknown>>;
+    for (const i of items) {
+      expect(i.apiKey).toBeUndefined();
+      expect(i.hmacSecret).toBeUndefined();
+      expect(i.apiKeyHash).toBeUndefined();
+    }
+  });
+
+  it('delete revokes the integrator, key no longer works', async () => {
+    const { session, csrf } = await login(app);
+    const apiKey = (globalThis as Record<string, unknown>).__lastApiKey as string;
+    const hmacSecret = (globalThis as Record<string, unknown>).__lastHmac as string;
+
+    const del = await app.inject({
+      method: 'DELETE',
+      url: '/admin/integrators/partner-a',
+      headers: { 'x-faucet-csrf': csrf },
+      cookies: { faucet_session: session, faucet_csrf: csrf },
+    });
+    expect(del.statusCode).toBe(200);
+
+    const payload = JSON.stringify({ address: USER_ADDR });
+    const ts = Date.now().toString();
+    const nonce = randomUUID();
+    const sig = signHmac(hmacSecret, ['POST', '/v1/claim', ts, nonce, payload]);
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/claim',
+      payload,
+      headers: {
+        'content-type': 'application/json',
+        'x-faucet-api-key': apiKey,
+        'x-faucet-timestamp': ts,
+        'x-faucet-nonce': nonce,
+        'x-faucet-signature': sig,
+      },
+    });
+    expect(res.statusCode).toBe(401);
+  });
+});

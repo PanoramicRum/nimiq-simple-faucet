@@ -1,0 +1,33 @@
+{
+  "name": "@nimiq-faucet/react",
+  "version": "0.0.1",
+  "description": "React hooks for the Nimiq Simple Faucet, built on @nimiq-faucet/sdk.",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": ["dist", "llms.txt"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "dev": "tsc -p tsconfig.json --watch"
+  },
+  "peerDependencies": {
+    "react": ">=18"
+  },
+  "dependencies": {
+    "@nimiq-faucet/sdk": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.11",
+    "react": "^18.3.1",
+    "typescript": "^5.6.2"
+  },
+  "keywords": ["nimiq", "faucet", "react", "hooks"]
+}

@@ -1,0 +1,19 @@
+# github.com/nimiq/simple-faucet-go
+
+Go client for the Nimiq Simple Faucet. Standard library only; Go 1.22+.
+
+```go
+client := faucet.New(faucet.Config{URL: "https://faucet.example.com"})
+resp, err := client.Claim(ctx, address, faucet.ClaimOptions{HostContext: &faucet.HostContext{UID: &uid}})
+final, err := client.WaitForConfirmation(ctx, resp.ID, 60*time.Second)
+```
+
+Server-to-server (HMAC-SHA256 over `"POST\n<path>\n<ts>\n<nonce>\n<body>"`):
+
+```go
+client := faucet.New(faucet.Config{URL: url, APIKey: key, HMACSecret: secret})
+```
+
+API: `Claim`, `Status`, `WaitForConfirmation`, `Config`, `RequestChallenge`, `SolveAndClaim`, plus package-level `SolveHashcash(challenge, difficulty) string`. Errors are `*FaucetError` with `Status`, `Message`, `Code`, `Decision`.
+
+Wire types match `@nimiq-faucet/sdk` field-for-field (optional fields are pointers or nil slices/maps).

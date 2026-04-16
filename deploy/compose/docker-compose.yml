@@ -1,0 +1,75 @@
+services:
+  faucet:
+    build:
+      context: ../..
+      dockerfile: deploy/docker/Dockerfile
+    image: nimiq-faucet:dev
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    # `.env` is optional so the `nimiq` service can be started on its own
+    # (e.g. for smoke testing) without first copying `.env.example`.
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      FAUCET_NETWORK: ${FAUCET_NETWORK:-test}
+      FAUCET_SIGNER_DRIVER: ${FAUCET_SIGNER_DRIVER:-rpc}
+      # When the `local-node` profile is active, the `nimiq` service below
+      # answers on `http://nimiq:8648`. Otherwise override FAUCET_RPC_URL via
+      # .env to point at an external Albatross RPC endpoint.
+      FAUCET_RPC_URL: ${FAUCET_RPC_URL:-http://nimiq:8648}
+      DATABASE_URL: ${DATABASE_URL:-postgres://faucet:faucet@postgres:5432/faucet}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    volumes:
+      - faucet-data:/data
+
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: faucet
+      POSTGRES_PASSWORD: faucet
+      POSTGRES_DB: faucet
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U faucet"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+
+  # Optional local Nimiq testnet node. Enabled via the `local-node` profile:
+  #   docker compose --profile local-node up -d
+  # See deploy/compose/nimiq-node/README.md for details.
+  nimiq:
+    image: ghcr.io/nimiq/core-rs-albatross:1.4.0-pre1
+    profiles: ["local-node"]
+    restart: unless-stopped
+    # The image's default CMD (`nimiq-client`) reads `/home/nimiq/.nimiq/client.toml`
+    # automatically; no `command:` override is needed.
+    volumes:
+      - ./nimiq-node/client.toml:/home/nimiq/.nimiq/client.toml:ro
+      - nimiq-data:/home/nimiq/.nimiq
+    # RPC (8648) intentionally not published to the host by default —
+    # the faucet reaches it on the compose network as `http://nimiq:8648`.
+    # Uncomment to expose for local debugging (e.g. curl from the host):
+    # ports:
+    #   - "127.0.0.1:8648:8648"
+    # P2P port must be reachable for the node to sync:
+    ports:
+      - "8443:8443"
+
+volumes:
+  faucet-data:
+  postgres-data:
+  nimiq-data:

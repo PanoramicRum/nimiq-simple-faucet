@@ -1,0 +1,2 @@
+# Intentionally empty — changeset snapshot files ARE committed so they can be
+# consumed by `changeset version` in the release workflow.

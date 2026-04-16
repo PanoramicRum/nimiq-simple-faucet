@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/security/advisories/new
+    about: Report a security issue privately via GitHub Security Advisories. Do NOT open a public issue. See SECURITY.md for the full policy.
+  - name: Question or discussion
+    url: https://github.com/discussions
+    about: For usage questions, ideas, or "how do I …" open a Discussion instead of an issue.

@@ -1,0 +1,32 @@
+{
+  "name": "@nimiq-faucet/vue",
+  "version": "0.0.1",
+  "description": "Vue 3 composables for the Nimiq Simple Faucet, built on @nimiq-faucet/sdk.",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": ["dist", "llms.txt"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "dev": "tsc -p tsconfig.json --watch"
+  },
+  "peerDependencies": {
+    "vue": "^3.4.0"
+  },
+  "dependencies": {
+    "@nimiq-faucet/sdk": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.2",
+    "vue": "^3.5.10"
+  },
+  "keywords": ["nimiq", "faucet", "vue", "composables"]
+}

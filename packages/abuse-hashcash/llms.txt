@@ -1,0 +1,11 @@
+# @faucet/abuse-hashcash
+
+Self-hosted **client-side hashcash** challenge. Purely an anti-bot layer — unrelated to Nimiq's proof-of-stake consensus. Server mints a signed challenge tied to the requester's IP; client brute-forces a SHA-256 nonce; server verifies.
+
+- `mintChallenge(config, {ip, uid?})` → `{ challenge, difficulty, expiresAt }`.
+- `hashcashCheck(config)` → `AbuseCheck` verifying `req.hashcashSolution` of the form `"<challenge>#<nonce>"`.
+- `solveChallenge(challenge, difficulty)` → helper brute-forcer for clients without a worker.
+
+Difficulty: leading zero bits required in SHA-256(challenge + ":" + nonce). 20 ≈ 1M hashes, a few seconds on consumer hardware.
+
+Use this for a fully self-hosted abuse layer with no third-party captcha. Pairs well with `@faucet/abuse-turnstile` or `@faucet/abuse-hcaptcha`.

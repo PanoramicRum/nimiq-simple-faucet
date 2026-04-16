@@ -1,0 +1,19 @@
+# @nimiq-faucet/sdk
+
+Framework-agnostic client for the Nimiq Simple Faucet. Works in browsers and Node 18+.
+
+```ts
+import { FaucetClient } from '@nimiq-faucet/sdk';
+
+const client = new FaucetClient({ url: 'https://faucet.example.com' });
+const { id, txId } = await client.claim(address, { hostContext: { uid: hashedUid } });
+await client.waitForConfirmation(id);
+```
+
+Server-to-server with HMAC:
+```ts
+const client = new FaucetClient({ url, apiKey, hmacSecret });
+await client.claim(address, { hostContext: { uid, signature } });
+```
+
+API: `claim`, `status`, `waitForConfirmation`, `config`, `subscribe`. All request shapes match `/v1/*` on the server; fetch `${url}/openapi.json` for the source of truth.

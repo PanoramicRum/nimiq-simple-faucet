@@ -1,0 +1,36 @@
+# @faucet/abuse-geoip
+
+Country / ASN / VPN / datacenter abuse check with pluggable resolvers.
+
+```ts
+import { geoipCheck, MaxMindResolver } from '@faucet/abuse-geoip';
+
+const resolver = new MaxMindResolver({
+  countryDbPath: '/data/geoip/GeoLite2-Country.mmdb',
+  asnDbPath: '/data/geoip/GeoLite2-ASN.mmdb',
+});
+
+const check = geoipCheck({
+  resolver,
+  policy: {
+    denyCountries: ['KP', 'IR'],
+    allowCountries: undefined,    // or a whitelist
+    denyVpn: true,
+    denyTor: true,
+    denyHosting: true,
+    denyAsns: [],
+  },
+});
+```
+
+Resolvers shipped:
+- `MaxMindResolver` — reads GeoLite2 `.mmdb` files on disk (offline). Needs a MaxMind license key to download the DBs.
+- `IpinfoResolver` — calls `ipinfo.io` with an API token; in-memory LRU cache.
+
+Resolver interface is public, so integrators can plug their own (`Cloudflare Radar`, `ipapi`, in-house ASN feed, etc.):
+
+```ts
+interface GeoIpResolver { readonly id: string; lookup(ip: string): Promise<GeoIpResult>; }
+```
+
+Heuristic hosting / VPN detection (`isHostingOrg`, `isVpnOrg`) is a substring match on the ASN org name. Not exhaustive; meant as a reasonable default when you don't have a paid anonymous-IP feed.

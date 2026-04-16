@@ -1,0 +1,7 @@
+# Generated at release time from GET /openapi.json; do not hand-edit.
+# Placeholder — populated by a future release script (see M7.x follow-ups).
+openapi: 3.1.0
+info:
+  title: Nimiq Simple Faucet
+  version: 0.0.0-placeholder
+paths: {}

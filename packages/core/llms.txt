@@ -1,0 +1,12 @@
+# @faucet/core
+
+Framework- and coin-agnostic primitives for the Nimiq Simple Faucet.
+
+Exports:
+- `CurrencyDriver` — contract a chain adapter must satisfy (parseAddress, getBalance, send, waitForConfirmation, optional addressHistory).
+- `AbuseCheck` — single scoring check: `check(req): { score, signals, decision?, reason? }`.
+- `AbusePipeline` — runs checks in order, aggregates weighted score, maps to `allow | challenge | review | deny`. Any check may hard-deny and short-circuit.
+- `HostContext` / `HostContextSchema` / `canonicalizeHostContext` — integrator-provided user signals; `canonicalizeHostContext` produces the bytes to HMAC-sign.
+- Shared types: `Address`, `TxId`, `ClaimStatus`, `ClaimRecord`, `HistorySummary`, `NetworkId`, `DriverError`.
+
+Coin-specific code MUST NOT live here. Add a new coin by implementing `CurrencyDriver` in a new `packages/driver-*` package.

@@ -1,0 +1,18 @@
+# @faucet/abuse-ai
+
+Local, deterministic, explainable anomaly scoring as an `AbuseCheck`. No external API, no GPU, no heavyweight deps. Ships a **rules** model today; the shape reserves an `AiModel` hook so a future ONNX-backed classifier can be dropped in without breaking callers. **ONNX support is a future hook** — the rules model is the only implementation shipped in v0.
+
+- `aiCheck({ query, model?, weight?, denyThreshold?, reviewThreshold? })` → `AbuseCheck`.
+- `buildFeatures({ req, query })` → `FeatureBundle` from recent-claim counters + request signals.
+- `defaultRulesModel()` → fixed-weight rules model (`id: 'rules-v0'`).
+
+The caller provides a `RecentClaimsQuery` with `byIp`, `byAddress`, `byUid` counters. The check:
+
+1. Builds a feature bundle (1h/24h claim counts, fingerprint entropy, host-context verification, hour-of-day, and an `addressIsFresh` slot wired in later by the onchain pipeline).
+2. Runs the model to produce per-feature contributions.
+3. Sums and clamps to `[0, 1]`.
+4. Emits `decision: 'deny'` at `≥ 0.85`, `'review'` at `≥ 0.65`, otherwise contributes softly to the aggregate score.
+5. Surfaces model id, score, top-3 contributions, and the full feature bundle in `signals` for the dashboard's explain drawer.
+6. Soft-skips on any error — a bad counter source must not block the pipeline.
+
+Pair with `@faucet/abuse-geoip`, `@faucet/abuse-hashcash`, and the captcha packages for a full anti-abuse pipeline.

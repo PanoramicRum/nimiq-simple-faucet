@@ -1,0 +1,23 @@
+node_modules
+dist
+.output
+.turbo
+coverage
+.env
+.env.local
+*.log
+.DS_Store
+data/
+*.db
+*.db-journal
+pnpm-lock.yaml.backup
+.vite
+.nuxt
+build
+target
+
+# Test artifacts
+test-results/
+playwright-report/
+blob-report/
+.e2e-state.json

@@ -1,0 +1,23 @@
+# nimiq_faucet
+
+Dart/Flutter client for the Nimiq Simple Faucet. Dart SDK `^3.5.0`. Deps: `http`, `crypto`, `web_socket_channel`.
+
+```dart
+import 'package:nimiq_faucet/nimiq_faucet.dart';
+
+final client = FaucetClient(url: 'https://faucet.example.com');
+final resp = await client.claim(address, const ClaimOptions(hostContext: HostContext(uid: 'u')));
+final result = await client.waitForConfirmation(resp.id);
+```
+
+Server-to-server (HMAC-SHA256 over `"POST\n<path>\n<ts>\n<nonce>\n<body>"`):
+
+```dart
+final client = FaucetClient(url: url, apiKey: key, hmacSecret: secret);
+```
+
+Surface: `claim`, `status`, `waitForConfirmation`, `config`, `requestChallenge`, `solveAndClaim`, `subscribe`. Package-level: `solveHashcash`, `signHmac`, `canonicalString`.
+
+Types mirror `@nimiq-faucet/sdk`: `HostContext`, `FingerprintBundle`, `ClaimOptions`, `ClaimResponse`, `HashcashChallenge`, `FaucetConfig`, `FaucetException`.
+
+WebSocket import path is `package:web_socket_channel/web_socket_channel.dart` (3.x). If bumping the dep, re-check: 2.x exported `IOWebSocketChannel`/`HtmlWebSocketChannel` under distinct sub-paths.

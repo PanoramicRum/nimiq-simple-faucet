@@ -1,0 +1,11 @@
+# @nimiq-faucet/react-native
+
+React Native wrapper. `createReactNativeFaucetClient(opts)` returns a `FaucetClient` whose `.claim(...)` and `.solveAndClaim(...)` auto-populate `fingerprint.visitorId` from `react-native-device-info`'s `getUniqueIdSync()` unless the caller set it. Gracefully degrades if the peer dep is missing.
+
+```ts
+import { createReactNativeFaucetClient } from '@nimiq-faucet/react-native';
+const client = createReactNativeFaucetClient({ url: 'https://faucet.example.com' });
+await client.claim(address, { hostContext: { uid } });
+```
+
+RN's native `fetch` is used; no polyfills. Everything from `@nimiq-faucet/sdk` is re-exported. Surface: `claim`, `status`, `waitForConfirmation`, `config`, `requestChallenge`, `solveAndClaim`, `subscribe`.

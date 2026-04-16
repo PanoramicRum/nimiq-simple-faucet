@@ -1,0 +1,140 @@
+# Nimiq Simple Faucet — full reference for AI coding tools
+
+This file is intentionally flat, copy-pastable, and dense. Fetch it and hand it
+to an LLM when you need complete context for an integration task.
+
+## Model
+
+Self-hosted service. One container per project. Integrates via stable REST API
+under `/v1`. MCP server at `/mcp`. Runtime-switchable between Nimiq `main` and
+`test` networks.
+
+## Endpoints (v1)
+
+- `GET  /v1/config`        → `{ network, claimAmountLuna, abuseLayers, captcha }`
+- `POST /v1/claim`         → `{ id, status, txId?, decision?, reason? }`
+- `GET  /v1/claim/:id`     → claim record
+- `GET  /v1/stats`         → recent aggregate counters
+- `WS   /v1/stream`        → live claim events
+- `GET  /openapi.json`     → OpenAPI 3.1 spec, source of truth
+- `POST /admin/*`          → admin API (password + TOTP session)
+- `GET  /mcp`              → MCP endpoint (HTTP+SSE)
+- `GET  /llms.txt`         → short integration summary
+- `GET  /llms-full.txt`    → this file
+
+## Request headers (integrator server-to-server)
+
+Any integrator-authenticated request carries:
+
+- `X-Faucet-Api-Key`: assigned key ID
+- `X-Faucet-Timestamp`: current unix-ms
+- `X-Faucet-Nonce`: 128-bit random hex
+- `X-Faucet-Signature`: hex HMAC-SHA256 of `"POST\n<path>\n<ts>\n<nonce>\n<body>"`
+  keyed by the integrator secret
+
+Window: ±5 min. Nonces are remembered for the full window to prevent replay.
+
+Browser calls omit these headers. To still carry trusted `hostContext` fields,
+the integrator backend signs `canonicalizeHostContext(context)` with the
+integrator secret and forwards the signature in `hostContext.signature`.
+
+## hostContext fields (all optional)
+
+- `uid` (hashed stable user id)
+- `cookieHash` (hash of a long-lived host cookie)
+- `sessionHash`
+- `accountAgeDays` (0..18250)
+- `emailDomainHash`
+- `kycLevel` ∈ `none | email | phone | id`
+- `tags` (≤32 strings, ≤64 chars each)
+- `signature` (HMAC-SHA256 over canonical form; when missing, the faucet
+  still accepts the context but weights it much lower)
+
+Canonical form for signing:
+```
+JSON.stringify(
+  Object.entries({uid, cookieHash, sessionHash, accountAgeDays,
+                  emailDomainHash, kycLevel, tags:sorted})
+    .filter(([,v]) => v !== undefined)
+)
+```
+
+## Abuse pipeline
+
+Ordered checks; each returns `{score, signals, decision?, reason?}`:
+
+1. `blocklist` (ip, address, uid)
+2. `rate-limit` (per-IP per-day)
+3. `turnstile` | `hcaptcha` | `hashcash` (client-side SHA-256 puzzle, not blockchain consensus)
+4. `geoip` (country + ASN + VPN/Tor/datacenter; resolvers: MaxMind GeoLite2 `.mmdb` or IPinfo API)
+5. `fingerprint+hostContext` correlation
+6. `onchain-nimiq` (sweeper/fresh-address heuristics)
+7. `ai` (local rules + ONNX classifier)
+
+Aggregate → `allow | challenge | review | deny`. Thresholds configurable per
+project. Every decision and its contributing signals are persisted and are
+retrievable via MCP `faucet.explain_decision(claimId)`.
+
+## Driver interface (in `@faucet/core`)
+
+```
+interface CurrencyDriver {
+  id: string; networks: NetworkId[];
+  init(): Promise<void>;
+  parseAddress(input: string): Address;
+  getFaucetAddress(): Promise<Address>;
+  getBalance(): Promise<bigint>;
+  send(to: Address, amount: bigint, memo?: string): Promise<TxId>;
+  waitForConfirmation(tx: TxId, timeoutMs?: number): Promise<void>;
+  addressHistory?(a: Address): Promise<HistorySummary>;
+}
+```
+
+Shipped Nimiq drivers:
+- `@faucet/driver-nimiq-wasm` (in-process WASM, no external node)
+- `@faucet/driver-nimiq-rpc` (talks to Albatross JSON-RPC)
+
+Adding another coin = new package implementing the interface. No server change.
+
+## SDK surface (same across every language)
+
+```
+client = new FaucetClient({ url, apiKey?, hmacSecret? })
+client.claim(address, { hostContext, fingerprint, captchaToken, hashcashSolution })
+client.status(id)
+client.waitForConfirmation(id, timeoutMs?)
+client.subscribe(onEvent) // WebSocket
+client.config()
+```
+
+## Env vars
+
+Required: `FAUCET_NETWORK`, `FAUCET_SIGNER_DRIVER`, signer-specific vars
+(`FAUCET_RPC_URL`+`FAUCET_WALLET_ADDRESS` for rpc, `FAUCET_PRIVATE_KEY` for
+wasm), `FAUCET_ADMIN_PASSWORD`.
+
+Optional: `FAUCET_TURNSTILE_SITE_KEY`, `FAUCET_TURNSTILE_SECRET`,
+`FAUCET_HCAPTCHA_*`, `DATABASE_URL`, `REDIS_URL`,
+`FAUCET_CLAIM_AMOUNT_LUNA`, `FAUCET_RATE_LIMIT_PER_MINUTE`,
+`FAUCET_RATE_LIMIT_PER_IP_PER_DAY`, `FAUCET_CORS_ORIGINS`,
+`FAUCET_INTEGRATOR_KEYS` (comma-separated `id:key:secret`).
+
+## MCP tools (agent-facing)
+
+- `faucet.claim` (integrator scope)
+- `faucet.status`, `faucet.recent_claims`, `faucet.stats`
+- `faucet.balance`, `faucet.send` (admin + TOTP step-up)
+- `faucet.block_address`, `faucet.unblock_address`, `faucet.list_blocks`
+- `faucet.update_limits`
+- `faucet.explain_decision(claimId)` — full signal bundle for audit / dispute
+
+Resources: `faucet://config`, `faucet://openapi.json`, `faucet://recent-claims`.
+
+## Non-Nimiq use
+
+The server is coin-agnostic. To drive a different chain:
+1. Implement `CurrencyDriver` in a new package.
+2. Register it in `apps/server/src/drivers.ts`.
+3. Optionally add chain-specific heuristics in a new `packages/abuse-onchain-*`.
+
+Nothing else needs to change.

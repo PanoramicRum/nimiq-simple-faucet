@@ -1,0 +1,58 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-card-bg: #ffffff;
+  --color-card-border: rgba(15, 12, 7, 0.08);
+  --color-text: #1f1b13;
+  --color-muted: #6b6355;
+  --color-input-bg: #ffffff;
+  --color-input-border: rgba(15, 12, 7, 0.16);
+  --color-danger: #b3261e;
+  --color-success: #1f6a3f;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-card-bg: #1d1a14;
+    --color-card-border: rgba(255, 240, 200, 0.08);
+    --color-text: #f3ead7;
+    --color-muted: #a79f8c;
+    --color-input-bg: #14110c;
+    --color-input-border: rgba(255, 240, 200, 0.14);
+    --color-danger: #f2a39b;
+    --color-success: #8fd6a6;
+  }
+}
+
+html,
+body,
+#app {
+  height: 100%;
+}
+
+body {
+  @apply bg-surface-muted text-[color:var(--color-text)] antialiased;
+  background-color: var(--color-input-bg);
+}
+
+@media (prefers-color-scheme: dark) {
+  body {
+    @apply bg-surface-dark;
+  }
+}
+
+/* Respect user motion preferences globally. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+.focus-ring {
+  @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nimiq-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--color-card-bg)];
+}

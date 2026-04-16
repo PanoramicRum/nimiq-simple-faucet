@@ -1,0 +1,46 @@
+Nimiq Simple Faucet has been installed.
+
+Release:   {{ .Release.Name }}
+Namespace: {{ .Release.Namespace }}
+Chart:     {{ .Chart.Name }}-{{ .Chart.Version }} (app {{ .Chart.AppVersion }})
+
+1. Verify the pod is ready:
+
+   kubectl --namespace {{ .Release.Namespace }} rollout status deploy/{{ include "nimiq-simple-faucet.fullname" . }}
+
+2. Port-forward the service for local access:
+
+   kubectl --namespace {{ .Release.Namespace }} port-forward svc/{{ include "nimiq-simple-faucet.fullname" . }} 8080:{{ .Values.service.port }}
+
+   Then open http://localhost:8080/
+
+3. Fetch the initial admin password (only when the secret is managed in-cluster):
+
+   kubectl --namespace {{ .Release.Namespace }} get secret {{ include "nimiq-simple-faucet.secretName" . }} \
+     -o jsonpath='{.data.FAUCET_ADMIN_PASSWORD}' | base64 -d ; echo
+
+4. Sign in to the admin UI and complete TOTP setup:
+
+   http://<host>/admin
+
+5. Fund the faucet hot wallet shown in the dashboard. Until it is funded,
+   `/v1/claim` will return HTTP 503.
+
+{{- if .Values.ingress.enabled }}
+
+Ingress is enabled. Configured hosts:
+{{- range .Values.ingress.hosts }}
+  - https://{{ .host }}
+{{- end }}
+{{- else }}
+
+Ingress is disabled. Enable via `--set ingress.enabled=true` plus a className
+and TLS secret reference.
+{{- end }}
+
+{{- if and (gt (int .Values.replicaCount) 1) (not (and .Values.postgresql.enabled .Values.redis.enabled)) }}
+
+WARNING: replicaCount is {{ .Values.replicaCount }} but postgresql.enabled or
+redis.enabled is false. Multi-replica SQLite mode will corrupt state. Either
+scale back to 1 or enable both subcharts.
+{{- end }}

@@ -1,0 +1,19 @@
+# @nimiq-faucet/react
+
+React hooks over `@nimiq-faucet/sdk`.
+
+```tsx
+import { useFaucetClaim } from '@nimiq-faucet/react';
+
+const { claim, status, txId, error } = useFaucetClaim({
+  client: { url: process.env.NEXT_PUBLIC_FAUCET_URL! },
+  address,
+  hostContext: { uid: hashedUid, kycLevel: 'email' },
+});
+```
+
+Other hooks:
+- `useFaucetStatus(client, id)` — polls `/v1/claim/:id`.
+- `useFaucetStream(client, onEvent)` — subscribes to `WS /v1/stream`.
+
+`client` can be either a pre-built `FaucetClient` or the options to construct one; the hook memoizes.

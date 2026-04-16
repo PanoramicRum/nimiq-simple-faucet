@@ -1,0 +1,44 @@
+{
+  "name": "nimiq-simple-faucet",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Reusable self-hosted Nimiq faucet / payout service with strong abuse prevention and first-class AI-agent integration",
+  "license": "MIT",
+  "packageManager": "pnpm@9.12.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "test": "turbo run test --filter=!@nimiq-faucet/e2e",
+    "test:e2e": "pnpm --filter @nimiq-faucet/e2e test",
+    "test:e2e:install": "cd tests/e2e && npx playwright install --with-deps",
+    "smoke:testnet": "tsx scripts/smoke-testnet.mts",
+    "typecheck": "turbo run typecheck",
+    "format": "prettier --write .",
+    "changeset": "changeset",
+    "changeset:version": "changeset version",
+    "changeset:publish": "changeset publish"
+  },
+  "devDependencies": {
+    "@changesets/cli": "^2.27.9",
+    "@faucet/abuse-hashcash": "workspace:*",
+    "@nimiq/core": "^2.0.0",
+    "@types/node": "^22.7.0",
+    "prettier": "^3.3.3",
+    "tsx": "^4.19.0",
+    "turbo": "^2.2.3",
+    "typescript": "^5.6.2"
+  },
+  "keywords": [
+    "nimiq",
+    "faucet",
+    "payout",
+    "crypto-faucet",
+    "mcp-server",
+    "abuse-prevention",
+    "blockchain"
+  ]
+}

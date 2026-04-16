@@ -1,0 +1,96 @@
+name: SBOM
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag to attach SBOMs to'
+        required: true
+
+permissions:
+  contents: read
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: nimiq/simple-faucet
+
+jobs:
+  image-sbom:
+    name: CycloneDX SBOM for container image
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+      packages: read
+    steps:
+      - uses: actions/checkout@v4.2.2
+
+      - name: Resolve tag
+        id: resolve
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "tag=${{ inputs.tag }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=${{ github.event.release.tag_name }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Generate SBOM for container image
+        uses: anchore/sbom-action@v0.17.7
+        with:
+          image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.resolve.outputs.tag }}
+          format: cyclonedx-json
+          output-file: sbom-image.cyclonedx.json
+          artifact-name: sbom-image.cyclonedx.json
+          upload-artifact: true
+          upload-release-assets: true
+
+  workspace-sbom:
+    name: CycloneDX SBOM for pnpm workspace
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4.2.2
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v4.0.0
+        with:
+          version: 9.12.0
+
+      - uses: actions/setup-node@v4.1.0
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install deps
+        run: pnpm install --frozen-lockfile=false
+
+      - name: Generate workspace SBOM with cdxgen
+        run: |
+          npx --yes @cyclonedx/cdxgen@10.11.0 \
+            -o sbom-workspace.cyclonedx.json \
+            -t js \
+            --spec-version 1.5 \
+            --project-name nimiq-simple-faucet \
+            .
+
+      - name: Resolve tag
+        id: resolve
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "tag=${{ inputs.tag }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=${{ github.event.release.tag_name }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Upload SBOM to release
+        uses: softprops/action-gh-release@v2.0.8
+        with:
+          tag_name: ${{ steps.resolve.outputs.tag }}
+          files: sbom-workspace.cyclonedx.json

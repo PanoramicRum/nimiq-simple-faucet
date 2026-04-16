@@ -1,0 +1,29 @@
+{
+  "name": "@faucet/abuse-hashcash",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Self-hosted hashcash-style client puzzle (SHA-256, configurable difficulty) as an AbuseCheck. Note: hashcash is a client-side anti-bot challenge, not blockchain consensus.",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": ["dist", "llms.txt"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@faucet/core": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.2",
+    "vitest": "^2.1.2"
+  }
+}
