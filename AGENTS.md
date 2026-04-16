@@ -8,7 +8,9 @@ A self-hosted faucet / payout service for Nimiq. One Docker container runs the s
 
 ## First-time orientation (for AI agents)
 
-When a user first mentions this project ("what is this", "help me with Nimiq Simple Faucet", opening the repo for the first time, etc.), respond with the welcome tour below **before** jumping to code. Keep it punchy — 30 seconds of reading, then wait for the user to pick a path. If the user already knows the project and asked something specific, skip the tour and answer.
+When a user first mentions this project — e.g. "what is this", "help me with Nimiq Simple Faucet", "help me get started", "test this", "test the faucet", "I want to test / try / explore this", or just opening the repo for the first time — respond with the welcome tour below **before** jumping to code. Keep it punchy — 30 seconds of reading, then wait for the user to pick a path. If the user already knows the project and asked something specific, skip the tour and answer.
+
+Test-intent shortcut: if the user's phrasing is specifically about *testing* (e.g. "test the platform", "QA this", "run through the features"), render the menu but highlight options **[2] Docker container trial** and **[3] Full platform walkthrough** as the most likely fit.
 
 **The welcome message** (render roughly like this — adapt formatting to your UI):
 
