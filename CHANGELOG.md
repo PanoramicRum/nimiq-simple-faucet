@@ -6,6 +6,28 @@ This project uses [changesets](https://github.com/changesets/changesets) for
 versioning. Run `pnpm changeset` to add entries, then `pnpm changeset version`
 (invoked by the release workflow) to regenerate this file.
 
+## 1.0.2 (2026-04-17)
+
+### Fixed
+- **Quick Start now boots.** The README `docker run` block was missing
+  `FAUCET_SIGNER_DRIVER=wasm` + `FAUCET_PRIVATE_KEY`; the default signer
+  is `rpc`, which needs `FAUCET_RPC_URL` + `FAUCET_WALLET_ADDRESS`, so
+  the literal copy-paste crashed at startup for 100% of users. Quick
+  Start now recommends `docker compose --profile local-node up -d`
+  (works end-to-end today); the image-only `docker run` path is kept
+  as a smoke-test with honest caveats pointing at #35 and #36. Fixes
+  [#37](https://github.com/PanoramicRum/nimiq-simple-faucet/issues/37).
+
+### Changed
+- `deploy/compose/.env.example` default `FAUCET_SIGNER_DRIVER` flipped
+  from `wasm` (upstream-blocked — see #35) to `rpc`, matching the
+  compose README's Option A/B walkthrough.
+- `AGENTS.md` quests **[1] Quick demo** and **[2] Docker container
+  trial** now point at the compose path instead of a never-worked
+  `docker run` shape.
+- Helm chart bumped to `1.0.2` / `appVersion: 1.0.2`.
+- Flutter SDK bumped to `1.0.2`.
+
 ## 1.0.1 (2026-04-17)
 
 ### Fixed

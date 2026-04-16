@@ -78,38 +78,34 @@ See [AGENTS.md](./AGENTS.md) for the full agent briefing (authoritative sources,
 
 Most Nimiq projects that want to give users free NIM end up building the same faucet twice: rate limiting, captcha, geo-IP, a dashboard, a claim page. This repo is that faucet, once, reusable, and hardened. It's also built behind a `CurrencyDriver` interface so the same core can back payout systems for other chains later.
 
-## Quick start (Docker, SQLite default)
+## Quick start
+
+One compose command brings up the faucet server and a `core-rs-albatross` testnet node it talks to:
 
 ```bash
-docker run -d \
-  --name nimiq-faucet \
-  -p 8080:8080 \
-  -v faucet-data:/data \
+git clone https://github.com/PanoramicRum/nimiq-simple-faucet
+cd nimiq-simple-faucet/deploy/compose
+cp .env.example .env           # edit FAUCET_ADMIN_PASSWORD + wallet credentials
+docker compose --profile local-node up -d
+```
+
+Initial testnet sync takes a few minutes (`docker compose logs -f nimiq` to watch). Once consensus is established, open `http://localhost:8080/admin`, finish TOTP setup, and the faucet issues claims.
+
+Wallet setup, external-RPC alternative, Postgres profile, smoke tests: see **[deploy/compose/README.md](deploy/compose/README.md)**. For Kubernetes see **[deploy/helm/](deploy/helm/)**.
+
+### Just smoke-testing the image?
+
+```bash
+docker run -d --name nimiq-faucet -p 8080:8080 -v faucet-data:/data \
   -e FAUCET_NETWORK=test \
+  -e FAUCET_SIGNER_DRIVER=wasm \
+  -e FAUCET_PRIVATE_KEY="$(openssl rand -hex 32)" \
   -e FAUCET_ADMIN_PASSWORD=change-me \
   -e FAUCET_KEY_PASSPHRASE=change-me-too \
-  -e FAUCET_TURNSTILE_SITE_KEY=... \
-  -e FAUCET_TURNSTILE_SECRET=... \
   ghcr.io/panoramicrum/nimiq-simple-faucet:latest
 ```
 
-Open `http://localhost:8080/admin`, finish TOTP setup, fund the generated faucet address, done.
-
-For a full compose stack (SQLite today; Postgres + Redis are defined but planned, see [ROADMAP](./ROADMAP.md)) use `deploy/compose/docker-compose.yml`. For Kubernetes see `deploy/helm/`.
-
-### Choosing an RPC backend
-
-The `rpc` signer driver needs to reach a Nimiq Albatross JSON-RPC endpoint.
-The compose stack supports both modes:
-
-- **External RPC URL** — set `FAUCET_RPC_URL=https://your-node…` in `.env`
-  and run `docker compose up -d`.
-- **Run your own local node** — leave `FAUCET_RPC_URL` unset and start with
-  `docker compose --profile local-node up -d`. A `core-rs-albatross`
-  container syncs testnet on the compose network; the faucet reaches it at
-  `http://nimiq:8648`.
-
-See [`deploy/compose/README.md`](deploy/compose/README.md) for the full walkthrough.
+Boots the container; proves the image is intact. **Not a working faucet on its own**: the bundled WASM client cannot currently peer with TestAlbatross ([#35](https://github.com/PanoramicRum/nimiq-simple-faucet/issues/35)), and pre-1.1 Fastify blocks listening until consensus ([#36](https://github.com/PanoramicRum/nimiq-simple-faucet/issues/36)). Use the compose path above for an end-to-end demo.
 
 ## Integrate into your app
 

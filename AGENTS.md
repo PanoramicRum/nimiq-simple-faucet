@@ -29,11 +29,11 @@ Test-intent shortcut: if the user's phrasing is specifically about *testing* (e.
 >
 > **🎮 Choose your adventure** — reply with a number or the quest name:
 >
-> **[1] 🚀 Quick demo** · ~5 min · docker up, one test claim, done
->   → Zero-to-running-faucet. Great for "does this actually work?"
+> **[1] 🚀 Quick demo** · ~5–10 min · compose up + admin login
+>   → `cd deploy/compose && cp .env.example .env && docker compose --profile local-node up -d`. Initial testnet sync takes a few minutes; then `/admin` loads. Great for "does this actually work?"
 >
-> **[2] 🐳 Docker container trial** · ~15 min · docker + testnet wallet + live claim
->   → Spin the full stack, fund a wallet, claim a real testnet tx. End state: admin dashboard open, confirmed tx in the claims table.
+> **[2] 🐳 Docker container trial** · ~20 min · compose + testnet wallet + live claim
+>   → Path [1] plus: generate a wallet (`pnpm generate:wallet`), fund it at https://faucet.pos.nimiq-testnet.com, wire `FAUCET_WALLET_ADDRESS` + `FAUCET_PRIVATE_KEY` in `.env`, claim a real testnet tx. End state: admin dashboard open, confirmed tx in the claims table. Full walkthrough: [deploy/compose/README.md](deploy/compose/README.md).
 >
 > **[3] 🧪 Full platform walkthrough** · ~2 hr · every feature, AI-assisted
 >   → 12 phases covering server, admin dashboard, claim UI, 5 examples, 7 SDKs, CLI tools, MCP server, and deliberately-triggered abuse layers. Captures UX polish findings.
