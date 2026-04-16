@@ -33,9 +33,9 @@ services:
     image: postgres:16-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_USER: faucet
-      POSTGRES_PASSWORD: faucet
-      POSTGRES_DB: faucet
+      POSTGRES_USER: ${POSTGRES_USER:-faucet}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-faucet}
+      POSTGRES_DB: ${POSTGRES_DB:-faucet}
     volumes:
       - postgres-data:/var/lib/postgresql/data
     healthcheck:

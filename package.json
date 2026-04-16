@@ -4,6 +4,12 @@
   "private": true,
   "description": "Reusable self-hosted Nimiq faucet / payout service with strong abuse prevention and first-class AI-agent integration",
   "license": "MIT",
+  "author": "Nimiq <richy@nimiq.com>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nimiq/simple-faucet.git"
+  },
+  "homepage": "https://github.com/nimiq/simple-faucet#readme",
   "packageManager": "pnpm@9.12.0",
   "engines": {
     "node": ">=22"
@@ -16,6 +22,7 @@
     "test:e2e": "pnpm --filter @nimiq-faucet/e2e test",
     "test:e2e:install": "cd tests/e2e && npx playwright install --with-deps",
     "smoke:testnet": "tsx scripts/smoke-testnet.mts",
+    "generate:wallet": "tsx scripts/generate-wallet.mts",
     "typecheck": "turbo run typecheck",
     "format": "prettier --write .",
     "changeset": "changeset",

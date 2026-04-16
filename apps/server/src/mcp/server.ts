@@ -6,8 +6,8 @@
  * in M3 (see plan `/home/richy/.claude/plans/starry-roaming-bunny.md`).
  *
  * The admin guard currently accepts a single shared secret via
- * `FAUCET_ADMIN_MCP_TOKEN`. TODO(M3): replace with the full admin-session
- * machinery (short-lived tokens, revocation, audit log).
+ * `FAUCET_ADMIN_MCP_TOKEN`. A future release will replace this with full
+ * admin-session machinery (short-lived tokens, revocation, audit log).
  */
 import { timingSafeEqual } from 'node:crypto';
 import { desc, eq, and } from 'drizzle-orm';
@@ -53,7 +53,7 @@ const BLOCK_KINDS = ['ip', 'address', 'uid', 'asn', 'country'] as const;
  * Enforces the admin-token policy. Throws a plain `Error` so the SDK surfaces
  * it as a tool-call error to the client. Uses timing-safe comparison.
  *
- * TODO(M3): swap for real admin sessions — see plan M3.
+ * NOTE: Uses a shared secret for now; will migrate to session-based auth.
  */
 export function requireAdminToken(
   tools: ReadonlySet<string>,

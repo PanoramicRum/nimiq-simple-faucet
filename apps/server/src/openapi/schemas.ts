@@ -5,8 +5,8 @@
  * retrofit `fastify-type-provider-zod` across every route — that would require
  * heavier surgery. Keep these in sync when routes evolve.
  *
- * TODO(M3-follow-up): several /admin/* shapes below are minimal (e.g. audit
- * `signals` is `record(unknown)`); expand once the dashboard freezes.
+ * NOTE: Several /admin/* shapes below are minimal (e.g. audit `signals` is
+ * `record(unknown)`); these will be tightened as the dashboard stabilises.
  */
 import { extendZodWithOpenApi, OpenAPIRegistry } from '@asteasolutions/zod-to-openapi';
 import { z } from 'zod';
@@ -234,7 +234,7 @@ export const AuditEntry = registry.register(
     actor: z.string(),
     action: z.string(),
     target: z.string().nullable(),
-    // TODO(M3-follow-up): tighten signals once admin actions stabilise.
+    // NOTE: signals shape will be tightened as admin actions stabilise.
     signals: z.record(z.unknown()),
   }),
 );
