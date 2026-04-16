@@ -16,7 +16,7 @@ permissions:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: panoramicrum/nimiq-simple-faucet
-  CHART_OCI_REGISTRY: oci://ghcr.io/nimiq/charts
+  CHART_OCI_REGISTRY: oci://ghcr.io/panoramicrum/charts
 
 jobs:
   build-and-publish:
