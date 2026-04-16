@@ -209,8 +209,8 @@ jobs:
           echo "Pulling $IMAGE"
           docker pull "$IMAGE"
           CID=$(docker run -d --rm -p 18080:8080 \
-            -e FAUCET_ADMIN_PASSWORD=changeme-release-freeze \
-            -e FAUCET_KEY_PASSPHRASE=changeme-release-freeze \
+            -e FAUCET_ADMIN_PASSWORD="$(openssl rand -hex 16)" \
+            -e FAUCET_KEY_PASSPHRASE="$(openssl rand -hex 16)" \
             -e FAUCET_OPENAPI_PUBLIC=true \
             -e FAUCET_CORS_ORIGINS='*' \
             "$IMAGE")

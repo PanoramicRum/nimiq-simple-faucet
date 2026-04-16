@@ -22,12 +22,9 @@ Please report suspected vulnerabilities privately. Do **not** open a public
 GitHub issue, a pull request, or a discussion thread for undisclosed
 vulnerabilities.
 
-- Email: `security@nimiq-faucet.example` *(placeholder — the maintainer will
-  replace this with the real contact address before 1.0; update this file
-  when you fork or deploy.)*
-- Preferred: encrypted email using the maintainer PGP key.
-- PGP fingerprint: `TBD — placeholder; the real key will be published at
-  `.well-known/security.txt` on the docs site and mirrored here.`
+- Email: `richy@nimiq.com`
+- If you fork or deploy your own instance, update this contact address in
+  your copy of the file.
 
 Include in the report:
 
