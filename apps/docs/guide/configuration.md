@@ -93,8 +93,8 @@ FAUCET_INTEGRATOR_KEYS=demo:key_abc123:secret_xyz789,partner2:key_def:secret_uvw
 | Variable | Default | Notes |
 | --- | --- | --- |
 | `FAUCET_DATA_DIR` | `/data` | SQLite + keyring location. |
-| `DATABASE_URL` | unset | Set to a Postgres URL to switch backends. |
-| `REDIS_URL` | unset | Set to enable shared rate limiting. |
+| `DATABASE_URL` | unset | Leave unset for SQLite (the only supported backend on 1.0.x). Postgres support is planned — see [ROADMAP.md §1.3.x](../../../ROADMAP.md). |
+| `REDIS_URL` | unset | Leave unset for in-memory rate limiting. Redis-backed shared state ships with Postgres support. |
 
 ## Security hardening
 

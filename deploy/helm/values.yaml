@@ -226,6 +226,12 @@ networkPolicy:
   #         port: 8080
 
 # Bitnami subchart passthrough. See their docs for full values.
+#
+# IMPORTANT: server-side Postgres / Redis support is NOT yet wired up
+# (tracked in ROADMAP.md 1.3.x). These subcharts are kept here so the
+# chart is ready for the 1.3.x release — but do NOT set `enabled: true`
+# on 1.0.x, the faucet will still use SQLite and the subchart will run
+# unused. Keep the default `enabled: false` for all 1.0.x deploys.
 postgresql:
   enabled: false
   auth:

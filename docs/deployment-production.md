@@ -6,12 +6,21 @@ environment. For local development or testnet smoke testing, see
 
 Two shipping paths are supported and fully tested:
 
-- **Docker Compose** — single-host deploys with Postgres + Redis. Simple,
-  good up to low-thousand claims/day.
-- **Helm / Kubernetes** — the standard path for anything production-grade.
-  Chart lives in [`deploy/helm/`](../deploy/helm/).
+- **Docker Compose** — single-host deploys. SQLite in a named volume
+  today; good up to low-thousand claims/day.
+- **Helm / Kubernetes** — the standard path for anything
+  production-grade. Chart lives in [`deploy/helm/`](../deploy/helm/).
+  Single-replica with a PVC-backed SQLite on 1.0.x.
 
 Pick whichever fits your operational maturity.
+
+> **Note on Postgres + Redis (for this release, 1.0.x):** The Postgres
+> and Redis subcharts in the Helm chart and the `postgres` profile in
+> docker-compose are defined but NOT yet consumed by the server — that
+> lands in a future 1.x release (tracked in [ROADMAP](../ROADMAP.md) §1.3.x).
+> Until then, SQLite is the supported backend. All references to
+> "Postgres" below describe the 1.3.x target; the current code path
+> refuses non-SQLite `DATABASE_URL` values.
 
 ---
 

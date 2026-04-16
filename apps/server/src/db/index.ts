@@ -14,9 +14,10 @@ export interface OpenDbOptions {
 
 export function openDb({ dataDir, databaseUrl }: OpenDbOptions): Db {
   if (databaseUrl && !databaseUrl.startsWith('sqlite:') && !databaseUrl.startsWith('file:')) {
-    // M2: Postgres branch via drizzle-orm/node-postgres. For M1 we only ship SQLite.
+    // Server-side Postgres support is on the roadmap (ROADMAP.md 1.3.x —
+    // "Server-side Postgres storage backend"). For now only SQLite is wired.
     throw new Error(
-      `Postgres support lands in M2. Unset DATABASE_URL or use sqlite:///path.db for now. Got: ${databaseUrl}`,
+      `Postgres support is planned — see ROADMAP.md. For now, unset DATABASE_URL (server uses SQLite at ${dataDir}/faucet.db) or set DATABASE_URL=sqlite:///data/faucet.db explicitly. Got: ${databaseUrl}`,
     );
   }
   const filePath =

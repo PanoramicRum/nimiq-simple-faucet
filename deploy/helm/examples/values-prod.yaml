@@ -2,23 +2,27 @@
 #
 # Copy, adjust, and install with:
 #   helm install faucet oci://ghcr.io/panoramicrum/charts/nimiq-simple-faucet \
-#     --version 1.0.0 \
+#     --version 1.0.1 \
 #     --namespace faucet --create-namespace \
 #     -f values-prod.yaml [-f values-secrets-LOCAL.yaml]
 #
 # Assumptions:
 #   - External Secrets Operator is installed and a ClusterSecretStore is ready.
 #   - cert-manager + ingress-nginx are installed.
-#   - Postgres + Redis run inside the chart (Bitnami subcharts).
+#   - Single-replica SQLite for 1.0.x. Multi-replica with Postgres + Redis
+#     lands in a future 1.x (tracked in ROADMAP.md 1.3.x).
 #
 # See docs/deployment-production.md for the full walkthrough.
 
 image:
   repository: ghcr.io/panoramicrum/nimiq-simple-faucet
-  tag: ""              # falls back to Chart.AppVersion = 1.0.0
+  tag: ""              # falls back to Chart.AppVersion
   pullPolicy: IfNotPresent
 
-replicaCount: 2        # safe because postgresql + redis are enabled below
+# NOTE: SQLite is single-writer, so replicaCount must stay at 1 until
+# server-side Postgres + Redis support lands. Horizontal scaling is
+# tracked in ROADMAP.md 1.3.x.
+replicaCount: 1
 
 config:
   network: "main"
@@ -62,36 +66,18 @@ ingress:
       hosts:
         - faucet.example.com
 
-# SQLite disabled because we're using Postgres.
+# SQLite in a PVC — the supported backend today.
 persistence:
-  enabled: false
+  enabled: true
+  size: 10Gi
+  storageClass: ""   # set to a non-volatile StorageClass in prod
 
+# Postgres + Redis — NOT yet functional at the server layer on 1.0.x.
+# Tracked in ROADMAP.md 1.3.x. Leave `enabled: false` until further notice.
 postgresql:
-  enabled: true
-  auth:
-    username: faucet
-    database: faucet
-    existingSecret: faucet-postgres-creds
-    secretKeys:
-      adminPasswordKey: postgres-password
-      userPasswordKey: password
-  primary:
-    persistence:
-      size: 50Gi
-    resources:
-      requests:
-        cpu: 250m
-        memory: 512Mi
-
+  enabled: false
 redis:
-  enabled: true
-  architecture: standalone
-  auth:
-    existingSecret: faucet-redis-creds
-    existingSecretPasswordKey: password
-  master:
-    persistence:
-      size: 5Gi
+  enabled: false
 
 resources:
   requests:
@@ -101,11 +87,9 @@ resources:
     cpu: 1000m
     memory: 1Gi
 
+# Disabled until multi-replica is supported (requires Postgres backend).
 autoscaling:
-  enabled: true
-  minReplicas: 2
-  maxReplicas: 5
-  targetCPUUtilizationPercentage: 70
+  enabled: false
 
 # Restrict egress to what the faucet actually needs.
 networkPolicy:

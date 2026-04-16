@@ -230,6 +230,25 @@ work. Shipped as point releases (1.0.1, 1.0.2, …) between 1.0.0 and 1.1.
 
 **Estimated effort:** 1 day.
 
+### 1.3.4 Server-side Postgres storage backend
+
+**Goal:** make the server actually accept `DATABASE_URL=postgres://...` so the compose `postgres` profile and the Helm `postgresql` subchart work as documented.
+
+**Context:** today [apps/server/src/db/index.ts](apps/server/src/db/index.ts) only accepts `sqlite:`/`file:` URLs and throws on everything else. The Postgres / Redis infrastructure is scaffolded (compose profile, Bitnami subcharts in Helm) but the server refuses to use it. Tracked by [#34](https://github.com/PanoramicRum/nimiq-simple-faucet/issues/34).
+
+**Scope:**
+- Wire `drizzle-orm/node-postgres` alongside the SQLite branch in `openDb()`.
+- Port the migrations in `db/index.ts` so they run on both backends (the schema is already trivial — mostly s/INTEGER/BIGINT, s/TEXT/VARCHAR).
+- Add `@fastify/rate-limit` Redis store when `REDIS_URL` is set.
+- Compose integration test: boot with `--profile postgres`, run the full e2e suite end-to-end.
+- Un-gate the compose `postgres` profile defaults: drop the `profiles: ["postgres"]` gate on postgres + redis, re-add `DATABASE_URL` + `REDIS_URL` defaults, restore the `depends_on` block.
+- Un-gate the Helm `postgresql.enabled=true` path in `deploy/helm/examples/values-prod.yaml`.
+- Update [docs/deployment-production.md](docs/deployment-production.md) — drop the "planned" caveats, un-comment the Postgres example values, bump `replicaCount` guidance to support >1.
+
+**Why deferred from 1.0:** SQLite + a PVC covers 95% of operators' actual traffic. Postgres unlocks `replicaCount > 1` which we already gate on at the Helm layer. Better to get this right than ship-and-patch under load.
+
+**Estimated effort:** 2 days.
+
 ---
 
 ## 1.4 — Integrator-signed host context (per-field HMAC)

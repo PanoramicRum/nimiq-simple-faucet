@@ -59,7 +59,7 @@ Fetch https://raw.githubusercontent.com/PanoramicRum/nimiq-simple-faucet/main/RE
 >   Framework recipe (Next.js, Vue, Capacitor, React Native, Flutter, Go, plain TS). See [AGENTS.md](./AGENTS.md#recipes).
 >
 > **[5] 🏗️ Deploy to production** · ~1 hr
->   TLS, secrets, Postgres, Helm. See [docs/deployment-production.md](./docs/deployment-production.md).
+>   TLS, secrets, Helm chart, single-image Docker. See [docs/deployment-production.md](./docs/deployment-production.md). (Postgres backend is on the [roadmap](./ROADMAP.md) — SQLite today.)
 >
 > **[6] 🛠️ Fork & customize** · open-ended
 >   Add a new abuse layer, driver, or SDK. See [CONTRIBUTING.md](./CONTRIBUTING.md) and [packages/core/README.md](./packages/core/README.md).
@@ -95,7 +95,7 @@ docker run -d \
 
 Open `http://localhost:8080/admin`, finish TOTP setup, fund the generated faucet address, done.
 
-For Postgres + Redis use `deploy/compose/docker-compose.yml`. For Kubernetes see `deploy/helm/`.
+For a full compose stack (SQLite today; Postgres + Redis are defined but planned, see [ROADMAP](./ROADMAP.md)) use `deploy/compose/docker-compose.yml`. For Kubernetes see `deploy/helm/`.
 
 ### Choosing an RPC backend
 

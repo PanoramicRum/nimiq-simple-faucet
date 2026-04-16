@@ -48,8 +48,13 @@ volumes:
   pg-data:
 ```
 
-Set `DATABASE_URL=postgres://postgres:faucet@postgres:5432/faucet` and
-`REDIS_URL=redis://redis:6379` in `.env` to wire in the managed services.
+> **Heads up (1.0.x):** server-side Postgres and Redis support are on the
+> roadmap ([ROADMAP.md §1.3.x](../../../ROADMAP.md)). On 1.0.x the faucet
+> uses SQLite in the `faucet-data` volume regardless of `DATABASE_URL` —
+> setting `DATABASE_URL=postgres://...` today produces a clear startup
+> error. The compose snippet above keeps the `postgres` and `redis`
+> services defined so the stack is ready for when server-side support
+> lands, but don't rely on them for persistence on 1.0.x.
 
 ## Helm
 

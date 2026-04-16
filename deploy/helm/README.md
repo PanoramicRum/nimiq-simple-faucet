@@ -55,11 +55,14 @@ Secret keys are the same `FAUCET_*` variables defined in
 
 ## Persistence
 
-- **SQLite mode (default).** `persistence.enabled=true` renders a PVC mounted
-  at `/data`. Single-replica only.
-- **Postgres/Redis mode.** Set `postgresql.enabled=true` and
-  `redis.enabled=true`. The chart wires `DATABASE_URL` and `REDIS_URL`
-  automatically, the PVC is not rendered, and you may scale `replicaCount`.
+- **SQLite mode (default, the only supported mode on 1.0.x).**
+  `persistence.enabled=true` renders a PVC mounted at `/data`. Single-replica
+  only.
+- **Postgres/Redis mode — NOT YET FUNCTIONAL.** Server-side Postgres support
+  is tracked in [ROADMAP.md 1.3.x](../../ROADMAP.md). The Bitnami subchart
+  dependencies remain in the chart so 1.3.x can flip them on without
+  structural changes, but on 1.0.x do NOT set `postgresql.enabled=true` —
+  the faucet will still use SQLite and the subchart will run unused.
 
 ## Upgrade notes
 
@@ -67,8 +70,9 @@ Secret keys are the same `FAUCET_*` variables defined in
   is bumped.
 - Upgrades use a zero-surge RollingUpdate (`maxUnavailable: 0`) to avoid
   double-writer races during the SQLite → SQLite rollout.
-- When switching storage backends (SQLite → Postgres) perform an explicit
-  export/import of the claim history; the chart will not migrate data for you.
+- When switching storage backends (SQLite → Postgres) in a future 1.3.x, an
+  explicit export/import of the claim history will be needed; the chart will
+  not migrate data for you.
 
 ## Values reference
 
@@ -78,7 +82,7 @@ See [`values.yaml`](./values.yaml) for the full annotated list. Highlights:
 | --- | --- | --- |
 | `image.repository` | `ghcr.io/panoramicrum/nimiq-simple-faucet` | Published on release. |
 | `image.tag` | `""` → `.Chart.AppVersion` | Pin to a tag for reproducibility. |
-| `replicaCount` | `1` | Scale >1 only with `postgresql.enabled && redis.enabled`. |
+| `replicaCount` | `1` | Must stay at `1` on 1.0.x (SQLite single-writer). Multi-replica lands with Postgres in ROADMAP 1.3.x. |
 | `config.network` | `test` | `main` for production. |
 | `config.claimAmountLuna` | `100000` | 1 NIM = 100 000 luna. |
 | `config.corsOrigins` | _required_ | Explicit CSV or `*`. |
