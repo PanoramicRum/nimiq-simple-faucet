@@ -44,6 +44,13 @@ RUN pnpm turbo run build --filter=@faucet/server --filter=@nimiq-faucet/claim-ui
 FROM base AS runtime
 ENV NODE_ENV=production
 ENV FAUCET_DATA_DIR=/data
+# Pull in the latest Debian security patches on top of the node:22
+# bookworm-slim base. Keeps the image small (no build tools) but
+# addresses OS-level CVEs the base image hasn't picked up yet.
+RUN apt-get update \
+    && DEBIAN_FRONTEND=noninteractive apt-get upgrade -y \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 RUN mkdir -p /data && chown -R node:node /data
 COPY --from=build /app/node_modules /app/node_modules
 COPY --from=build /app/packages /app/packages
