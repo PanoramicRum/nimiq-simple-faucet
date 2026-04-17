@@ -14,7 +14,6 @@ import {
 } from '../src/mcp/server.js';
 
 const FAUCET_ADDR = 'NQ00 0000 0000 0000 0000 0000 0000 0000 0000';
-const USER_ADDR = 'NQ00 1111 1111 1111 1111 1111 1111 1111 1111';
 const ADMIN_TOKEN = 'test-token-hex';
 
 class FakeNimiqDriver implements CurrencyDriver {

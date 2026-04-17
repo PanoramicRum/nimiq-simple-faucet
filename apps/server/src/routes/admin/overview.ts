@@ -42,7 +42,7 @@ export async function adminOverviewRoutes(app: FastifyInstance, ctx: AppContext)
       .orderBy(sql`count(*) desc`)
       .limit(5);
 
-    let balance = '0';
+    let balance: string;
     try {
       balance = (await ctx.driver.getBalance()).toString();
     } catch {

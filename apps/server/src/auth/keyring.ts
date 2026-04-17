@@ -12,7 +12,7 @@
  * NOTHING in this file logs, stringifies, or returns a decrypted plaintext
  * key via errors. Errors use generic messages so they can't leak key bits.
  */
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { randomBytes, scrypt as _scrypt } from 'node:crypto';
@@ -120,9 +120,13 @@ export async function loadOrInitKeyring(
   passphrase: string,
   generatorFn: () => string,
 ): Promise<string> {
-  if (existsSync(path)) {
+  // Read-first, catch ENOENT — avoids the TOCTOU race where
+  // existsSync(path) + readFileSync(path) could see different state.
+  try {
     const blob = readFileSync(path, 'utf8').trim();
     return decryptPrivateKey(blob, passphrase);
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code !== 'ENOENT') throw err;
   }
   const plaintext = generatorFn();
   const blob = await encryptPrivateKey(plaintext, passphrase);

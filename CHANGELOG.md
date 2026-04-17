@@ -6,6 +6,25 @@ This project uses [changesets](https://github.com/changesets/changesets) for
 versioning. Run `pnpm changeset` to add entries, then `pnpm changeset version`
 (invoked by the release workflow) to regenerate this file.
 
+## 1.2.3 (2026-04-17)
+
+### Security
+- **TOCTOU race in keyring resolved.** `loadOrInitKeyring()` used
+  `existsSync()` + `readFileSync()` — a file could change between the
+  two calls. Now reads first, catches `ENOENT`, then creates if
+  missing. Low-risk in single-process deployments but correct practice.
+
+### Changed
+- Resolved all 12 CodeQL code-scanning alerts: 4 code fixes (keyring
+  TOCTOU, 2 useless variable assignments, 1 unused constant) + 8
+  false-positive dismissals with documented reasons (SHA-256 on
+  high-entropy API keys, Fastify rate-limit plugin not recognized,
+  linear regex misidentified as polynomial, web-worker origin check
+  not applicable, integrator API-key gate not a bypass, single-run
+  CLI script race).
+- Helm chart bumped to `1.2.3` / `appVersion: 1.2.3`.
+- Flutter SDK bumped to `1.2.3`.
+
 ## 1.2.2 (2026-04-17)
 
 ### Fixed

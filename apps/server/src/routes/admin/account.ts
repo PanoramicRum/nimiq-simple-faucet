@@ -22,7 +22,7 @@ export async function adminAccountRoutes(app: FastifyInstance, ctx: AppContext):
     } catch {
       address = '';
     }
-    let balance = '0';
+    let balance: string;
     try {
       balance = (await ctx.driver.getBalance()).toString();
     } catch {
