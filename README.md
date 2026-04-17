@@ -90,12 +90,15 @@ Every SDK accepts the same `hostContext` (hashed UID, cookie hash, session hash,
 
 ## Abuse prevention (9 pluggable layers, rate-limiting on by default)
 
-1. Rate limits per IP, per host-UID, per destination address, per fingerprint.
-2. Captcha (Cloudflare Turnstile or hCaptcha) with a self-hosted SHA-256 hashcash client puzzle as fallback (client-side anti-bot challenge, unrelated to Nimiq's proof-of-stake consensus).
-3. Geo-IP / ASN (MaxMind GeoLite2 + IPinfo): VPN/datacenter blocking, country allow-list.
-4. Device fingerprint + host-provided UID / cookie correlation.
-5. On-chain heuristics (sweeper addresses, fresh-address detection).
-6. Local AI anomaly scoring (deterministic rules + small ONNX classifier, CPU-only).
+1. **Blocklist** — IP, address, UID, ASN, or country deny-list with optional expiry.
+2. **Rate limiting** — per-IP daily cap (default 5 claims/day).
+3. **Cloudflare Turnstile** — captcha challenge (opt-in via env).
+4. **hCaptcha** — alternative captcha provider (opt-in via env).
+5. **Hashcash** — self-hosted SHA-256 client puzzle; anti-bot without third-party deps (unrelated to Nimiq's proof-of-stake consensus).
+6. **Geo-IP / ASN** — DB-IP Lite (zero-config default), MaxMind, or IPinfo. VPN/datacenter/Tor blocking, country allow/deny-list.
+7. **Device fingerprint** — visitor-ID + host-provided UID / cookie correlation.
+8. **On-chain heuristics** — sweeper-address detection, fresh-address scoring.
+9. **AI anomaly scoring** — deterministic rules + small ONNX classifier (CPU-only).
 
 Each layer emits signals that can be inspected per claim in the dashboard and retrieved via the MCP tool `faucet.explain_decision`.
 

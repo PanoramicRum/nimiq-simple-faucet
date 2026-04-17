@@ -9,6 +9,8 @@ export const HostContextSchema = z
     emailDomainHash: z.string().max(256).optional(),
     kycLevel: z.enum(['none', 'email', 'phone', 'id']).optional(),
     tags: z.array(z.string().max(64)).max(32).optional(),
+    /** SSO providers the integrator authenticated the user against. */
+    verifiedIdentities: z.array(z.string().max(64)).max(10).optional(),
     signature: z.string().max(512).optional(),
   })
   .strict();
@@ -23,6 +25,7 @@ const CANONICAL_FIELDS = [
   'emailDomainHash',
   'kycLevel',
   'tags',
+  'verifiedIdentities',
 ] as const;
 
 export function canonicalizeHostContext(ctx: HostContext): string {

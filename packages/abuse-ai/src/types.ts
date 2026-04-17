@@ -17,6 +17,7 @@ export interface FeatureBundle {
   claimsByUid24h: number;
   fingerprintEntropy: number;
   hostContextVerified: number;
+  verifiedIdentityCount: number;
   addressIsFresh: number;
   hourOfDayUtc: number;
 }

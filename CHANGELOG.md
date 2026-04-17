@@ -6,6 +6,36 @@ This project uses [changesets](https://github.com/changesets/changesets) for
 versioning. Run `pnpm changeset` to add entries, then `pnpm changeset version`
 (invoked by the release workflow) to regenerate this file.
 
+## 2.0.0 (2026-04-17)
+
+### Added
+- **Per-field integrator-signed host context.** Browser SDKs can now
+  submit a pre-signed `hostContext.signature` (format:
+  `{integratorId}:{base64-hmac}`) without the integrator's backend
+  proxying the whole claim request. The server verifies the HMAC
+  against the integrator's secret and sets `hostContextVerified: true`.
+  The whole-request HMAC flow continues to work alongside.
+  (ROADMAP §1.4)
+- **`verifiedIdentities` field on HostContext.** Array of SSO providers
+  the integrator authenticated the user against (e.g., `["apple",
+  "google"]`). Covered by the per-field signature. Claims with verified
+  identities receive a scoring bonus (lower abuse score, -0.15
+  contribution from the AI layer).
+- **`FaucetClient.signHostContext()` static method.** Backend-only
+  helper: takes a hostContext + integrator ID + HMAC secret → returns
+  the context with `signature` populated. Pass the result through to
+  the browser SDK's `claim()` call.
+
+### Changed
+- README abuse layer list expanded from 6 grouped items to 9 individual
+  layers (blocklist, rate-limit, Turnstile, hCaptcha, hashcash,
+  geo-IP, fingerprint, on-chain, AI).
+- HostContext canonicalization now includes `verifiedIdentities`.
+- OpenAPI spec updated: `HostContext.verifiedIdentities` + signature
+  format documented.
+- Helm chart bumped to `2.0.0` / `appVersion: 2.0.0`.
+- Flutter SDK bumped to `2.0.0`.
+
 ## 1.9.0 (2026-04-17)
 
 ### Changed

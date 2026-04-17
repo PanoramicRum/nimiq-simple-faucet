@@ -94,6 +94,34 @@ export class FaucetClient {
     }
   }
 
+  /**
+   * Sign a hostContext with an integrator's HMAC secret. The returned
+   * context has `signature` set to `{integratorId}:{base64-hmac}`.
+   *
+   * Run this on your BACKEND — never expose hmacSecret to the browser.
+   * Pass the signed context through to the browser SDK's `claim()` call.
+   */
+  static signHostContext(
+    hostContext: HostContext,
+    integratorId: string,
+    hmacSecret: string,
+  ): HostContext {
+    // Inline canonicalization (mirrors @faucet/core's canonicalizeHostContext).
+    const FIELDS = ['uid', 'cookieHash', 'sessionHash', 'accountAgeDays', 'emailDomainHash', 'kycLevel', 'tags', 'verifiedIdentities'] as const;
+    const entries: [string, unknown][] = [];
+    for (const key of FIELDS) {
+      const value = (hostContext as Record<string, unknown>)[key];
+      if (value === undefined) continue;
+      entries.push([key, Array.isArray(value) ? [...value].sort() : value]);
+    }
+    const canonical = JSON.stringify(entries);
+    // Lazy-import Node crypto so this module stays browser-importable.
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { createHmac } = require('node:crypto') as typeof import('node:crypto');
+    const hmac = createHmac('sha256', hmacSecret).update(canonical).digest('base64');
+    return { ...hostContext, signature: `${integratorId}:${hmac}` };
+  }
+
   async config(): Promise<FaucetConfig> {
     return this.#get<FaucetConfig>('/v1/config');
   }

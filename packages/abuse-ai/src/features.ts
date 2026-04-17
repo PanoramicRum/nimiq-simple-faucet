@@ -23,6 +23,7 @@ export async function buildFeatures({ req, query }: BuildFeaturesArgs): Promise<
     claimsByUid24h,
     fingerprintEntropy: fingerprintEntropy(req.fingerprint),
     hostContextVerified: hostContextVerified(req),
+    verifiedIdentityCount: verifiedIdentityCount(req),
     // Onchain freshness comes from a later pipeline stage; default to 0 here.
     addressIsFresh: 0,
     hourOfDayUtc: new Date(req.requestedAt).getUTCHours(),
@@ -42,4 +43,8 @@ function hostContextVerified(req: { hostContext?: unknown; hostContextVerified?:
   if (req.hostContextVerified) return 1;
   if (req.hostContext) return 0;
   return 0.5;
+}
+
+function verifiedIdentityCount(req: { hostContext?: { verifiedIdentities?: string[] | undefined } | undefined }): number {
+  return req.hostContext?.verifiedIdentities?.length ?? 0;
 }

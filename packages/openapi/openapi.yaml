@@ -74,9 +74,17 @@ components:
             type: string
             maxLength: 64
           maxItems: 32
+        verifiedIdentities:
+          type: array
+          items:
+            type: string
+            maxLength: 64
+          maxItems: 10
+          description: SSO providers the integrator authenticated the user against
         signature:
           type: string
           maxLength: 512
+          description: "Per-field HMAC signature: {integratorId}:{base64-hmac}"
     Fingerprint:
       type: object
       properties:

@@ -40,6 +40,12 @@ export function defaultRulesModel(): AiModel {
         raw.push({ feature: 'hostContextVerified', weight: 0.1, contribution: 0.1 });
       }
 
+      // Scoring bonus: signed context with verified identities (§1.4).
+      // Negative contribution = reduces score = more trusted.
+      if (f.hostContextVerified === 1 && f.verifiedIdentityCount > 0) {
+        raw.push({ feature: 'verifiedIdentityCount', weight: -0.15, contribution: -0.15 });
+      }
+
       if (f.addressIsFresh === 1) {
         raw.push({ feature: 'addressIsFresh', weight: 0.1, contribution: 0.1 });
       }

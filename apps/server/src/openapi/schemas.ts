@@ -28,7 +28,8 @@ export const HostContextDTO = registry.register(
     emailDomainHash: z.string().max(256).optional(),
     kycLevel: z.enum(['none', 'email', 'phone', 'id']).optional(),
     tags: z.array(z.string().max(64)).max(32).optional(),
-    signature: z.string().max(512).optional(),
+    verifiedIdentities: z.array(z.string().max(64)).max(10).optional().describe('SSO providers the integrator authenticated the user against'),
+    signature: z.string().max(512).optional().describe('Per-field HMAC signature: {integratorId}:{base64-hmac}'),
   }),
 );
 

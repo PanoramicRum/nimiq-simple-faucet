@@ -1,8 +1,8 @@
-import { createHash } from 'node:crypto';
+import { createHash, createHmac, timingSafeEqual } from 'node:crypto';
 import type { FastifyInstance } from 'fastify';
 import { and, eq, isNull } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
-import { DriverError, type ClaimRequest } from '@faucet/core';
+import { DriverError, canonicalizeHostContext, type ClaimRequest } from '@faucet/core';
 import { mintChallenge } from '@faucet/abuse-hashcash';
 import { claims, integratorKeys } from '../db/schema.js';
 import type { AppContext } from '../context.js';
@@ -108,6 +108,36 @@ export async function claimRoutes(app: FastifyInstance, ctx: AppContext): Promis
       }
       integratorId = result.integratorId;
       hostContextVerified = true;
+    }
+
+    // Per-field host-context signature verification (§1.4).
+    // Allows browser SDKs to submit a pre-signed hostContext without the
+    // integrator's backend proxying the whole request. Format:
+    //   hostContext.signature = "{integratorId}:{base64-hmac}"
+    if (!hostContextVerified && parsed.data.hostContext?.signature) {
+      const sig = parsed.data.hostContext.signature;
+      const colonIdx = sig.indexOf(':');
+      if (colonIdx > 0) {
+        const sigIntegratorId = sig.slice(0, colonIdx);
+        const sigHmac = sig.slice(colonIdx + 1);
+        const [row] = await ctx.db
+          .select()
+          .from(integratorKeys)
+          .where(and(eq(integratorKeys.id, sigIntegratorId), isNull(integratorKeys.revokedAt)))
+          .limit(1);
+        if (row) {
+          const canonical = canonicalizeHostContext(parsed.data.hostContext);
+          const expected = createHmac('sha256', row.hmacSecret).update(canonical).digest('base64');
+          try {
+            if (timingSafeEqual(Buffer.from(sigHmac, 'base64'), Buffer.from(expected, 'base64'))) {
+              hostContextVerified = true;
+              integratorId = sigIntegratorId;
+            }
+          } catch {
+            // Length mismatch → not equal, leave hostContextVerified false.
+          }
+        }
+      }
     }
 
     let address: string;
