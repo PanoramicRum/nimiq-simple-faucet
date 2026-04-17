@@ -43,11 +43,11 @@ versioning. Run `pnpm changeset` to add entries, then `pnpm changeset version`
   `/admin/audit-log`) let the audit log through without a session
   cookie. The log contains admin action history including operator IPs.
   Fixes [#43](https://github.com/PanoramicRum/nimiq-simple-faucet/issues/43).
-- **`POST /admin/auth/reset` removed entirely.** The endpoint wiped
-  all faucet state (admin users, sessions, claims, audit log) with no
-  authentication — gated only by `FAUCET_DEV=1`, which the compose
-  Quick Start requires. Operators who need a clean slate should use
-  `docker compose down -v`. Fixes
+- **`POST /admin/auth/reset` now requires `FAUCET_ADMIN_PASSWORD`
+  in the request body.** Previously unauthenticated — anyone who could
+  reach the faucet could wipe all state. Still gated on
+  `FAUCET_DEV=1` (404 in production). E2e tests updated to pass the
+  password. Fixes
   [#44](https://github.com/PanoramicRum/nimiq-simple-faucet/issues/44).
 
 ### Fixed

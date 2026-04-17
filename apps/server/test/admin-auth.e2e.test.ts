@@ -139,9 +139,19 @@ describe('admin auth', () => {
     expect(res.statusCode).toBe(401);
   });
 
-  it('POST /admin/auth/reset is no longer accessible (removed, fixes #44)', async () => {
+  it('POST /admin/auth/reset without password returns 401 (fixes #44)', async () => {
     const res = await app.inject({ method: 'POST', url: '/admin/auth/reset' });
-    expect([401, 404]).toContain(res.statusCode);
+    expect(res.statusCode).toBe(401);
+  });
+
+  it('POST /admin/auth/reset with wrong password returns 401', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/admin/auth/reset',
+      payload: { password: 'wrong' },
+      headers: { 'content-type': 'application/json' },
+    });
+    expect(res.statusCode).toBe(401);
   });
 
   it('logout revokes the session', async () => {

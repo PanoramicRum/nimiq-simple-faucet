@@ -154,6 +154,26 @@ export async function adminAuthRoutes(app: FastifyInstance, ctx: AppContext): Pr
     return reply.code(200).send({ ok: true });
   });
 
+  // Dev-only: wipe per-instance state so e2e tests start from a pristine DB.
+  // Gated on FAUCET_DEV=1 AND requires FAUCET_ADMIN_PASSWORD in the body
+  // so it's not exploitable without knowing the configured password.
+  app.post('/admin/auth/reset', async (req, reply) => {
+    if (!ctx.config.dev) {
+      return reply.code(404).send({ error: 'not found' });
+    }
+    const body = req.body as { password?: string } | null;
+    if (!body?.password || body.password !== ctx.config.adminPassword) {
+      return reply.code(401).send({ error: 'password required' });
+    }
+    await ctx.db.delete(adminSessions);
+    await ctx.db.delete(adminUsers);
+    await ctx.db.delete(ipCounters);
+    await ctx.db.delete(fingerprintLinks);
+    await ctx.db.delete(claims);
+    await ctx.db.delete(auditLog);
+    return reply.code(200).send({ ok: true });
+  });
+
   // Pre-enrolment TOTP provisioning. Only usable if no admin row exists yet.
   app.post('/admin/auth/totp/enroll', async (_req, reply) => {
     const [existing] = await ctx.db

@@ -17,7 +17,10 @@ test.describe.configure({ mode: 'serial' });
 // `first login reveals TOTP provisioning URI` test sees a clean slate even
 // when multiple projects share the same Fastify instance / SQLite DB.
 test.beforeAll(async ({ request }) => {
-  const res = await request.post('/admin/auth/reset');
+  const res = await request.post('/admin/auth/reset', {
+    data: { password: ADMIN_PASSWORD },
+    headers: { 'content-type': 'application/json' },
+  });
   if (!res.ok()) {
     throw new Error(`admin reset endpoint returned ${res.status()}`);
   }

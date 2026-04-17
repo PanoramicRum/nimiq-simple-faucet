@@ -9,7 +9,10 @@ const ANOTHER_ADDRESS = 'NQ00 2222 2222 2222 2222 2222 2222 2222 2222';
 // browser project so the claim tests don't inherit counter state from the
 // previous project's run.
 test.beforeAll(async ({ request }) => {
-  const res = await request.post('/admin/auth/reset');
+  const res = await request.post('/admin/auth/reset', {
+    data: { password: 'admin-pass-123' },
+    headers: { 'content-type': 'application/json' },
+  });
   if (!res.ok()) {
     throw new Error(`admin reset endpoint returned ${res.status()}`);
   }

@@ -1,6 +1,6 @@
 name: nimiq_faucet
 description: Dart/Flutter client for the Nimiq Simple Faucet. Mirrors @nimiq-faucet/sdk.
-version: 1.2.0
+version: 1.2.1
 repository: https://github.com/PanoramicRum/nimiq-simple-faucet
 
 environment:

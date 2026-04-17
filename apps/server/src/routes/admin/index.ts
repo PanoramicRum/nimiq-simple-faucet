@@ -28,6 +28,7 @@ export async function adminRoutes(app: FastifyInstance, ctx: AppContext): Promis
     '/admin/auth/login',
     '/admin/auth/logout',
     '/admin/auth/totp/enroll',
+    '/admin/auth/reset', // password-protected in-handler, not session-gated (avoids chicken-and-egg in e2e)
   ]);
   const sessionGate = requireAdminSession(ctx);
   // Only the admin *API* prefixes are gated. Paths like /admin/login or
