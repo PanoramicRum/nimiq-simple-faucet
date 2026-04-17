@@ -6,6 +6,21 @@ This project uses [changesets](https://github.com/changesets/changesets) for
 versioning. Run `pnpm changeset` to add entries, then `pnpm changeset version`
 (invoked by the release workflow) to regenerate this file.
 
+## 1.8.2 (2026-04-17)
+
+### Changed
+- **SQLite/Postgres migrations deduplicated.** The ~200 lines of
+  near-identical CREATE TABLE statements are replaced by a shared
+  `migrationStatements(dialect)` builder in `db/migrations.ts` that
+  parameterizes timestamp types (`INTEGER` vs `BIGINT`) and default
+  expressions. Drizzle schema files stay separate (type-system
+  constraint) but a new 11-test schema-parity suite asserts
+  column-name alignment between the two — catches drift where a column
+  is added to one dialect but not the other. Fixes
+  [#59](https://github.com/PanoramicRum/nimiq-simple-faucet/issues/59).
+- Helm chart bumped to `1.8.2` / `appVersion: 1.8.2`.
+- Flutter SDK bumped to `1.8.2`.
+
 ## 1.8.1 (2026-04-17)
 
 ### Changed
