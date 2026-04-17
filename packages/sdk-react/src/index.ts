@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   FaucetClient,
-  FaucetError,
   ClaimManager,
   StatusPoller,
   StreamManager,
@@ -56,14 +55,15 @@ export function useFaucetClaim(args: UseFaucetClaimArgs): UseFaucetClaimResult {
   const { address, hostContext, captchaToken, hashcashSolution, fingerprint, pollForConfirmation } = args;
 
   const claim = useCallback(
-    () =>
-      manager.current?.claim(address, {
+    async () => {
+      await manager.current?.claim(address, {
         hostContext,
         captchaToken,
         hashcashSolution,
         fingerprint,
         pollForConfirmation,
-      }) ?? Promise.resolve(),
+      });
+    },
     [address, hostContext, captchaToken, hashcashSolution, fingerprint, pollForConfirmation],
   );
 
@@ -116,7 +116,7 @@ export function useFaucetStream(
   }, [c]);
 }
 
-export { FaucetClient, FaucetError } from '@nimiq-faucet/sdk';
+export { FaucetClient } from '@nimiq-faucet/sdk';
 export type {
   ClaimOptions,
   ClaimResponse,

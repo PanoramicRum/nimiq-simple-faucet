@@ -57,6 +57,8 @@ work. Shipped as point releases (1.0.1, 1.0.2, …) between 1.0.0 and 1.1.
 
 ### 1.1.1 Prometheus `/metrics` endpoint
 
+**Status:** ✅ shipped in v1.4.0.
+
 **Goal:** first-class metrics without polling `/v1/stats`.
 
 **Scope:**
@@ -198,6 +200,8 @@ we go the shared-wallet route).
 
 ### 1.1.3 Grafana dashboard JSON
 
+**Status:** ✅ shipped in v1.5.1.
+
 **Goal:** operators get a working dashboard on import, not a TODO.
 
 **Scope:**
@@ -209,6 +213,8 @@ we go the shared-wallet route).
 **Estimated effort:** half day.
 
 ### 1.1.4 Admin TOTP reset flow
+
+**Status:** ✅ shipped in v1.3.0.
 
 **Goal:** operator can reset a lost TOTP without SQL surgery.
 
@@ -291,6 +297,8 @@ we go the shared-wallet route).
 
 ### 1.3.1 Reconciliation job for stuck `broadcast` claims
 
+**Status:** ✅ shipped in v1.4.0.
+
 **Goal:** after a server restart, claims with `status=broadcast` that dropped their in-memory `waitForConfirmation` promise should still converge to `confirmed` or `rejected`.
 
 **Context:** the RPC-driver fix in 1.0.0 made the poll loop resilient to transient RPC errors, but a restart *during* the await still orphans the claim. The row stays at `broadcast` until a human notices.
@@ -312,6 +320,8 @@ we go the shared-wallet route).
 
 ### 1.3.2 Richer claim status transitions
 
+**Status:** ✅ shipped in v1.7.0. Added `timeout` + `expired` statuses.
+
 **Goal:** callers can distinguish "confirmed on-chain", "rejected up-front", "broadcast but timed out waiting", "abandoned after N retries".
 
 **Scope:**
@@ -323,6 +333,8 @@ we go the shared-wallet route).
 
 ### 1.3.3 Claim idempotency via integrator-supplied nonce
 
+**Status:** ✅ shipped in v1.7.0. `idempotencyKey` field on POST /v1/claim.
+
 **Goal:** integrators can retry safely — two claims with the same nonce within a window return the same id.
 
 **Scope:**
@@ -333,6 +345,8 @@ we go the shared-wallet route).
 **Estimated effort:** 1 day.
 
 ### 1.3.4 Server-side Postgres storage backend
+
+**Status:** ✅ shipped in v1.5.0. Dual SQLite/Postgres + Redis rate-limit store.
 
 **Goal:** make the server actually accept `DATABASE_URL=postgres://...` so the compose `postgres` profile and the Helm `postgresql` subchart work as documented.
 
@@ -354,6 +368,10 @@ we go the shared-wallet route).
 ---
 
 ## 1.4 — Integrator-signed host context (per-field HMAC)
+
+**Status:** ✅ shipped in v2.0.0. Per-field signature verification,
+`verifiedIdentities`, `FaucetClient.signHostContext()`, identity
+scoring bonus.
 
 **Goal:** replace whole-request HMAC with field-level signing, so browser code can forward a signed `hostContext` without the integrator's backend having to proxy the whole claim.
 
@@ -412,6 +430,9 @@ we go the shared-wallet route).
 ---
 
 ## 1.6 — Dependency sweep
+
+**Status:** ✅ 6 of 8 shipped in v1.9.0. Remaining 2 (tailwindcss 4,
+@vitejs/plugin-react 6) deferred to Vite 6 migration cycle.
 
 **Goal:** burn down the deferred major-version bumps from the initial
 Dependabot burst as a single coordinated upgrade, with full regression

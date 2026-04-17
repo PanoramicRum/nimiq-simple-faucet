@@ -1,7 +1,6 @@
 import { computed, onUnmounted, reactive, toRefs, type Ref } from 'vue';
 import {
   FaucetClient,
-  FaucetError,
   ClaimManager,
   StatusPoller,
   StreamManager,
@@ -85,7 +84,7 @@ export function useFaucetStream(
   onUnmounted(() => mgr.destroy());
 }
 
-export { FaucetClient, FaucetError } from '@nimiq-faucet/sdk';
+export { FaucetClient } from '@nimiq-faucet/sdk';
 export type {
   ClaimOptions,
   ClaimResponse,

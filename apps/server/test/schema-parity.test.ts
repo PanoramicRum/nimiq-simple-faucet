@@ -4,7 +4,6 @@
  * one dialect but not the other.
  */
 import { describe, expect, it } from 'vitest';
-import { getTableName } from 'drizzle-orm';
 import * as sqlite from '../src/db/schema.sqlite.js';
 import * as pg from '../src/db/schema.pg.js';
 
