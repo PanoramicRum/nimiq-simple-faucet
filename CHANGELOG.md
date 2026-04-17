@@ -6,6 +6,29 @@ This project uses [changesets](https://github.com/changesets/changesets) for
 versioning. Run `pnpm changeset` to add entries, then `pnpm changeset version`
 (invoked by the release workflow) to regenerate this file.
 
+## 1.4.0 (2026-04-17)
+
+### Added
+- **Prometheus `/metrics` endpoint.** Exposes counters
+  (`faucet_claims_total{status,decision}`), histograms
+  (`faucet_claim_duration_seconds{phase}`), and gauges
+  (`faucet_wallet_balance_luna`, `faucet_driver_ready`,
+  `faucet_reconciler_flips_total{to}`) in standard Prometheus text
+  format. Gated by `FAUCET_METRICS_ENABLED` (default true). Plugs into
+  any Grafana / AlertManager stack without polling `/v1/stats`.
+  (ROADMAP §1.1.1)
+- **Background reconciliation for stuck `broadcast` claims.** A
+  periodic sweep (default every 5 minutes) checks in-flight claims
+  against the chain via `waitForConfirmation` and flips them to
+  `confirmed` or `rejected`. Handles server restarts that orphan the
+  in-memory confirmation promise. Gated by `FAUCET_RECONCILE_ENABLED`
+  (default true), interval configurable via
+  `FAUCET_RECONCILE_INTERVAL_MS`. (ROADMAP §1.3.1)
+
+### Changed
+- Helm chart bumped to `1.4.0` / `appVersion: 1.4.0`.
+- Flutter SDK bumped to `1.4.0`.
+
 ## 1.3.0 (2026-04-17)
 
 ### Added

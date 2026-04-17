@@ -17,6 +17,7 @@ import { openapiRoute } from './openapi/route.js';
 import { registerUi } from './ui.js';
 import { applyHardening, buildRedactPaths } from './hardening.js';
 import type { AppContext } from './context.js';
+import { registry, driverReady, walletBalance } from './metrics.js';
 
 export interface BuildAppOptions {
   /** Replace the Nimiq driver (useful for tests). */
@@ -96,6 +97,17 @@ export async function buildApp(
     reply.header('Retry-After', '10');
     reply.code(503);
     return { ready: false, reason: 'driver_not_ready' };
+  });
+  app.get('/metrics', async (_req, reply) => {
+    if (!config.metricsEnabled) return reply.code(404).send({ error: 'metrics disabled' });
+    driverReady.set(isDriverReady() ? 1 : 0);
+    try {
+      walletBalance.set(Number(await driver.getBalance()));
+    } catch {
+      // Driver not ready — leave gauge at its last value.
+    }
+    reply.type(registry.contentType);
+    return registry.metrics();
   });
   app.get('/llms.txt', async (_req, reply) => {
     reply.type('text/plain');

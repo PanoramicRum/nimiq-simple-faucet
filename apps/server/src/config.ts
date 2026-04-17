@@ -119,6 +119,10 @@ export const ServerConfigSchema = z.object({
 
   tlsRequired: z.coerce.boolean().default(true),
   helmetCsp: z.enum(['strict', 'relaxed-for-ui', 'off']).default('relaxed-for-ui'),
+
+  metricsEnabled: z.coerce.boolean().default(true),
+  reconcileEnabled: z.coerce.boolean().default(true),
+  reconcileIntervalMs: z.coerce.number().int().min(10_000).default(5 * 60_000),
 });
 
 export type ServerConfig = z.infer<typeof ServerConfigSchema>;
@@ -184,6 +188,9 @@ const ENV_KEYS: Record<string, string> = {
   corsOrigins: 'FAUCET_CORS_ORIGINS',
   tlsRequired: 'FAUCET_TLS_REQUIRED',
   helmetCsp: 'FAUCET_HELMET_CSP',
+  metricsEnabled: 'FAUCET_METRICS_ENABLED',
+  reconcileEnabled: 'FAUCET_RECONCILE_ENABLED',
+  reconcileIntervalMs: 'FAUCET_RECONCILE_INTERVAL_MS',
 };
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): ServerConfig {

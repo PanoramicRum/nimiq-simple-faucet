@@ -9,6 +9,7 @@ import { claims, integratorKeys } from '../db/schema.js';
 import type { AppContext } from '../context.js';
 import { incrementIpCounter } from '../abuse/rateLimit.js';
 import { verifyIntegratorRequest, type IntegratorKey } from '../hmac.js';
+import { claimsTotal, claimDuration } from '../metrics.js';
 
 const ClaimBody = z
   .object({
@@ -165,6 +166,8 @@ export async function claimRoutes(app: FastifyInstance, ctx: AppContext): Promis
         signalsJson: JSON.stringify(evaluation.signals),
         rejectionReason: evaluation.reasons.join('; ') || evaluation.decision,
       });
+      claimsTotal.inc({ status: 'rejected', decision: evaluation.decision });
+      claimDuration.observe({ phase: 'total' }, (Date.now() - now) / 1000);
       return reply.code(evaluation.decision === 'deny' ? 403 : 202).send({
         id,
         status: 'rejected',
@@ -186,6 +189,8 @@ export async function claimRoutes(app: FastifyInstance, ctx: AppContext): Promis
         decision: evaluation.decision,
         signalsJson: JSON.stringify(evaluation.signals),
       });
+      claimsTotal.inc({ status: 'challenged', decision: 'challenge' });
+      claimDuration.observe({ phase: 'total' }, (Date.now() - now) / 1000);
       return reply.code(202).send({
         id,
         status: 'challenged',
@@ -232,6 +237,8 @@ export async function claimRoutes(app: FastifyInstance, ctx: AppContext): Promis
     });
     inflightClaims.delete(address);
     await incrementIpCounter(ctx.db, req.ip, now);
+    claimsTotal.inc({ status: 'broadcast', decision: 'allow' });
+    claimDuration.observe({ phase: 'total' }, (Date.now() - now) / 1000);
     ctx.stream.publish({ type: 'claim.broadcast', id, address, txId });
 
     // Confirm asynchronously; don't block the response.
