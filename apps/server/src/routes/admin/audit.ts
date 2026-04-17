@@ -1,13 +1,8 @@
 import type { FastifyInstance } from 'fastify';
 import { desc, sql } from 'drizzle-orm';
-import { z } from 'zod';
 import type { AppContext } from '../../context.js';
 import { auditLog } from '../../db/schema.js';
-
-const ListQuery = z.object({
-  limit: z.coerce.number().int().min(1).max(500).default(100),
-  offset: z.coerce.number().int().min(0).default(0),
-});
+import { AuditListQuery as ListQuery } from '../../openapi/schemas.js';
 
 export async function adminAuditRoutes(app: FastifyInstance, ctx: AppContext): Promise<void> {
   app.get('/admin/audit-log', async (req, reply) => {

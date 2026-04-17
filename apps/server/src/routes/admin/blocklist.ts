@@ -1,23 +1,14 @@
 import type { FastifyInstance } from 'fastify';
 import { desc, eq, sql } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
-import { z } from 'zod';
 import type { AppContext } from '../../context.js';
 import { blocklist } from '../../db/schema.js';
 import { writeAudit } from '../../auth/audit.js';
 import { requireAdminCsrf } from '../../auth/middleware.js';
-
-const ListQuery = z.object({
-  limit: z.coerce.number().int().min(1).max(200).default(50),
-  offset: z.coerce.number().int().min(0).default(0),
-});
-
-const CreateBody = z.object({
-  kind: z.enum(['ip', 'address', 'uid', 'asn', 'country']),
-  value: z.string().min(1).max(128),
-  reason: z.string().max(256).optional(),
-  expiresAt: z.union([z.string(), z.number()]).optional(),
-});
+import {
+  BlocklistListQuery as ListQuery,
+  BlocklistCreateRequest as CreateBody,
+} from '../../openapi/schemas.js';
 
 export async function adminBlocklistRoutes(app: FastifyInstance, ctx: AppContext): Promise<void> {
   app.get('/admin/blocklist', async (req, reply) => {

@@ -1,15 +1,11 @@
 import { createHash, randomBytes } from 'node:crypto';
 import type { FastifyInstance } from 'fastify';
 import { and, desc, eq } from 'drizzle-orm';
-import { z } from 'zod';
 import type { AppContext } from '../../context.js';
 import { integratorKeys } from '../../db/schema.js';
 import { writeAudit } from '../../auth/audit.js';
 import { requireAdminCsrf } from '../../auth/middleware.js';
-
-const CreateBody = z.object({
-  id: z.string().min(1).max(64).regex(/^[a-zA-Z0-9_-]+$/),
-});
+import { IntegratorCreateRequest as CreateBody } from '../../openapi/schemas.js';
 
 function sha256Hex(s: string): string {
   return createHash('sha256').update(s).digest('hex');

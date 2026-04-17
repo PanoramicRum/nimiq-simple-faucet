@@ -1,18 +1,10 @@
 import type { FastifyInstance } from 'fastify';
 import { and, desc, eq, sql, type SQL } from 'drizzle-orm';
-import { z } from 'zod';
 import type { AppContext } from '../../context.js';
 import { claims } from '../../db/schema.js';
 import { writeAudit } from '../../auth/audit.js';
 import { requireAdminCsrf } from '../../auth/middleware.js';
-
-const ListQuery = z.object({
-  limit: z.coerce.number().int().min(1).max(200).default(50),
-  offset: z.coerce.number().int().min(0).default(0),
-  status: z.string().optional(),
-  decision: z.string().optional(),
-  address: z.string().optional(),
-});
+import { ClaimsListQuery as ListQuery } from '../../openapi/schemas.js';
 
 export async function adminClaimsRoutes(app: FastifyInstance, ctx: AppContext): Promise<void> {
   app.get('/admin/claims', async (req, reply) => {

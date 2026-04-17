@@ -103,6 +103,10 @@ components:
         powSolution:
           type: string
           description: Deprecated alias for hashcashSolution
+        idempotencyKey:
+          type: string
+          maxLength: 128
+          description: Idempotency key for safe retries
         fingerprint:
           $ref: "#/components/schemas/Fingerprint"
         hostContext:
@@ -121,6 +125,8 @@ components:
             - confirmed
             - rejected
             - challenged
+            - timeout
+            - expired
             - manual-allow
         decision:
           type: string
@@ -689,6 +695,54 @@ components:
             - true
       required:
         - ok
+    BlocklistListQuery:
+      type: object
+      properties:
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 200
+          default: 50
+        offset:
+          type:
+            - integer
+            - "null"
+          minimum: 0
+          default: 0
+    ClaimsListQuery:
+      type: object
+      properties:
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 200
+          default: 50
+        offset:
+          type:
+            - integer
+            - "null"
+          minimum: 0
+          default: 0
+        status:
+          type: string
+        decision:
+          type: string
+        address:
+          type: string
+    AuditListQuery:
+      type: object
+      properties:
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 500
+          default: 50
+        offset:
+          type:
+            - integer
+            - "null"
+          minimum: 0
+          default: 0
     McpDiscovery:
       type: object
       properties:
@@ -1097,6 +1151,25 @@ paths:
                     type: string
                 required:
                   - txId
+  /admin/account/rotate-key:
+    post:
+      tags:
+        - Admin
+      summary: Rotate encrypted at-rest key material (requires TOTP step-up)
+      security:
+        - adminSession: []
+      responses:
+        "200":
+          description: Rotation timestamp
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  rotatedAt:
+                    type: string
+                required:
+                  - rotatedAt
   /admin/audit-log:
     get:
       tags:
@@ -1127,6 +1200,67 @@ paths:
       responses:
         "200":
           description: Claim with expanded signals
+        "404":
+          description: Claim not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /admin/claims/{id}/allow:
+    post:
+      tags:
+        - Admin
+      summary: Override a claim to allow (manual admin action)
+      security:
+        - adminSession: []
+      parameters:
+        - schema:
+            type: string
+          required: true
+          name: id
+          in: path
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+        "404":
+          description: Claim not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /admin/claims/{id}/deny:
+    post:
+      tags:
+        - Admin
+      summary: Override a claim to deny (manual admin action)
+      security:
+        - adminSession: []
+      parameters:
+        - schema:
+            type: string
+          required: true
+          name: id
+          in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+                  maxLength: 256
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
         "404":
           description: Claim not found
           content:

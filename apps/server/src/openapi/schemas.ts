@@ -48,6 +48,7 @@ export const ClaimRequest = registry.register(
     captchaToken: z.string().optional(),
     hashcashSolution: z.string().optional(),
     powSolution: z.string().optional().describe('Deprecated alias for hashcashSolution'),
+    idempotencyKey: z.string().max(128).optional().describe('Idempotency key for safe retries'),
     fingerprint: FingerprintDTO.optional(),
     hostContext: HostContextDTO.optional(),
   }),
@@ -57,7 +58,7 @@ export const ClaimResponse = registry.register(
   'ClaimResponse',
   z.object({
     id: z.string(),
-    status: z.enum(['broadcast', 'confirmed', 'rejected', 'challenged', 'manual-allow']),
+    status: z.enum(['broadcast', 'confirmed', 'rejected', 'challenged', 'timeout', 'expired', 'manual-allow']),
     decision: z.enum(['allow', 'deny', 'review', 'challenge']).optional(),
     txId: z.string().optional(),
     reason: z.string().optional(),
@@ -309,6 +310,35 @@ export const AdminSendRequest = registry.register(
 );
 
 export const OkResponse = registry.register('OkResponse', z.object({ ok: z.literal(true) }));
+
+// ---------- Query schemas (shared with route handlers) ----------
+
+export const BlocklistListQuery = registry.register(
+  'BlocklistListQuery',
+  z.object({
+    limit: z.coerce.number().int().min(1).max(200).default(50),
+    offset: z.coerce.number().int().min(0).default(0),
+  }),
+);
+
+export const ClaimsListQuery = registry.register(
+  'ClaimsListQuery',
+  z.object({
+    limit: z.coerce.number().int().min(1).max(200).default(50),
+    offset: z.coerce.number().int().min(0).default(0),
+    status: z.string().optional(),
+    decision: z.string().optional(),
+    address: z.string().optional(),
+  }),
+);
+
+export const AuditListQuery = registry.register(
+  'AuditListQuery',
+  z.object({
+    limit: z.coerce.number().int().min(1).max(500).default(50),
+    offset: z.coerce.number().int().min(0).default(0),
+  }),
+);
 
 export const McpDiscoveryResponse = registry.register(
   'McpDiscovery',

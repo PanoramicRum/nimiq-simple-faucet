@@ -2,36 +2,20 @@ import { createHash } from 'node:crypto';
 import type { FastifyInstance } from 'fastify';
 import { and, eq, isNull } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
-import { z } from 'zod';
-import { DriverError, HostContextSchema, type ClaimRequest } from '@faucet/core';
+import { DriverError, type ClaimRequest } from '@faucet/core';
 import { mintChallenge } from '@faucet/abuse-hashcash';
 import { claims, integratorKeys } from '../db/schema.js';
 import type { AppContext } from '../context.js';
 import { incrementIpCounter, decrementIpCounter } from '../abuse/rateLimit.js';
 import { verifyIntegratorRequest, type IntegratorKey } from '../hmac.js';
 import { claimsTotal, claimDuration } from '../metrics.js';
+import { ClaimRequest as ClaimRequestSchema } from '../openapi/schemas.js';
 
-const ClaimBody = z
-  .object({
-    address: z.string().min(1),
-    captchaToken: z.string().optional(),
-    hashcashSolution: z.string().optional(),
-    /** @deprecated alias for `hashcashSolution`; accepted for backwards compatibility. */
-    powSolution: z.string().optional(),
-    idempotencyKey: z.string().max(128).optional(),
-    fingerprint: z
-      .object({
-        visitorId: z.string().optional(),
-        confidence: z.number().min(0).max(1).optional(),
-        components: z.record(z.unknown()).optional(),
-      })
-      .optional(),
-    hostContext: HostContextSchema.optional(),
-  })
-  .transform(({ powSolution, hashcashSolution, ...rest }) => ({
-    ...rest,
-    hashcashSolution: hashcashSolution ?? powSolution,
-  }));
+// Extend the shared OpenAPI schema with the backwards-compat transform.
+const ClaimBody = ClaimRequestSchema.transform(({ powSolution, hashcashSolution, ...rest }) => ({
+  ...rest,
+  hashcashSolution: hashcashSolution ?? powSolution,
+}));
 
 export async function claimRoutes(app: FastifyInstance, ctx: AppContext): Promise<void> {
   app.get('/v1/config', async () => ({

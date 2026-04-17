@@ -7,32 +7,12 @@
  */
 import type { FastifyInstance } from 'fastify';
 import { eq } from 'drizzle-orm';
-import { z } from 'zod';
 import type { AppContext } from '../../context.js';
 import { runtimeConfig } from '../../db/schema.js';
 import { buildPipeline } from '../../abuse/pipeline.js';
 import { writeAudit } from '../../auth/audit.js';
 import { requireAdminCsrf } from '../../auth/middleware.js';
-
-const PatchBody = z
-  .object({
-    claimAmountLuna: z.string().regex(/^\d+$/).optional(),
-    rateLimitPerIpPerDay: z.number().int().min(1).max(10_000).optional(),
-    abuseDenyThreshold: z.number().min(0).max(1).optional(),
-    abuseReviewThreshold: z.number().min(0).max(1).optional(),
-    layers: z
-      .object({
-        turnstile: z.boolean().optional(),
-        hcaptcha: z.boolean().optional(),
-        hashcash: z.boolean().optional(),
-        geoip: z.boolean().optional(),
-        fingerprint: z.boolean().optional(),
-        onchain: z.boolean().optional(),
-        ai: z.boolean().optional(),
-      })
-      .optional(),
-  })
-  .strict();
+import { AdminConfigPatch as PatchBody } from '../../openapi/schemas.js';
 
 async function readOverrides(ctx: AppContext): Promise<Record<string, unknown>> {
   const rows = await ctx.db.select().from(runtimeConfig);

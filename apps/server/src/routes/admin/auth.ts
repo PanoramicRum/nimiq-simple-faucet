@@ -17,7 +17,6 @@
 import { randomBytes } from 'node:crypto';
 import type { FastifyInstance } from 'fastify';
 import { eq } from 'drizzle-orm';
-import { z } from 'zod';
 import type { AppContext } from '../../context.js';
 import {
   adminUsers,
@@ -45,10 +44,8 @@ import { writeAudit } from '../../auth/audit.js';
 
 const ADMIN_USER_ID = 'admin';
 
-const LoginBody = z.object({
-  password: z.string().min(1).max(512),
-  totp: z.string().min(1).max(16).optional(),
-});
+// Shared schema — single source of truth with OpenAPI spec.
+import { LoginRequest as LoginBody } from '../../openapi/schemas.js';
 
 export async function adminAuthRoutes(app: FastifyInstance, ctx: AppContext): Promise<void> {
   app.post(

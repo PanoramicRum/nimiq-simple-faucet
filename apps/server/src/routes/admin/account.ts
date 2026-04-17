@@ -1,18 +1,12 @@
 import { randomBytes } from 'node:crypto';
 import type { FastifyInstance } from 'fastify';
 import { desc, isNotNull } from 'drizzle-orm';
-import { z } from 'zod';
 import type { AppContext } from '../../context.js';
 import { claims } from '../../db/schema.js';
 import { writeAudit } from '../../auth/audit.js';
 import { requireAdminCsrf, requireTotpStepUp } from '../../auth/middleware.js';
 import { writeKeyring } from '../../auth/keyring.js';
-
-const SendBody = z.object({
-  to: z.string().min(1),
-  amountLuna: z.union([z.string().regex(/^\d+$/), z.number().int().min(1)]),
-  memo: z.string().max(256).optional(),
-});
+import { AdminSendRequest as SendBody } from '../../openapi/schemas.js';
 
 export async function adminAccountRoutes(app: FastifyInstance, ctx: AppContext): Promise<void> {
   app.get('/admin/account', async () => {

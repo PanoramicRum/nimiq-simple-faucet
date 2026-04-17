@@ -6,6 +6,26 @@ This project uses [changesets](https://github.com/changesets/changesets) for
 versioning. Run `pnpm changeset` to add entries, then `pnpm changeset version`
 (invoked by the release workflow) to regenerate this file.
 
+## 1.8.0 (2026-04-17)
+
+### Changed
+- **Route schemas are now single-source.** All 10 inline Zod validators
+  that were duplicated across route handler files now import from
+  `openapi/schemas.ts` — the same schemas that generate the OpenAPI
+  spec. Eliminates the dual-maintenance pattern where route validators
+  and OpenAPI documentation could drift independently. Zero inline
+  `z.object()` definitions remain in `apps/server/src/routes/`. Fixes
+  [#57](https://github.com/PanoramicRum/nimiq-simple-faucet/issues/57).
+- 3 previously-undocumented query schemas (`BlocklistListQuery`,
+  `ClaimsListQuery`, `AuditListQuery`) now appear in the OpenAPI spec.
+- `ClaimRequest` OpenAPI schema updated to include `idempotencyKey`
+  (added in v1.7.0 but missing from spec).
+- `ClaimResponse` status enum updated to include `timeout` and `expired`
+  (added in v1.7.0 but missing from spec).
+- Frozen OpenAPI spec regenerated.
+- Helm chart bumped to `1.8.0` / `appVersion: 1.8.0`.
+- Flutter SDK bumped to `1.8.0`.
+
 ## 1.7.0 (2026-04-17)
 
 ### Added
