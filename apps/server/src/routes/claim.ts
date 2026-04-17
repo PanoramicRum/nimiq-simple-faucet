@@ -18,6 +18,7 @@ const ClaimBody = z
     hashcashSolution: z.string().optional(),
     /** @deprecated alias for `hashcashSolution`; accepted for backwards compatibility. */
     powSolution: z.string().optional(),
+    idempotencyKey: z.string().max(128).optional(),
     fingerprint: z
       .object({
         visitorId: z.string().optional(),
@@ -89,6 +90,23 @@ export async function claimRoutes(app: FastifyInstance, ctx: AppContext): Promis
     const parsed = ClaimBody.safeParse(req.body);
     if (!parsed.success) {
       return reply.code(400).send({ error: 'invalid body', issues: parsed.error.issues });
+    }
+
+    // Idempotency: if the same key was used before, return the original result.
+    if (parsed.data.idempotencyKey) {
+      const [existing] = await ctx.db
+        .select()
+        .from(claims)
+        .where(eq(claims.idempotencyKey, parsed.data.idempotencyKey))
+        .limit(1);
+      if (existing) {
+        return reply.code(200).send({
+          id: existing.id,
+          status: existing.status,
+          txId: existing.txId ?? undefined,
+          idempotent: true,
+        });
+      }
     }
 
     let integratorId: string | undefined;
@@ -174,6 +192,7 @@ export async function claimRoutes(app: FastifyInstance, ctx: AppContext): Promis
         decision: evaluation.decision,
         signalsJson: JSON.stringify(evaluation.signals),
         rejectionReason: evaluation.reasons.join('; ') || evaluation.decision,
+        idempotencyKey: parsed.data.idempotencyKey ?? null,
       });
       claimsTotal.inc({ status: 'rejected', decision: evaluation.decision });
       claimDuration.observe({ phase: 'total' }, (Date.now() - now) / 1000);
@@ -198,6 +217,7 @@ export async function claimRoutes(app: FastifyInstance, ctx: AppContext): Promis
         abuseScore: Math.round(evaluation.score * 1000),
         decision: evaluation.decision,
         signalsJson: JSON.stringify(evaluation.signals),
+        idempotencyKey: parsed.data.idempotencyKey ?? null,
       });
       claimsTotal.inc({ status: 'challenged', decision: 'challenge' });
       claimDuration.observe({ phase: 'total' }, (Date.now() - now) / 1000);
@@ -245,6 +265,7 @@ export async function claimRoutes(app: FastifyInstance, ctx: AppContext): Promis
       abuseScore: Math.round(evaluation.score * 1000),
       decision: 'allow',
       signalsJson: JSON.stringify(evaluation.signals),
+      idempotencyKey: parsed.data.idempotencyKey ?? null,
     });
     inflightClaims.delete(address);
     // IP counter was already incremented before the pipeline (see #52 fix above).
@@ -259,7 +280,10 @@ export async function claimRoutes(app: FastifyInstance, ctx: AppContext): Promis
         await ctx.db.update(claims).set({ status: 'confirmed' }).where(eq(claims.id, id));
         ctx.stream.publish({ type: 'claim.confirmed', id, address, txId });
       })
-      .catch((err: unknown) => {
+      .catch(async (err: unknown) => {
+        if (err instanceof DriverError && err.code === 'CONFIRM_TIMEOUT') {
+          await ctx.db.update(claims).set({ status: 'timeout' }).where(eq(claims.id, id));
+        }
         req.log.warn({ err, txId, id }, 'confirmation failed');
       });
 

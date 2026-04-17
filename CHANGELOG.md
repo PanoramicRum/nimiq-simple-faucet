@@ -6,6 +6,33 @@ This project uses [changesets](https://github.com/changesets/changesets) for
 versioning. Run `pnpm changeset` to add entries, then `pnpm changeset version`
 (invoked by the release workflow) to regenerate this file.
 
+## 1.7.0 (2026-04-17)
+
+### Added
+- **Richer claim status transitions.** Claims can now be `timeout`
+  (confirmation polling exhausted, reconciler will retry) or `expired`
+  (TX invalidated on-chain, funds never left). The admin dashboard
+  gains color-coded status badges (green=confirmed, yellow=broadcast,
+  gray=timeout, red=rejected/expired, orange=challenged). SDK callers
+  and the `/v1/claim/:id` endpoint return the richer status.
+  (ROADMAP §1.3.2)
+- **Claim idempotency via `idempotencyKey`.** Integrators can supply an
+  optional key (string, max 128 chars) with each claim request.
+  Duplicate requests within the key's lifetime return the original
+  result (same claim ID, same status, `idempotent: true`) without
+  re-running the abuse pipeline or sending a second transaction.
+  Unique partial index on `claims.idempotency_key`. (ROADMAP §1.3.3)
+
+### Changed
+- Reconciler now sweeps claims with status `broadcast` OR `timeout`
+  (timeout claims are retryable). On-chain expiry writes `expired`
+  (distinct from abuse-pipeline `rejected`).
+- `POST /v1/claim` accepts optional `idempotencyKey` field.
+- `claims` table gains `idempotency_key` column (nullable, unique
+  partial index). Migration adds the column automatically on upgrade.
+- Helm chart bumped to `1.7.0` / `appVersion: 1.7.0`.
+- Flutter SDK bumped to `1.7.0`.
+
 ## 1.6.0 (2026-04-17)
 
 ### Security

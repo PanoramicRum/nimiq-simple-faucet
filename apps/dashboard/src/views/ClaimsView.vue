@@ -85,6 +85,19 @@ function badgeClass(decision: string | null): string {
   if (decision === 'deny') return 'badge badge-deny';
   return 'badge badge-review';
 }
+
+const statusStyle: Record<string, string> = {
+  broadcast: 'bg-yellow-500/20 text-yellow-300',
+  confirmed: 'bg-green-500/20 text-green-300',
+  rejected: 'bg-red-500/20 text-red-300',
+  challenged: 'bg-orange-500/20 text-orange-300',
+  timeout: 'bg-gray-500/20 text-gray-300',
+  expired: 'bg-red-700/20 text-red-400',
+};
+
+function statusBadge(status: string): string {
+  return statusStyle[status] ?? 'bg-gray-500/20 text-gray-300';
+}
 </script>
 
 <template>
@@ -149,7 +162,7 @@ function badgeClass(decision: string | null): string {
               {{ formatTimestamp(row.createdAt) }}
             </td>
             <td class="font-mono text-xs">{{ truncateMiddle(row.address, 10, 6) }}</td>
-            <td>{{ row.status }}</td>
+            <td><span class="inline-block rounded px-2 py-0.5 text-xs font-medium" :class="statusBadge(row.status)">{{ row.status }}</span></td>
             <td><span :class="badgeClass(row.decision)">{{ row.decision ?? '—' }}</span></td>
             <td class="font-mono text-xs">{{ row.ip ?? '—' }}</td>
             <td class="text-xs">{{ row.rejectionReason ?? '—' }}</td>

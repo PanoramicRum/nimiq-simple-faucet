@@ -17,6 +17,7 @@ export const claims = sqliteTable('claims', {
   decision: text('decision').notNull(),
   signalsJson: text('signals_json').notNull().default('{}'),
   rejectionReason: text('rejection_reason'),
+  idempotencyKey: text('idempotency_key'),
 });
 
 export const blocklist = sqliteTable('blocklist', {

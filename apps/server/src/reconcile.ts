@@ -6,7 +6,7 @@
  * at `broadcast` forever. This sweep polls the chain for those orphaned
  * claims and flips them to `confirmed` or `rejected`.
  */
-import { and, eq, isNotNull, gte } from 'drizzle-orm';
+import { and, eq, isNotNull, gte, or } from 'drizzle-orm';
 import { DriverError } from '@faucet/core';
 import type { AppContext } from './context.js';
 import { claims } from './db/schema.js';
@@ -21,7 +21,7 @@ export async function sweep(ctx: AppContext): Promise<number> {
     .from(claims)
     .where(
       and(
-        eq(claims.status, 'broadcast'),
+        or(eq(claims.status, 'broadcast'), eq(claims.status, 'timeout')),
         isNotNull(claims.txId),
         gte(claims.createdAt, cutoff),
       ),
@@ -47,12 +47,19 @@ export async function sweep(ctx: AppContext): Promise<number> {
       if (err instanceof DriverError && err.code === 'TX_REJECTED') {
         await ctx.db
           .update(claims)
-          .set({ status: 'rejected', rejectionReason: 'tx expired/invalidated on-chain' })
+          .set({ status: 'expired', rejectionReason: 'tx expired/invalidated on-chain' })
           .where(eq(claims.id, claim.id));
-        reconcilerFlips.inc({ to: 'rejected' });
+        reconcilerFlips.inc({ to: 'expired' });
         flipped++;
+      } else if (err instanceof DriverError && err.code === 'CONFIRM_TIMEOUT') {
+        // Mark as timeout so the dashboard shows it distinctly from
+        // fresh broadcasts. Next sweep will retry.
+        await ctx.db
+          .update(claims)
+          .set({ status: 'timeout' })
+          .where(eq(claims.id, claim.id));
       }
-      // CONFIRM_TIMEOUT → leave as broadcast, retry next sweep.
+      // Other errors: leave as-is, retry next sweep.
     }
   }
   return flipped;

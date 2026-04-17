@@ -85,7 +85,7 @@ describe('reconciler sweep()', () => {
     expect(row?.status).toBe('confirmed');
   });
 
-  it('flips a broadcast claim to rejected when the tx is invalidated', async () => {
+  it('flips a broadcast claim to expired when the tx is invalidated', async () => {
     const ctx = await setup();
     driver.confirmBehaviour = 'rejected';
     await ctx.db.insert(claims).values({
@@ -100,10 +100,10 @@ describe('reconciler sweep()', () => {
     const flipped = await sweep(ctx);
     expect(flipped).toBe(1);
     const [row] = await ctx.db.select().from(claims).where(eq(claims.id, 'test-claim-2'));
-    expect(row?.status).toBe('rejected');
+    expect(row?.status).toBe('expired');
   });
 
-  it('leaves a broadcast claim as broadcast on timeout (retry next sweep)', async () => {
+  it('flips a broadcast claim to timeout on confirmation timeout (retried next sweep)', async () => {
     const ctx = await setup();
     driver.confirmBehaviour = 'timeout';
     await ctx.db.insert(claims).values({
@@ -118,6 +118,6 @@ describe('reconciler sweep()', () => {
     const flipped = await sweep(ctx);
     expect(flipped).toBe(0);
     const [row] = await ctx.db.select().from(claims).where(eq(claims.id, 'test-claim-3'));
-    expect(row?.status).toBe('broadcast');
+    expect(row?.status).toBe('timeout');
   });
 });

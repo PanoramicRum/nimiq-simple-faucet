@@ -73,6 +73,9 @@ function migrateSqlite(db: Db): void {
   db.run(sql`CREATE INDEX IF NOT EXISTS idx_claims_created_at ON claims(created_at DESC)`);
   db.run(sql`CREATE INDEX IF NOT EXISTS idx_claims_address ON claims(address)`);
   db.run(sql`CREATE INDEX IF NOT EXISTS idx_claims_ip ON claims(ip)`);
+  // v1.7.0: idempotency key column + unique partial index
+  try { db.run(sql`ALTER TABLE claims ADD COLUMN idempotency_key TEXT`); } catch { /* column already exists */ }
+  db.run(sql`CREATE UNIQUE INDEX IF NOT EXISTS idx_claims_idempotency ON claims(idempotency_key) WHERE idempotency_key IS NOT NULL`);
 
   db.run(sql`CREATE TABLE IF NOT EXISTS blocklist (
     id TEXT PRIMARY KEY,
@@ -180,6 +183,8 @@ function migratePg(db: any): void {
   db.execute(sql`CREATE INDEX IF NOT EXISTS idx_claims_created_at ON claims(created_at DESC)`);
   db.execute(sql`CREATE INDEX IF NOT EXISTS idx_claims_address ON claims(address)`);
   db.execute(sql`CREATE INDEX IF NOT EXISTS idx_claims_ip ON claims(ip)`);
+  db.execute(sql`ALTER TABLE claims ADD COLUMN IF NOT EXISTS idempotency_key TEXT`);
+  db.execute(sql`CREATE UNIQUE INDEX IF NOT EXISTS idx_claims_idempotency ON claims(idempotency_key) WHERE idempotency_key IS NOT NULL`);
 
   db.execute(sql`CREATE TABLE IF NOT EXISTS blocklist (
     id TEXT PRIMARY KEY,
