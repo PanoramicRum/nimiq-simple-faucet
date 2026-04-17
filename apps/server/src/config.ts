@@ -32,7 +32,7 @@ export const ServerConfigSchema = z.object({
   hashcashDifficulty: z.coerce.number().int().min(8).max(30).default(20),
   hashcashTtlMs: z.coerce.number().int().min(10_000).default(5 * 60_000),
 
-  geoipBackend: z.enum(['none', 'maxmind', 'ipinfo']).default('none'),
+  geoipBackend: z.enum(['none', 'dbip', 'maxmind', 'ipinfo']).default('dbip'),
   geoipMaxmindCountryDb: z.string().optional(),
   geoipMaxmindAsnDb: z.string().optional(),
   geoipIpinfoToken: z.string().optional(),

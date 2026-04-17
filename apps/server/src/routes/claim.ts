@@ -53,6 +53,9 @@ export async function claimRoutes(app: FastifyInstance, ctx: AppContext): Promis
     hashcash: ctx.config.hashcashSecret
       ? { difficulty: ctx.config.hashcashDifficulty, ttlMs: ctx.config.hashcashTtlMs }
       : null,
+    geoipAttribution: ctx.config.geoipBackend === 'dbip'
+      ? 'IP geolocation by DB-IP (https://db-ip.com)'
+      : undefined,
   }));
 
   app.post('/v1/challenge', {
