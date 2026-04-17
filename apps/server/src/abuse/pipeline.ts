@@ -20,6 +20,9 @@ import { DrizzleRecentClaimsQuery } from './recentClaimsQuery.js';
 
 export interface PipelineOverrides {
   geoipResolver?: GeoIpResolver;
+  fingerprintEnabled?: boolean | undefined;
+  onchainEnabled?: boolean | undefined;
+  aiEnabled?: boolean | undefined;
 }
 
 export function buildPipeline(
@@ -64,7 +67,7 @@ export function buildPipeline(
       }),
     );
   }
-  if (config.fingerprintEnabled) {
+  if (overrides.fingerprintEnabled ?? config.fingerprintEnabled) {
     checks.push(
       fingerprintCheck({
         store: new DrizzleFingerprintStore(db),
@@ -74,7 +77,7 @@ export function buildPipeline(
       }),
     );
   }
-  if (config.onchainEnabled && driver.addressHistory) {
+  if ((overrides.onchainEnabled ?? config.onchainEnabled) && driver.addressHistory) {
     checks.push(
       onchainNimiqCheck({
         driver,
@@ -83,7 +86,7 @@ export function buildPipeline(
       }),
     );
   }
-  if (config.aiEnabled) {
+  if (overrides.aiEnabled ?? config.aiEnabled) {
     checks.push(
       aiCheck({
         query: new DrizzleRecentClaimsQuery(db),

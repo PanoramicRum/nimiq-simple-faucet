@@ -77,6 +77,8 @@ export async function claimRoutes(app: FastifyInstance, ctx: AppContext): Promis
     return reply.send(challenge);
   });
 
+  const inflightClaims = new Set<string>();
+
   app.post('/v1/claim', { bodyLimit: 16 * 1024 }, async (req, reply) => {
     const now = Date.now();
     const rawBody = typeof req.body === 'string' ? req.body : JSON.stringify(req.body ?? {});
@@ -192,11 +194,21 @@ export async function claimRoutes(app: FastifyInstance, ctx: AppContext): Promis
       });
     }
 
-    // allow
+    // allow — lock per address to prevent duplicate txIds from concurrent
+    // requests (the Nimiq node deduplicates identical mempool transactions,
+    // so two sends with the same params return the same hash). See #50.
+    if (inflightClaims.has(address)) {
+      return reply.code(429).send({
+        error: 'claim_in_progress',
+        message: 'A claim for this address is already being processed. Try again shortly.',
+      });
+    }
+    inflightClaims.add(address);
     let txId: string;
     try {
       txId = await ctx.driver.send(address, ctx.config.claimAmountLuna);
     } catch (err) {
+      inflightClaims.delete(address);
       if (err instanceof DriverError && err.code === 'RPC_-32602') {
         return reply.code(400).send({
           error: 'invalid address',
@@ -218,6 +230,7 @@ export async function claimRoutes(app: FastifyInstance, ctx: AppContext): Promis
       decision: 'allow',
       signalsJson: JSON.stringify(evaluation.signals),
     });
+    inflightClaims.delete(address);
     await incrementIpCounter(ctx.db, req.ip, now);
     ctx.stream.publish({ type: 'claim.broadcast', id, address, txId });
 

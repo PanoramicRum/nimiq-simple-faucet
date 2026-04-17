@@ -6,6 +6,30 @@ This project uses [changesets](https://github.com/changesets/changesets) for
 versioning. Run `pnpm changeset` to add entries, then `pnpm changeset version`
 (invoked by the release workflow) to regenerate this file.
 
+## 1.2.4 (2026-04-17)
+
+### Fixed
+- **Rapid duplicate claims to the same address no longer produce two
+  records with the same txId.** An in-memory per-address lock rejects
+  concurrent `POST /v1/claim` while a `send()` for that address is in
+  flight, returning `429 claim_in_progress`. Prevents accounting drift
+  where the DB showed 2 fulfilled claims but only 1 on-chain tx. Fixes
+  [#50](https://github.com/PanoramicRum/nimiq-simple-faucet/issues/50).
+
+### Added
+- **Abuse-layer toggles take effect immediately on admin config Save.**
+  The abuse pipeline is rebuilt in memory on `PATCH /admin/config` with
+  the persisted overrides for fingerprint, on-chain, and AI layers.
+  Other config values (claim amount, rate limit) still require a
+  restart. Fixes
+  [#51](https://github.com/PanoramicRum/nimiq-simple-faucet/issues/51).
+
+### Changed
+- Admin Config UI: warning banner now distinguishes "layer toggles:
+  immediate" from "other settings: restart required."
+- Helm chart bumped to `1.2.4` / `appVersion: 1.2.4`.
+- Flutter SDK bumped to `1.2.4`.
+
 ## 1.2.3 (2026-04-17)
 
 ### Security
