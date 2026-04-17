@@ -38,7 +38,7 @@ jobs:
           fi
 
       - name: Generate SBOM for container image
-        uses: anchore/sbom-action@v0.17.7
+        uses: anchore/sbom-action@v0.24.0
         with:
           image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.resolve.outputs.tag }}
           format: cyclonedx-json
