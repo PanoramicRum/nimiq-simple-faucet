@@ -3,7 +3,7 @@ import type { FastifyInstance } from 'fastify';
 import { and, eq, isNull } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import { z } from 'zod';
-import { HostContextSchema, type ClaimRequest } from '@faucet/core';
+import { DriverError, HostContextSchema, type ClaimRequest } from '@faucet/core';
 import { mintChallenge } from '@faucet/abuse-hashcash';
 import { claims, integratorKeys } from '../db/schema.js';
 import type { AppContext } from '../context.js';
@@ -193,7 +193,18 @@ export async function claimRoutes(app: FastifyInstance, ctx: AppContext): Promis
     }
 
     // allow
-    const txId = await ctx.driver.send(address, ctx.config.claimAmountLuna);
+    let txId: string;
+    try {
+      txId = await ctx.driver.send(address, ctx.config.claimAmountLuna);
+    } catch (err) {
+      if (err instanceof DriverError && err.code === 'RPC_-32602') {
+        return reply.code(400).send({
+          error: 'invalid address',
+          message: 'Address rejected by the network (invalid checksum or format)',
+        });
+      }
+      throw err;
+    }
     await ctx.db.insert(claims).values({
       id,
       address,

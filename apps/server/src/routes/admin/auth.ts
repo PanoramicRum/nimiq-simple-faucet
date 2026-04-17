@@ -154,22 +154,6 @@ export async function adminAuthRoutes(app: FastifyInstance, ctx: AppContext): Pr
     return reply.code(200).send({ ok: true });
   });
 
-  // Test-only: wipe admin + per-IP counters + fingerprint links + claims +
-  // audit log so a fresh browser-project run sees pristine state. Gated on
-  // dev mode; 404 in prod so it never becomes a production foot-gun.
-  app.post('/admin/auth/reset', async (_req, reply) => {
-    if (!ctx.config.dev) {
-      return reply.code(404).send({ error: 'not found' });
-    }
-    await ctx.db.delete(adminSessions);
-    await ctx.db.delete(adminUsers);
-    await ctx.db.delete(ipCounters);
-    await ctx.db.delete(fingerprintLinks);
-    await ctx.db.delete(claims);
-    await ctx.db.delete(auditLog);
-    return reply.code(200).send({ ok: true });
-  });
-
   // Pre-enrolment TOTP provisioning. Only usable if no admin row exists yet.
   app.post('/admin/auth/totp/enroll', async (_req, reply) => {
     const [existing] = await ctx.db

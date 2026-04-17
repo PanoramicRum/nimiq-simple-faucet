@@ -134,6 +134,16 @@ describe('admin auth', () => {
     expect(res.statusCode).toBe(401);
   });
 
+  it('/admin/audit-log without cookie returns 401 (fixes #43)', async () => {
+    const res = await app.inject({ method: 'GET', url: '/admin/audit-log' });
+    expect(res.statusCode).toBe(401);
+  });
+
+  it('POST /admin/auth/reset is no longer accessible (removed, fixes #44)', async () => {
+    const res = await app.inject({ method: 'POST', url: '/admin/auth/reset' });
+    expect([401, 404]).toContain(res.statusCode);
+  });
+
   it('logout revokes the session', async () => {
     const session = (globalThis as Record<string, unknown>).__sessionCookie as string;
     const out = await app.inject({

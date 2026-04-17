@@ -6,6 +6,33 @@ This project uses [changesets](https://github.com/changesets/changesets) for
 versioning. Run `pnpm changeset` to add entries, then `pnpm changeset version`
 (invoked by the release workflow) to regenerate this file.
 
+## 1.1.5 (2026-04-17)
+
+### Security
+- **`GET /admin/audit-log` now requires authentication.** A prefix
+  typo in the admin session gate (`/admin/audit` vs the actual route
+  `/admin/audit-log`) let the audit log through without a session
+  cookie. The log contains admin action history including operator IPs.
+  Fixes [#43](https://github.com/PanoramicRum/nimiq-simple-faucet/issues/43).
+- **`POST /admin/auth/reset` removed entirely.** The endpoint wiped
+  all faucet state (admin users, sessions, claims, audit log) with no
+  authentication — gated only by `FAUCET_DEV=1`, which the compose
+  Quick Start requires. Operators who need a clean slate should use
+  `docker compose down -v`. Fixes
+  [#44](https://github.com/PanoramicRum/nimiq-simple-faucet/issues/44).
+
+### Fixed
+- **Regex-valid but checksum-invalid Nimiq address now returns 400**
+  instead of leaking a raw `500 RPC_-32602` from the node. The claim
+  route catches the RPC "invalid params" error and maps it to a
+  user-friendly 400 response. (Full IBAN checksum validation in
+  `parseAddress()` is planned for v1.2.0.) Fixes
+  [#42](https://github.com/PanoramicRum/nimiq-simple-faucet/issues/42).
+
+### Changed
+- Helm chart bumped to `1.1.5` / `appVersion: 1.1.5`.
+- Flutter SDK bumped to `1.1.5`.
+
 ## 1.1.4 (2026-04-17)
 
 ### Fixed

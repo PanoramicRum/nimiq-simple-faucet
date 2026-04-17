@@ -28,7 +28,6 @@ export async function adminRoutes(app: FastifyInstance, ctx: AppContext): Promis
     '/admin/auth/login',
     '/admin/auth/logout',
     '/admin/auth/totp/enroll',
-    '/admin/auth/reset',
   ]);
   const sessionGate = requireAdminSession(ctx);
   // Only the admin *API* prefixes are gated. Paths like /admin/login or
@@ -43,6 +42,7 @@ export async function adminRoutes(app: FastifyInstance, ctx: AppContext): Promis
     '/admin/config',
     '/admin/account',
     '/admin/audit',
+    '/admin/audit-log',
   ];
   // Load the dashboard SPA shell once so we can short-circuit API paths that
   // collide with client-side routes (e.g. `/admin/claims`) when the browser is
