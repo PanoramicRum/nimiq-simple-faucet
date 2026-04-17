@@ -5,6 +5,7 @@ import websocket from '@fastify/websocket';
 import rateLimit from '@fastify/rate-limit';
 import type { CurrencyDriver } from '@faucet/core';
 import type { GeoIpResolver } from '@faucet/abuse-geoip';
+import { sql } from 'drizzle-orm';
 import type { ServerConfig } from './config.js';
 import { openDb } from './db/index.js';
 import { buildDriver } from './drivers.js';
@@ -101,10 +102,35 @@ export async function buildApp(
 
   app.get('/healthz', async () => ({ ok: true }));
   app.get('/readyz', async (_req, reply) => {
-    if (isDriverReady()) return { ready: true };
-    reply.header('Retry-After', '10');
-    reply.code(503);
-    return { ready: false, reason: 'driver_not_ready' };
+    const checks: Record<string, string> = {};
+    let allOk = true;
+
+    checks.driver = isDriverReady() ? 'ok' : 'not_ready';
+    if (checks.driver !== 'ok') allOk = false;
+
+    try {
+      db.run(sql`SELECT 1`);
+      checks.db = 'ok';
+    } catch (err) {
+      checks.db = `error: ${(err as Error).message}`;
+      allOk = false;
+    }
+
+    if (isDriverReady()) {
+      try {
+        checks.balance = (await driver.getBalance()).toString();
+      } catch {
+        checks.balance = 'unknown';
+      }
+    } else {
+      checks.balance = 'unknown';
+    }
+
+    if (!allOk) {
+      reply.header('Retry-After', '10');
+      reply.code(503);
+    }
+    return { ready: allOk, checks };
   });
   app.get('/metrics', async (_req, reply) => {
     if (!config.metricsEnabled) return reply.code(404).send({ error: 'metrics disabled' });

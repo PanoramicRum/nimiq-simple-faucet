@@ -98,12 +98,18 @@ describe('driver readiness gating', () => {
     const syncing = await built.app.inject({ method: 'GET', url: '/readyz' });
     expect(syncing.statusCode).toBe(503);
     expect(syncing.headers['retry-after']).toBe('10');
-    expect(syncing.json()).toEqual({ ready: false, reason: 'driver_not_ready' });
+    const syncBody = syncing.json();
+    expect(syncBody.ready).toBe(false);
+    expect(syncBody.checks.driver).toBe('not_ready');
+    expect(syncBody.checks.db).toBe('ok');
 
     driver.releaseReady();
     const ready = await built.app.inject({ method: 'GET', url: '/readyz' });
     expect(ready.statusCode).toBe(200);
-    expect(ready.json()).toEqual({ ready: true });
+    const readyBody = ready.json();
+    expect(readyBody.ready).toBe(true);
+    expect(readyBody.checks.driver).toBe('ok');
+    expect(readyBody.checks.db).toBe('ok');
   });
 
   it('POST /v1/claim returns 503 Retry-After while driver is syncing', async () => {

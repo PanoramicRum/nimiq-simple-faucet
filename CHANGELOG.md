@@ -6,6 +6,30 @@ This project uses [changesets](https://github.com/changesets/changesets) for
 versioning. Run `pnpm changeset` to add entries, then `pnpm changeset version`
 (invoked by the release workflow) to regenerate this file.
 
+## 1.5.1 (2026-04-17)
+
+### Fixed
+- **Docker image no longer crashes on startup.** v1.4.0 introduced the
+  reconciler with `app.addHook('onClose', ...)` called AFTER
+  `app.listen()` — Fastify 5 forbids this. Moved the hook registration
+  before listen. The CI smoke-test ("container exited early") now
+  catches this class of regression.
+
+### Added
+- **Grafana dashboard JSON** at `deploy/grafana/nimiq-faucet.json`.
+  Import into any Grafana instance connected to the faucet's Prometheus
+  — panels for claim rate, wallet balance, driver status, latency
+  percentiles (p50/p95/p99), and reconciler activity. (ROADMAP §1.1.3)
+- **`/readyz` now checks DB connectivity + wallet balance**, not just
+  driver readiness. Returns a structured
+  `{ ready, checks: { driver, db, balance } }` body so operators and
+  load balancers can pinpoint which dependency is down.
+  (ROADMAP §1.1.2a)
+
+### Changed
+- Helm chart bumped to `1.5.1` / `appVersion: 1.5.1`.
+- Flutter SDK bumped to `1.5.1`.
+
 ## 1.5.0 (2026-04-17)
 
 ### Added

@@ -5,9 +5,11 @@ import { startReconciler } from './reconcile.js';
 async function main(): Promise<void> {
   const config = loadConfig();
   const { app, ctx } = await buildApp(config);
-  await app.listen({ host: config.host, port: config.port });
+  // Start the reconciler BEFORE listen and register cleanup BEFORE listen
+  // — Fastify 5 forbids addHook() after the instance is listening.
   const stopReconciler = startReconciler(ctx);
   app.addHook('onClose', () => stopReconciler());
+  await app.listen({ host: config.host, port: config.port });
   app.log.info({ network: config.network, signerDriver: config.signerDriver }, 'faucet up');
 }
 
