@@ -9,8 +9,7 @@
 # Assumptions:
 #   - External Secrets Operator is installed and a ClusterSecretStore is ready.
 #   - cert-manager + ingress-nginx are installed.
-#   - Single-replica SQLite for 1.0.x. Multi-replica with Postgres + Redis
-#     lands in a future 1.x (tracked in ROADMAP.md 1.3.x).
+#   - Postgres + Redis enabled for production (multi-replica ready since v1.5.0).
 #
 # See docs/deployment-production.md for the full walkthrough.
 
@@ -19,10 +18,8 @@ image:
   tag: ""              # falls back to Chart.AppVersion
   pullPolicy: IfNotPresent
 
-# NOTE: SQLite is single-writer, so replicaCount must stay at 1 until
-# server-side Postgres + Redis support lands. Horizontal scaling is
-# tracked in ROADMAP.md 1.3.x.
-replicaCount: 1
+# With Postgres + Redis enabled (below), multiple replicas are supported.
+replicaCount: 2
 
 config:
   network: "main"
@@ -72,12 +69,24 @@ persistence:
   size: 10Gi
   storageClass: ""   # set to a non-volatile StorageClass in prod
 
-# Postgres + Redis — NOT yet functional at the server layer on 1.0.x.
-# Tracked in ROADMAP.md 1.3.x. Leave `enabled: false` until further notice.
+# Postgres + Redis — production-grade backend since v1.5.0.
+# Set DATABASE_URL and REDIS_URL in config.extra or via External Secrets.
 postgresql:
-  enabled: false
+  enabled: true
+  auth:
+    postgresPassword: ""  # set via secret
+    username: faucet
+    password: ""          # set via secret
+    database: faucet
+  primary:
+    persistence:
+      enabled: true
+      size: 20Gi
 redis:
-  enabled: false
+  enabled: true
+  architecture: standalone
+  auth:
+    enabled: false
 
 resources:
   requests:
@@ -87,9 +96,12 @@ resources:
     cpu: 1000m
     memory: 1Gi
 
-# Disabled until multi-replica is supported (requires Postgres backend).
+# HPA — scale based on CPU. Requires Postgres + Redis enabled above.
 autoscaling:
-  enabled: false
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 70
 
 # Restrict egress to what the faucet actually needs.
 networkPolicy:

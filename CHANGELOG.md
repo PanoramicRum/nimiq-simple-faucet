@@ -6,6 +6,35 @@ This project uses [changesets](https://github.com/changesets/changesets) for
 versioning. Run `pnpm changeset` to add entries, then `pnpm changeset version`
 (invoked by the release workflow) to regenerate this file.
 
+## 1.5.0 (2026-04-17)
+
+### Added
+- **Postgres storage backend.** Set `DATABASE_URL=postgres://...` to
+  use Postgres instead of SQLite. The server detects the URL scheme at
+  startup and initialises the correct Drizzle dialect + schema
+  automatically. Timestamps stored as `bigint` (epoch ms) on both
+  backends for application-layer parity. SQLite remains the default
+  when `DATABASE_URL` is unset. (ROADMAP §1.3.4)
+- **Redis rate-limit store.** When `REDIS_URL` is set, `@fastify/rate-limit`
+  uses a shared Redis store instead of in-memory counters. Enables
+  consistent rate limiting across multiple replicas. (`ioredis` dep
+  added.)
+- **Postgres schema** at `apps/server/src/db/schema.pg.ts` — mirrors
+  the SQLite schema with `pgTable` + Postgres-native column types.
+- **Dual-dialect DB factory** — `openDb()` returns a typed Drizzle
+  instance for either SQLite or Postgres based on `DATABASE_URL`.
+
+### Changed
+- **Compose `postgres` + `redis` profiles are now production-ready.**
+  Comments updated to reflect that the server consumes them (since
+  v1.5.0). `.env.example` documents `DATABASE_URL` + `REDIS_URL`.
+- **Helm `examples/values-prod.yaml`** flipped to `postgresql.enabled:
+  true`, `redis.enabled: true`, `replicaCount: 2`, `autoscaling:
+  enabled: true`. Multi-replica deployments are supported.
+- `pg` + `@types/pg` + `ioredis` added to server dependencies.
+- Helm chart bumped to `1.5.0` / `appVersion: 1.5.0`.
+- Flutter SDK bumped to `1.5.0`.
+
 ## 1.4.0 (2026-04-17)
 
 ### Added

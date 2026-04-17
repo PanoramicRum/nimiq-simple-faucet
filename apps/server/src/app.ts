@@ -47,11 +47,19 @@ export async function buildApp(
   await app.register(cors, { origin: config.corsOrigins });
   await app.register(cookie);
   await app.register(websocket);
-  await app.register(rateLimit, {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const rateLimitOpts: any = {
     max: config.rateLimitPerMinute,
     timeWindow: '1 minute',
     allowList: () => false,
-  });
+  };
+  if (config.redisUrl) {
+    const ioredis = await import('ioredis');
+    // ioredis default export is the Redis class constructor.
+    const RedisClass = (ioredis.default ?? ioredis) as unknown as new (url: string) => unknown;
+    rateLimitOpts.redis = new RedisClass(config.redisUrl);
+  }
+  await app.register(rateLimit, rateLimitOpts);
 
   const db = openDb({ dataDir: config.dataDir, databaseUrl: config.databaseUrl });
   const driver = opts.driverOverride ?? (await buildDriver(config));

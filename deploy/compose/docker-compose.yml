@@ -35,9 +35,9 @@ services:
     volumes:
       - faucet-data:/data
 
-  # Postgres — NOT yet consumed by the server. Gated behind the `postgres`
-  # profile. Start with: `docker compose --profile postgres up -d` once
-  # server-side Postgres support is implemented.
+  # Postgres — production-grade storage backend. Start with the `postgres`
+  # profile: `docker compose --profile postgres up -d`. Set DATABASE_URL
+  # in .env to postgres://faucet:faucet@postgres:5432/faucet to activate.
   postgres:
     image: postgres:16-alpine
     restart: unless-stopped
@@ -54,8 +54,8 @@ services:
       timeout: 3s
       retries: 10
 
-  # Redis — same caveat as postgres: defined but not yet consumed by the
-  # server. Gated behind the `postgres` profile.
+  # Redis — shared rate-limit store for multi-replica deployments. Same
+  # profile as postgres. Set REDIS_URL=redis://redis:6379 in .env.
   redis:
     image: redis:7-alpine
     restart: unless-stopped
