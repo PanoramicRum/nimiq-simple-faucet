@@ -350,8 +350,8 @@ importers:
         specifier: ^2.3.2026040119
         version: 2.3.2026040119
       maxmind:
-        specifier: ^4.3.22
-        version: 4.3.29
+        specifier: ^5.0.6
+        version: 5.0.6
       undici:
         specifier: ^6.19.8
         version: 6.25.0
@@ -3239,8 +3239,8 @@ packages:
     resolution: {integrity: sha512-/IXtbwEk5HTPyEwyKX6hGkYXxM9nbj64B+ilVJnC/R6B0pH5G4V3b0pVbL7DBj4tkhBAppbQUlf6F6Xl9LHu1g==}
     engines: {node: '>= 0.4'}
 
-  maxmind@4.3.29:
-    resolution: {integrity: sha512-Vxx0rh7omBekjZnsDxpw35SrGGM3Uy7NoIKWzZlvh3UcjihGaySR8n+YSQ8YBseCvhEn+yehA98rZkTDW+uhPw==}
+  maxmind@5.0.6:
+    resolution: {integrity: sha512-5bvd/u+kIaTqaGM+xkXjatzQw1dQfSmlLggr2W1EKMyMxSgx2woZyusLpNpZ4DdPmL+1bbJWeo4LXsi6bC0Iew==}
     engines: {node: '>=12', npm: '>=6'}
 
   mdast-util-to-hast@13.2.1:
@@ -3392,8 +3392,8 @@ packages:
     engines: {node: '>=10'}
     hasBin: true
 
-  mmdb-lib@2.2.1:
-    resolution: {integrity: sha512-DXO4L9W+08T+A7h5+xdT32l7IMot8z7WOH+7C1Maol571PnktQ8un7Ni4CyPFp4H+vht/FDA5/tpjRvWMFQDMw==}
+  mmdb-lib@3.0.2:
+    resolution: {integrity: sha512-7e87vk0DdWT647wjcfEtWeMtjm+zVGqNohN/aeIymbUfjHQ2T4Sx5kM+1irVDBSloNC3CkGKxswdMoo8yhqTDg==}
     engines: {node: '>=10', npm: '>=6'}
 
   mnemonist@0.40.0:
@@ -4219,9 +4219,9 @@ packages:
   throat@5.0.0:
     resolution: {integrity: sha512-fcwX4mndzpLQKBS1DVYhGAcYaYt7vsHNIvQV+WXMvnow5cgjPphq5CaayLaGsjRdSCKZFNGt7/GYAuXaNOiYCA==}
 
-  tiny-lru@11.3.4:
-    resolution: {integrity: sha512-UxWEfRKpFCabAf6fkTNdlfSw/RDUJ/4C6i1aLZaDnGF82PERHyYhz5CMCVYXtLt34LbqgfpJ2bjmgGKgxuF/6A==}
-    engines: {node: '>=12'}
+  tiny-lru@13.0.0:
+    resolution: {integrity: sha512-xDHxKKS1FdF0Tv2P+QT7IeSEg74K/8cEDzbv3Tv6UyHHUgBOjOiQiBp818MGj66dhurQus/IBcoAbwIKtSGc6Q==}
+    engines: {node: '>=14'}
 
   tinybench@2.9.0:
     resolution: {integrity: sha512-0+DUvqWMValLmha6lr4kD8iAMK1HzV0/aKnCtWb9v9641TnP/MFb7Pc2bxoxQjTXAErryXVgUOfv2YqNllqGeg==}
@@ -7164,10 +7164,10 @@ snapshots:
 
   math-intrinsics@1.1.0: {}
 
-  maxmind@4.3.29:
+  maxmind@5.0.6:
     dependencies:
-      mmdb-lib: 2.2.1
-      tiny-lru: 11.3.4
+      mmdb-lib: 3.0.2
+      tiny-lru: 13.0.0
 
   mdast-util-to-hast@13.2.1:
     dependencies:
@@ -7420,7 +7420,7 @@ snapshots:
 
   mkdirp@1.0.4: {}
 
-  mmdb-lib@2.2.1: {}
+  mmdb-lib@3.0.2: {}
 
   mnemonist@0.40.0:
     dependencies:
@@ -8306,7 +8306,7 @@ snapshots:
 
   throat@5.0.0: {}
 
-  tiny-lru@11.3.4: {}
+  tiny-lru@13.0.0: {}
 
   tinybench@2.9.0: {}
 
