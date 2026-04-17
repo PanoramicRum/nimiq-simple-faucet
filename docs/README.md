@@ -21,6 +21,7 @@ the [root README](../README.md).
 - [qa-testing.md](./qa-testing.md) — 12-phase hands-on walkthrough of every feature (AI-assisted)
 - [release-playbook.md](./release-playbook.md) — tag → publish flow, NPM_TOKEN provisioning, rc dry-runs
 - [release-polish-plan.md](./release-polish-plan.md) — historical pre-1.0 polish plan (reference)
+- [quality/runtime-core-quality-audit-2026-04.md](./quality/runtime-core-quality-audit-2026-04.md) — runtime core quality audit ledger (PRs, issues, recommendations)
 - [../CONTRIBUTING.md](../CONTRIBUTING.md) — dev setup, repository layout, code style
 - [../ROADMAP.md](../ROADMAP.md) — post-1.0 plans + ongoing quality programs
 

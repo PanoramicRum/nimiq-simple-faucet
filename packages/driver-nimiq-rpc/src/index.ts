@@ -1,6 +1,8 @@
 import { request } from 'undici';
 import {
   DriverError,
+  isValidNimiqAddress,
+  normalizeNimiqAddress,
   type Address,
   type CurrencyDriver,
   type CurrencyDriverFactory,
@@ -160,8 +162,8 @@ export class NimiqRpcDriver implements CurrencyDriver {
   }
 
   parseAddress(input: string): Address {
-    const normalized = input.trim().toUpperCase().replace(/\s+/g, ' ');
-    if (!/^NQ[0-9]{2}(?: ?[0-9A-Z]{4}){8}$/.test(normalized)) {
+    const normalized = normalizeNimiqAddress(input);
+    if (!isValidNimiqAddress(normalized)) {
       throw new DriverError(`Invalid Nimiq address: ${input}`, 'INVALID_ADDRESS');
     }
     return normalized as Address;

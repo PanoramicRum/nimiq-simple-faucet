@@ -35,6 +35,9 @@ importers:
 
   apps/claim-ui:
     dependencies:
+      '@faucet/core':
+        specifier: workspace:*
+        version: link:../../packages/core
       '@nimiq-faucet/sdk':
         specifier: workspace:*
         version: link:../../packages/sdk-ts

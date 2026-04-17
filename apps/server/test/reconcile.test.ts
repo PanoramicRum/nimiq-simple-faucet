@@ -3,24 +3,20 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { eq } from 'drizzle-orm';
-import { DriverError, type CurrencyDriver } from '@faucet/core';
+import { DriverError } from '@faucet/core';
 import { buildApp } from '../src/app.js';
 import { ServerConfigSchema } from '../src/config.js';
 import { claims } from '../src/db/schema.js';
 import { sweep } from '../src/reconcile.js';
+import { BaseTestDriver, TEST_FAUCET_ADDRESS } from './helpers/testDriver.js';
 
-const FAUCET_ADDR = 'NQ00 0000 0000 0000 0000 0000 0000 0000 0000';
+const FAUCET_ADDR = TEST_FAUCET_ADDRESS;
 
-class MockDriver implements CurrencyDriver {
-  readonly id = 'nimiq';
-  readonly networks = ['test'] as const;
+class MockDriver extends BaseTestDriver {
   confirmBehaviour: 'ok' | 'timeout' | 'rejected' = 'ok';
-  async init() {}
-  parseAddress(s: string) { return s.trim().toUpperCase().replace(/\s+/g, ' '); }
-  async getFaucetAddress() { return FAUCET_ADDR; }
-  async getBalance() { return 0n; }
-  async send() { return 'tx_1'; }
-  async waitForConfirmation() {
+  override async getBalance() { return 0n; }
+  override async send() { return 'tx_1'; }
+  override async waitForConfirmation() {
     if (this.confirmBehaviour === 'ok') return;
     if (this.confirmBehaviour === 'rejected') {
       throw new DriverError('tx invalidated', 'TX_REJECTED');

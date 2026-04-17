@@ -2,23 +2,14 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import type { CurrencyDriver } from '@faucet/core';
 import { buildApp } from '../src/app.js';
 import { ServerConfigSchema } from '../src/config.js';
+import { BaseTestDriver, TEST_FAUCET_ADDRESS } from './helpers/testDriver.js';
 
-const FAUCET_ADDR = 'NQ00 0000 0000 0000 0000 0000 0000 0000 0000';
+const FAUCET_ADDR = TEST_FAUCET_ADDRESS;
 
-class StubDriver implements CurrencyDriver {
-  readonly id = 'nimiq';
-  readonly networks = ['test'] as const;
-  async init() {}
-  parseAddress(s: string) {
-    return s.trim().toUpperCase().replace(/\s+/g, ' ');
-  }
-  async getFaucetAddress() { return FAUCET_ADDR; }
-  async getBalance() { return 42_000n; }
-  async send() { return 'tx_1'; }
-  async waitForConfirmation() {}
+class StubDriver extends BaseTestDriver {
+  override async getBalance() { return 42_000n; }
 }
 
 function baseConfig(dir: string, overrides: Record<string, unknown> = {}) {

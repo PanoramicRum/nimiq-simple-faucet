@@ -257,6 +257,20 @@ function registerRoutes(): void {
   });
 
   registry.registerPath({
+    method: 'post',
+    path: '/admin/account/rotate-key',
+    tags: ['Admin'],
+    summary: 'Rotate encrypted at-rest key material (requires TOTP step-up)',
+    security: [{ adminSession: [] }],
+    responses: {
+      200: {
+        description: 'Rotation timestamp',
+        content: jsonContent(z.object({ rotatedAt: z.string() })),
+      },
+    },
+  });
+
+  registry.registerPath({
     method: 'get',
     path: '/admin/audit-log',
     tags: ['Admin'],
@@ -276,6 +290,41 @@ function registerRoutes(): void {
     request: { params: z.object({ id: z.string() }) },
     responses: {
       200: { description: 'Claim with expanded signals' },
+      404: { description: 'Claim not found', content: jsonContent(ErrorResponse) },
+    },
+  });
+
+  registry.registerPath({
+    method: 'post',
+    path: '/admin/claims/{id}/allow',
+    tags: ['Admin'],
+    summary: 'Override a claim to allow (manual admin action)',
+    security: [{ adminSession: [] }],
+    request: { params: z.object({ id: z.string() }) },
+    responses: {
+      200: { description: 'Updated', content: jsonContent(OkResponse) },
+      404: { description: 'Claim not found', content: jsonContent(ErrorResponse) },
+    },
+  });
+
+  registry.registerPath({
+    method: 'post',
+    path: '/admin/claims/{id}/deny',
+    tags: ['Admin'],
+    summary: 'Override a claim to deny (manual admin action)',
+    security: [{ adminSession: [] }],
+    request: {
+      params: z.object({ id: z.string() }),
+      body: {
+        content: jsonContent(
+          z.object({
+            reason: z.string().max(256).optional(),
+          }),
+        ),
+      },
+    },
+    responses: {
+      200: { description: 'Updated', content: jsonContent(OkResponse) },
       404: { description: 'Claim not found', content: jsonContent(ErrorResponse) },
     },
   });
