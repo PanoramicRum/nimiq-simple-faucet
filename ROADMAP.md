@@ -454,6 +454,45 @@ sweep.
 
 ---
 
+## 1.8 — Architecture cleanup (from April 2026 quality audit)
+
+Filed from the [runtime core quality audit](docs/quality/runtime-core-quality-audit-2026-04.md).
+Low-risk fixes shipped in PR #61; these are the larger follow-ups.
+
+### 1.8.1 Refactor OpenAPI/runtime route schemas to a single source of truth
+
+**Goal:** route validators (Zod) and OpenAPI docs (zod-to-openapi) are maintained in parallel today. Drift silently ships undocumented contracts (#49 was an example). Refactor to a shared contract module where each route declares its schema once.
+
+**Tracked as:** [#57](https://github.com/PanoramicRum/nimiq-simple-faucet/issues/57)
+
+**Estimated effort:** 2-3 days.
+
+### 1.8.2 Deduplicate runtime config mapping
+
+**Goal:** Server config, admin config PATCH, /v1/config response, and the dashboard form all define the same fields independently. Refactor to a shared config catalog with derived types.
+
+**Tracked as:** [#58](https://github.com/PanoramicRum/nimiq-simple-faucet/issues/58)
+
+**Estimated effort:** 2-3 days.
+
+### 1.8.3 Reduce SQLite/Postgres schema duplication
+
+**Goal:** `schema.sqlite.ts` and `schema.pg.ts` (introduced in v1.5.0) are hand-maintained mirrors. A schema descriptor that generates dialect-specific tables would eliminate the drift risk.
+
+**Tracked as:** [#59](https://github.com/PanoramicRum/nimiq-simple-faucet/issues/59)
+
+**Estimated effort:** 2 days.
+
+### 1.8.4 Unify React/Vue SDK hook engines
+
+**Goal:** Both SDKs implement the same claim/status/stream lifecycle independently. A shared reactive core with framework-specific wrappers prevents cross-SDK drift.
+
+**Tracked as:** [#60](https://github.com/PanoramicRum/nimiq-simple-faucet/issues/60)
+
+**Estimated effort:** 2 days.
+
+---
+
 # Beyond 1.x — Ongoing quality programs
 
 These are continuous investments rather than a single release. They
