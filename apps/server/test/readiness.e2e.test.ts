@@ -2,20 +2,19 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import type { CurrencyDriver } from '@faucet/core';
 import { buildApp } from '../src/app.js';
 import { ServerConfigSchema } from '../src/config.js';
+import { BaseTestDriver, TEST_FAUCET_ADDRESS } from './helpers/testDriver.js';
 
-const FAUCET_ADDR = 'NQ00 0000 0000 0000 0000 0000 0000 0000 0000';
+const FAUCET_ADDR = TEST_FAUCET_ADDRESS;
 
-class NeverReadyDriver implements CurrencyDriver {
-  readonly id = 'nimiq';
-  readonly networks = ['test'] as const;
+class NeverReadyDriver extends BaseTestDriver {
   readonly readyPromise: Promise<void>;
   #ready = false;
   #release!: () => void;
 
   constructor() {
+    super();
     this.readyPromise = new Promise<void>((resolve) => {
       this.#release = () => {
         this.#ready = true;
@@ -32,21 +31,12 @@ class NeverReadyDriver implements CurrencyDriver {
   isReady() {
     return this.#ready;
   }
-  parseAddress(s: string) {
-    const n = s.trim().toUpperCase().replace(/\s+/g, ' ');
-    if (!/^NQ[0-9]{2}(?: ?[0-9A-Z]{4}){8}$/.test(n)) throw new Error(`bad: ${s}`);
-    return n;
-  }
-  async getFaucetAddress() {
-    return FAUCET_ADDR;
-  }
-  async getBalance() {
+  override async getBalance() {
     return 0n;
   }
-  async send() {
-    return 'tx_ready' as never;
+  override async send() {
+    return 'tx_ready';
   }
-  async waitForConfirmation() {}
 }
 
 function baseConfig(dir: string) {

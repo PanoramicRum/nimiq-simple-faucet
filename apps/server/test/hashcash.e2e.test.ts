@@ -3,32 +3,22 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { solveChallenge } from '@faucet/abuse-hashcash';
-import type { CurrencyDriver } from '@faucet/core';
 import { buildApp } from '../src/app.js';
 import { ServerConfigSchema } from '../src/config.js';
+import { BaseTestDriver, TEST_FAUCET_ADDRESS } from './helpers/testDriver.js';
 
-const FAUCET_ADDR = 'NQ00 0000 0000 0000 0000 0000 0000 0000 0000';
+const FAUCET_ADDR = TEST_FAUCET_ADDRESS;
 const USER_ADDR = 'NQ00 1111 1111 1111 1111 1111 1111 1111 1111';
 
-class StubDriver implements CurrencyDriver {
-  readonly id = 'nimiq';
-  readonly networks = ['test'] as const;
+class StubDriver extends BaseTestDriver {
   public sends: Array<{ to: string; amount: bigint }> = [];
-  async init() {}
-  parseAddress(s: string) {
-    return s.trim().toUpperCase().replace(/\s+/g, ' ');
-  }
-  async getFaucetAddress() {
-    return FAUCET_ADDR;
-  }
-  async getBalance() {
+  override async getBalance() {
     return 0n;
   }
-  async send(to: string, amount: bigint) {
+  override async send(to: string, amount: bigint) {
     this.sends.push({ to, amount });
     return `tx_${this.sends.length}`;
   }
-  async waitForConfirmation() {}
 }
 
 describe('hashcash challenge flow', () => {

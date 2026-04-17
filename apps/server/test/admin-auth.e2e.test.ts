@@ -3,35 +3,15 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { authenticator } from '@otplib/preset-default';
-import type { CurrencyDriver } from '@faucet/core';
 import { buildApp } from '../src/app.js';
 import { ServerConfigSchema } from '../src/config.js';
+import { BaseTestDriver, TEST_FAUCET_ADDRESS, parseCookie } from './helpers/testDriver.js';
 
-const FAUCET_ADDR = 'NQ00 0000 0000 0000 0000 0000 0000 0000 0000';
+const FAUCET_ADDR = TEST_FAUCET_ADDRESS;
 
-class FakeDriver implements CurrencyDriver {
-  readonly id = 'nimiq';
-  readonly networks = ['test'] as const;
-  async init(): Promise<void> {}
-  parseAddress(s: string): string {
-    const n = s.trim().toUpperCase().replace(/\s+/g, ' ');
-    if (!/^NQ[0-9]{2}(?: ?[0-9A-Z]{4}){8}$/.test(n)) throw new Error(`bad address: ${s}`);
-    return n;
-  }
-  async getFaucetAddress() { return FAUCET_ADDR; }
-  async getBalance() { return 10_000_000n; }
-  async send() { return 'tx_x'; }
-  async waitForConfirmation() {}
-}
-
-function parseCookie(setCookie: string | string[] | undefined, name: string): string | null {
-  if (!setCookie) return null;
-  const arr = Array.isArray(setCookie) ? setCookie : [setCookie];
-  for (const line of arr) {
-    const m = line.match(new RegExp(`(?:^|;\\s*)${name}=([^;]+)`));
-    if (m) return decodeURIComponent(m[1]!);
-  }
-  return null;
+class FakeDriver extends BaseTestDriver {
+  override async getBalance() { return 10_000_000n; }
+  override async send() { return 'tx_x'; }
 }
 
 describe('admin auth', () => {

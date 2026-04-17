@@ -2,39 +2,26 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import type { CurrencyDriver } from '@faucet/core';
 import { buildApp } from '../src/app.js';
 import { ServerConfigSchema } from '../src/config.js';
+import { BaseTestDriver, TEST_FAUCET_ADDRESS } from './helpers/testDriver.js';
 
-const FAUCET_ADDR = 'NQ00 0000 0000 0000 0000 0000 0000 0000 0000';
+const FAUCET_ADDR = TEST_FAUCET_ADDRESS;
 const USER_ADDR = 'NQ00 1111 1111 1111 1111 1111 1111 1111 1111';
 
-class FakeNimiqDriver implements CurrencyDriver {
-  readonly id = 'nimiq';
-  readonly networks = ['test'] as const;
+class FakeNimiqDriver extends BaseTestDriver {
   public sends: Array<{ to: string; amount: bigint }> = [];
   public balance = 10_000_000n;
 
-  async init(): Promise<void> {}
-  parseAddress(s: string): string {
-    const n = s.trim().toUpperCase().replace(/\s+/g, ' ');
-    if (!/^NQ[0-9]{2}(?: ?[0-9A-Z]{4}){8}$/.test(n)) {
-      throw new Error(`bad address: ${s}`);
-    }
-    return n;
-  }
-  async getFaucetAddress() {
-    return FAUCET_ADDR;
-  }
-  async getBalance() {
+  override async getBalance() {
     return this.balance;
   }
-  async send(to: string, amount: bigint): Promise<string> {
+  override async send(to: string, amount: bigint): Promise<string> {
     this.sends.push({ to, amount });
     this.balance -= amount;
     return `tx_${this.sends.length}`;
   }
-  async waitForConfirmation(): Promise<void> {
+  override async waitForConfirmation(): Promise<void> {
     // confirmed instantly
   }
 }

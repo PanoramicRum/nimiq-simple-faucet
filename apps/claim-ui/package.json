@@ -10,6 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@faucet/core": "workspace:*",
     "@nimiq-faucet/sdk": "workspace:*",
     "vue": "^3.5.10"
   },

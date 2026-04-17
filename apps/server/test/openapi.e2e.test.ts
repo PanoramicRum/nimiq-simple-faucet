@@ -2,30 +2,13 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import type { CurrencyDriver } from '@faucet/core';
 import { buildApp } from '../src/app.js';
 import { ServerConfigSchema } from '../src/config.js';
+import { BaseTestDriver, TEST_FAUCET_ADDRESS } from './helpers/testDriver.js';
 
-const FAUCET_ADDR = 'NQ00 0000 0000 0000 0000 0000 0000 0000 0000';
+const FAUCET_ADDR = TEST_FAUCET_ADDRESS;
 
-class StubDriver implements CurrencyDriver {
-  readonly id = 'nimiq';
-  readonly networks = ['test'] as const;
-  async init(): Promise<void> {}
-  parseAddress(s: string): string {
-    return s;
-  }
-  async getFaucetAddress(): Promise<string> {
-    return FAUCET_ADDR;
-  }
-  async getBalance(): Promise<bigint> {
-    return 0n;
-  }
-  async send(): Promise<string> {
-    return 'tx_0';
-  }
-  async waitForConfirmation(): Promise<void> {}
-}
+class StubDriver extends BaseTestDriver {}
 
 function makeConfig(tmp: string, overrides: Record<string, unknown> = {}) {
   return ServerConfigSchema.parse({ geoipBackend: "none",
