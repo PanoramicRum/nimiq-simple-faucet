@@ -13,6 +13,7 @@ import { buildPipeline } from '../../abuse/pipeline.js';
 import { writeAudit } from '../../auth/audit.js';
 import { requireAdminCsrf } from '../../auth/middleware.js';
 import { AdminConfigPatch as PatchBody } from '../../openapi/schemas.js';
+import { deriveAdminConfigBase } from '../../configView.js';
 
 async function readOverrides(ctx: AppContext): Promise<Record<string, unknown>> {
   const rows = await ctx.db.select().from(runtimeConfig);
@@ -28,25 +29,10 @@ async function readOverrides(ctx: AppContext): Promise<Record<string, unknown>> 
 }
 
 export async function adminConfigRoutes(app: FastifyInstance, ctx: AppContext): Promise<void> {
-  app.get('/admin/config', async () => {
-    const overrides = await readOverrides(ctx);
-    const base = {
-      claimAmountLuna: ctx.config.claimAmountLuna.toString(),
-      rateLimitPerIpPerDay: ctx.config.rateLimitPerIpPerDay,
-      abuseDenyThreshold: ctx.config.aiDenyThreshold,
-      abuseReviewThreshold: ctx.config.aiReviewThreshold,
-      layers: {
-        turnstile: !!ctx.config.turnstileSiteKey,
-        hcaptcha: !!ctx.config.hcaptchaSiteKey,
-        hashcash: !!ctx.config.hashcashSecret,
-        geoip: ctx.config.geoipBackend !== 'none',
-        fingerprint: ctx.config.fingerprintEnabled,
-        onchain: ctx.config.onchainEnabled,
-        ai: ctx.config.aiEnabled,
-      },
-    };
-    return { base, overrides };
-  });
+  app.get('/admin/config', async () => ({
+    base: deriveAdminConfigBase(ctx.config),
+    overrides: await readOverrides(ctx),
+  }));
 
   app.patch(
     '/admin/config',

@@ -6,6 +6,19 @@ This project uses [changesets](https://github.com/changesets/changesets) for
 versioning. Run `pnpm changeset` to add entries, then `pnpm changeset version`
 (invoked by the release workflow) to regenerate this file.
 
+## 1.8.1 (2026-04-17)
+
+### Changed
+- **Config response derivation centralized in `configView.ts`.** The
+  abuse-layer toggle list (7 layers), public `/v1/config` response,
+  and admin `/admin/config` base object are now derived from shared
+  helper functions instead of being hand-mapped independently in each
+  route handler. Prevents layer-name drift and field-mapping
+  inconsistencies. Fixes
+  [#58](https://github.com/PanoramicRum/nimiq-simple-faucet/issues/58).
+- Helm chart bumped to `1.8.1` / `appVersion: 1.8.1`.
+- Flutter SDK bumped to `1.8.1`.
+
 ## 1.8.0 (2026-04-17)
 
 ### Changed

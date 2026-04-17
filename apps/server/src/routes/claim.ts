@@ -10,6 +10,7 @@ import { incrementIpCounter, decrementIpCounter } from '../abuse/rateLimit.js';
 import { verifyIntegratorRequest, type IntegratorKey } from '../hmac.js';
 import { claimsTotal, claimDuration } from '../metrics.js';
 import { ClaimRequest as ClaimRequestSchema } from '../openapi/schemas.js';
+import { derivePublicConfig } from '../configView.js';
 
 // Extend the shared OpenAPI schema with the backwards-compat transform.
 const ClaimBody = ClaimRequestSchema.transform(({ powSolution, hashcashSolution, ...rest }) => ({
@@ -18,30 +19,7 @@ const ClaimBody = ClaimRequestSchema.transform(({ powSolution, hashcashSolution,
 }));
 
 export async function claimRoutes(app: FastifyInstance, ctx: AppContext): Promise<void> {
-  app.get('/v1/config', async () => ({
-    network: ctx.config.network,
-    claimAmountLuna: ctx.config.claimAmountLuna.toString(),
-    abuseLayers: {
-      turnstile: !!ctx.config.turnstileSiteKey,
-      hcaptcha: !!ctx.config.hcaptchaSiteKey,
-      hashcash: !!ctx.config.hashcashSecret,
-      geoip: ctx.config.geoipBackend !== 'none',
-      fingerprint: ctx.config.fingerprintEnabled,
-      onchain: ctx.config.onchainEnabled,
-      ai: ctx.config.aiEnabled,
-    },
-    captcha: ctx.config.turnstileSiteKey
-      ? { provider: 'turnstile', siteKey: ctx.config.turnstileSiteKey }
-      : ctx.config.hcaptchaSiteKey
-        ? { provider: 'hcaptcha', siteKey: ctx.config.hcaptchaSiteKey }
-        : null,
-    hashcash: ctx.config.hashcashSecret
-      ? { difficulty: ctx.config.hashcashDifficulty, ttlMs: ctx.config.hashcashTtlMs }
-      : null,
-    geoipAttribution: ctx.config.geoipBackend === 'dbip'
-      ? 'IP geolocation by DB-IP (https://db-ip.com)'
-      : undefined,
-  }));
+  app.get('/v1/config', async () => derivePublicConfig(ctx.config));
 
   app.post('/v1/challenge', {
     bodyLimit: 1024,
