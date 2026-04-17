@@ -33,7 +33,7 @@
     "@faucet/driver-nimiq-wasm": "workspace:*",
     "@modelcontextprotocol/sdk": "^1.0.0",
     "@noble/ciphers": "^1.0.0",
-    "@noble/hashes": "^1.5.0",
+    "@noble/hashes": "^2.2.0",
     "@otplib/preset-default": "^12.0.1",
     "better-sqlite3": "^11.3.0",
     "drizzle-orm": "^0.45.2",
