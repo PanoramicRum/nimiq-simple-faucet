@@ -1,11 +1,16 @@
-import { computed, onUnmounted, ref, shallowRef, watch, type Ref } from 'vue';
+import { computed, onUnmounted, reactive, toRefs, type Ref } from 'vue';
 import {
   FaucetClient,
   FaucetError,
+  ClaimManager,
+  StatusPoller,
+  StreamManager,
   type ClaimOptions,
   type ClaimResponse,
+  type ClaimState,
   type ClaimStatus,
   type FaucetClientOptions,
+  type StatusState,
 } from '@nimiq-faucet/sdk';
 
 export type FaucetClientLike = Pick<
@@ -26,60 +31,32 @@ function asClient(source: FaucetClientLike | FaucetClientOptions): FaucetClientL
 }
 
 export function useFaucetClaim(args: UseFaucetClaimArgs) {
-  const client = shallowRef(asClient(args.client));
-  const status = ref<'idle' | 'pending' | ClaimStatus>('idle');
-  const id = ref<string | null>(null);
-  const txId = ref<string | null>(null);
-  const decision = ref<ClaimResponse['decision'] | null>(null);
-  const error = ref<FaucetError | Error | null>(null);
-  let controller: AbortController | null = null;
+  const client = asClient(args.client);
+  const state = reactive<ClaimState>({
+    status: 'idle',
+    id: null,
+    txId: null,
+    decision: null,
+    error: null,
+  });
+  const manager = new ClaimManager(client, (s) => Object.assign(state, s));
+  const isPending = computed(() => state.status === 'pending');
 
-  const isPending = computed(() => status.value === 'pending');
+  onUnmounted(() => manager.destroy());
 
-  const reset = () => {
-    controller?.abort();
-    controller = null;
-    status.value = 'idle';
-    id.value = null;
-    txId.value = null;
-    decision.value = null;
-    error.value = null;
-  };
-
-  const claim = async () => {
-    reset();
-    status.value = 'pending';
-    controller = new AbortController();
-    try {
-      const response = await client.value.claim(args.address, {
+  return {
+    ...toRefs(state),
+    isPending,
+    claim: () =>
+      manager.claim(args.address, {
         hostContext: args.hostContext,
         captchaToken: args.captchaToken,
         hashcashSolution: args.hashcashSolution,
         fingerprint: args.fingerprint,
-        signal: controller.signal,
-      });
-      id.value = response.id;
-      status.value = response.status;
-      txId.value = response.txId ?? null;
-      decision.value = response.decision ?? null;
-      const shouldPoll = args.pollForConfirmation ?? true;
-      if (shouldPoll && (response.status === 'broadcast' || response.status === 'queued')) {
-        const confirmed = await client.value.waitForConfirmation(response.id);
-        status.value = confirmed.status;
-        txId.value = confirmed.txId ?? response.txId ?? null;
-        decision.value = confirmed.decision ?? null;
-      }
-    } catch (err) {
-      error.value = err as Error;
-      status.value = 'rejected';
-    } finally {
-      controller = null;
-    }
+        pollForConfirmation: args.pollForConfirmation,
+      }),
+    reset: () => manager.reset(),
   };
-
-  onUnmounted(() => controller?.abort());
-
-  return { claim, reset, status, id, txId, decision, error, isPending };
 }
 
 export function useFaucetStatus(
@@ -88,45 +65,14 @@ export function useFaucetStatus(
   pollIntervalMs = 2_000,
 ) {
   const c = asClient(client);
-  const data = ref<ClaimResponse | null>(null);
-  const error = ref<Error | null>(null);
-  const loading = ref(false);
-  const idRef = (typeof id === 'object' && id !== null && 'value' in id ? id : ref(id)) as Ref<string | null>;
-  let timer: ReturnType<typeof setInterval> | undefined;
-  let tick = 0;
+  const state = reactive<StatusState>({ data: null, error: null, loading: false });
+  const poller = new StatusPoller(c, (s) => Object.assign(state, s));
+  const idValue = typeof id === 'object' && id !== null && 'value' in id ? id.value : id;
 
-  const refetch = async () => {
-    if (!idRef.value) return;
-    loading.value = true;
-    const n = ++tick;
-    try {
-      const next = await c.status(idRef.value);
-      if (n === tick) data.value = next;
-    } catch (err) {
-      if (n === tick) error.value = err as Error;
-    } finally {
-      if (n === tick) loading.value = false;
-    }
-  };
+  if (idValue) poller.start(idValue, pollIntervalMs);
+  onUnmounted(() => poller.destroy());
 
-  watch(
-    idRef,
-    (newId) => {
-      if (timer) clearInterval(timer);
-      if (!newId) return;
-      refetch();
-      if (pollIntervalMs > 0) {
-        timer = setInterval(refetch, pollIntervalMs);
-      }
-    },
-    { immediate: true },
-  );
-
-  onUnmounted(() => {
-    if (timer) clearInterval(timer);
-  });
-
-  return { data, error, loading, refetch };
+  return { ...toRefs(state), refetch: () => { if (idValue) poller.refetch(idValue); } };
 }
 
 export function useFaucetStream(
@@ -134,8 +80,9 @@ export function useFaucetStream(
   onEvent: (event: unknown) => void,
 ) {
   const c = asClient(client);
-  const unsubscribe = c.subscribe(onEvent);
-  onUnmounted(unsubscribe);
+  const mgr = new StreamManager(c);
+  mgr.start(onEvent);
+  onUnmounted(() => mgr.destroy());
 }
 
 export { FaucetClient, FaucetError } from '@nimiq-faucet/sdk';
@@ -146,4 +93,5 @@ export type {
   ClaimDecision,
   HostContext,
   FingerprintBundle,
+  ClaimState,
 } from '@nimiq-faucet/sdk';

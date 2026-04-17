@@ -276,6 +276,11 @@ function toHex(buf: Uint8Array): string {
   return out;
 }
 
+// Re-export shared managers for framework-specific SDK wrappers.
+export { ClaimManager, type ClaimState, type FaucetClaimClient } from './claimManager.js';
+export { StatusPoller, type StatusState, type FaucetStatusClient } from './statusPoller.js';
+export { StreamManager, type FaucetStreamClient } from './streamManager.js';
+
 function randomNonce(): string {
   const buf = new Uint8Array(16);
   const c = globalThis.crypto;

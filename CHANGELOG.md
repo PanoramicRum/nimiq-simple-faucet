@@ -6,6 +6,19 @@ This project uses [changesets](https://github.com/changesets/changesets) for
 versioning. Run `pnpm changeset` to add entries, then `pnpm changeset version`
 (invoked by the release workflow) to regenerate this file.
 
+## 1.8.3 (2026-04-17)
+
+### Changed
+- **React/Vue SDK hooks share a common engine.** The claim lifecycle,
+  confirmation polling, and stream subscription logic now live in
+  `@nimiq-faucet/sdk` as imperative state machines (`ClaimManager`,
+  `StatusPoller`, `StreamManager`). The React and Vue SDKs are thin
+  reactive wrappers (~15 lines each vs ~55 previously). Zero API
+  changes for consumers. Fixes
+  [#60](https://github.com/PanoramicRum/nimiq-simple-faucet/issues/60).
+- Helm chart bumped to `1.8.3` / `appVersion: 1.8.3`.
+- Flutter SDK bumped to `1.8.3`.
+
 ## 1.8.2 (2026-04-17)
 
 ### Changed

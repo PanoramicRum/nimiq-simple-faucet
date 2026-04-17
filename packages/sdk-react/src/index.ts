@@ -2,10 +2,15 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   FaucetClient,
   FaucetError,
+  ClaimManager,
+  StatusPoller,
+  StreamManager,
   type ClaimOptions,
   type ClaimResponse,
+  type ClaimState,
   type ClaimStatus,
   type FaucetClientOptions,
+  type StatusState,
 } from '@nimiq-faucet/sdk';
 
 export type FaucetClientLike = Pick<
@@ -14,21 +19,14 @@ export type FaucetClientLike = Pick<
 >;
 
 export interface UseFaucetClaimArgs extends Omit<ClaimOptions, 'signal'> {
-  /** Either a ready FaucetClient or options to construct one on the fly. */
   client: FaucetClientLike | FaucetClientOptions;
   address: string;
-  /** Auto-poll claim status after submission. Defaults to true. */
   pollForConfirmation?: boolean;
 }
 
-export interface UseFaucetClaimResult {
+export interface UseFaucetClaimResult extends ClaimState {
   claim: () => Promise<void>;
   reset: () => void;
-  status: 'idle' | 'pending' | ClaimStatus;
-  id: string | null;
-  txId: string | null;
-  decision: ClaimResponse['decision'] | null;
-  error: FaucetError | Error | null;
 }
 
 function useClient(source: FaucetClientLike | FaucetClientOptions): FaucetClientLike {
@@ -41,65 +39,40 @@ function useClient(source: FaucetClientLike | FaucetClientOptions): FaucetClient
 
 export function useFaucetClaim(args: UseFaucetClaimArgs): UseFaucetClaimResult {
   const client = useClient(args.client);
-  const { address, hostContext, captchaToken, hashcashSolution, fingerprint, pollForConfirmation = true } = args;
+  const [state, setState] = useState<ClaimState>({
+    status: 'idle',
+    id: null,
+    txId: null,
+    decision: null,
+    error: null,
+  });
+  const manager = useRef<ClaimManager | null>(null);
 
-  const [status, setStatus] = useState<UseFaucetClaimResult['status']>('idle');
-  const [id, setId] = useState<string | null>(null);
-  const [txId, setTxId] = useState<string | null>(null);
-  const [decision, setDecision] = useState<ClaimResponse['decision'] | null>(null);
-  const [error, setError] = useState<FaucetError | Error | null>(null);
-  const abort = useRef<AbortController | null>(null);
+  useEffect(() => {
+    manager.current = new ClaimManager(client, setState);
+    return () => manager.current?.destroy();
+  }, [client]);
 
-  const reset = useCallback(() => {
-    abort.current?.abort();
-    abort.current = null;
-    setStatus('idle');
-    setId(null);
-    setTxId(null);
-    setDecision(null);
-    setError(null);
-  }, []);
+  const { address, hostContext, captchaToken, hashcashSolution, fingerprint, pollForConfirmation } = args;
 
-  const claim = useCallback(async () => {
-    reset();
-    setStatus('pending');
-    const controller = new AbortController();
-    abort.current = controller;
-    try {
-      const response = await client.claim(address, {
+  const claim = useCallback(
+    () =>
+      manager.current?.claim(address, {
         hostContext,
         captchaToken,
         hashcashSolution,
         fingerprint,
-        signal: controller.signal,
-      });
-      setId(response.id);
-      setStatus(response.status);
-      setTxId(response.txId ?? null);
-      setDecision(response.decision ?? null);
-      if (pollForConfirmation && (response.status === 'broadcast' || response.status === 'queued')) {
-        const confirmed = await client.waitForConfirmation(response.id);
-        setStatus(confirmed.status);
-        setTxId(confirmed.txId ?? response.txId ?? null);
-        setDecision(confirmed.decision ?? null);
-      }
-    } catch (err) {
-      setError(err as Error);
-      setStatus('rejected');
-    } finally {
-      abort.current = null;
-    }
-  }, [client, address, hostContext, captchaToken, hashcashSolution, fingerprint, pollForConfirmation, reset]);
+        pollForConfirmation,
+      }) ?? Promise.resolve(),
+    [address, hostContext, captchaToken, hashcashSolution, fingerprint, pollForConfirmation],
+  );
 
-  useEffect(() => () => abort.current?.abort(), []);
+  const reset = useCallback(() => manager.current?.reset(), []);
 
-  return { claim, reset, status, id, txId, decision, error };
+  return { ...state, claim, reset };
 }
 
-export interface UseFaucetStatusResult {
-  data: ClaimResponse | null;
-  error: Error | null;
-  loading: boolean;
+export interface UseFaucetStatusResult extends StatusState {
   refetch: () => void;
 }
 
@@ -109,38 +82,24 @@ export function useFaucetStatus(
   pollIntervalMs = 2_000,
 ): UseFaucetStatusResult {
   const c = useClient(client);
-  const [data, setData] = useState<ClaimResponse | null>(null);
-  const [error, setError] = useState<Error | null>(null);
-  const [loading, setLoading] = useState(false);
-  const tick = useRef(0);
-
-  const fetchOnce = useCallback(async () => {
-    if (!id) return;
-    setLoading(true);
-    const n = ++tick.current;
-    try {
-      const next = await c.status(id);
-      if (n === tick.current) setData(next);
-    } catch (err) {
-      if (n === tick.current) setError(err as Error);
-    } finally {
-      if (n === tick.current) setLoading(false);
-    }
-  }, [c, id]);
+  const [state, setState] = useState<StatusState>({ data: null, error: null, loading: false });
+  const poller = useRef<StatusPoller | null>(null);
 
   useEffect(() => {
-    if (!id) return;
-    let timer: ReturnType<typeof setInterval> | undefined;
-    fetchOnce();
-    if (pollIntervalMs > 0) {
-      timer = setInterval(fetchOnce, pollIntervalMs);
-    }
-    return () => {
-      if (timer) clearInterval(timer);
-    };
-  }, [id, pollIntervalMs, fetchOnce]);
+    poller.current = new StatusPoller(c, setState);
+    return () => poller.current?.destroy();
+  }, [c]);
 
-  return { data, error, loading, refetch: fetchOnce };
+  useEffect(() => {
+    if (id) poller.current?.start(id, pollIntervalMs);
+    else poller.current?.stop();
+  }, [id, pollIntervalMs]);
+
+  const refetch = useCallback(() => {
+    if (id) poller.current?.refetch(id);
+  }, [id]);
+
+  return { ...state, refetch };
 }
 
 export function useFaucetStream(
@@ -151,8 +110,9 @@ export function useFaucetStream(
   const handler = useRef(onEvent);
   handler.current = onEvent;
   useEffect(() => {
-    const unsubscribe = c.subscribe((event) => handler.current(event));
-    return unsubscribe;
+    const mgr = new StreamManager(c);
+    mgr.start((event) => handler.current(event));
+    return () => mgr.destroy();
   }, [c]);
 }
 
@@ -164,4 +124,5 @@ export type {
   ClaimDecision,
   HostContext,
   FingerprintBundle,
+  ClaimState,
 } from '@nimiq-faucet/sdk';
