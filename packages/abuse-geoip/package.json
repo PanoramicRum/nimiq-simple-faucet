@@ -13,7 +13,10 @@
       "import": "./dist/index.js"
     }
   },
-  "files": ["dist", "llms.txt"],
+  "files": [
+    "dist",
+    "llms.txt"
+  ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
@@ -21,6 +24,8 @@
   },
   "dependencies": {
     "@faucet/core": "workspace:*",
+    "@ip-location-db/dbip-asn-mmdb": "^2.3.2026040119",
+    "@ip-location-db/dbip-country-mmdb": "^2.3.2026040119",
     "maxmind": "^4.3.22",
     "undici": "^6.19.8"
   },

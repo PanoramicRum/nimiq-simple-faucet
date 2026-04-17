@@ -2,6 +2,7 @@ import { AbusePipeline, type AbuseCheck, type CurrencyDriver } from '@faucet/cor
 import { hashcashCheck } from '@faucet/abuse-hashcash';
 import { hcaptchaCheck } from '@faucet/abuse-hcaptcha';
 import {
+  DbipResolver,
   IpinfoResolver,
   MaxMindResolver,
   geoipCheck,
@@ -99,6 +100,9 @@ export function buildPipeline(
 }
 
 function buildGeoipResolver(config: ServerConfig): GeoIpResolver | undefined {
+  if (config.geoipBackend === 'dbip') {
+    return new DbipResolver();
+  }
   if (config.geoipBackend === 'maxmind') {
     if (!config.geoipMaxmindCountryDb) {
       throw new Error('FAUCET_GEOIP_BACKEND=maxmind requires FAUCET_GEOIP_MAXMIND_COUNTRY_DB');

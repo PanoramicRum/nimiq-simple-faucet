@@ -343,6 +343,12 @@ importers:
       '@faucet/core':
         specifier: workspace:*
         version: link:../core
+      '@ip-location-db/dbip-asn-mmdb':
+        specifier: ^2.3.2026040119
+        version: 2.3.2026040119
+      '@ip-location-db/dbip-country-mmdb':
+        specifier: ^2.3.2026040119
+        version: 2.3.2026040119
       maxmind:
         specifier: ^4.3.22
         version: 4.3.29
@@ -1460,6 +1466,12 @@ packages:
 
   '@ioredis/commands@1.5.1':
     resolution: {integrity: sha512-JH8ZL/ywcJyR9MmJ5BNqZllXNZQqQbnVZOqpPQqE1vHiFgAw4NHbvE0FOduNU8IX9babitBT46571OnPTT0Zcw==}
+
+  '@ip-location-db/dbip-asn-mmdb@2.3.2026040119':
+    resolution: {integrity: sha512-9tN2pPfu19S3TrYB5Wkxy3BwTR2Kw7xkhEJC5NL0hEPo2qJ93DKzDXmbW/MyN4lUyrAZUsd60DsLH3YZlCnyuQ==}
+
+  '@ip-location-db/dbip-country-mmdb@2.3.2026040119':
+    resolution: {integrity: sha512-PdE2l2ZNbPQbFzlWScHfmk8jQ/sDFDIxwOyeLzykyAktHJwBI6jfy+IuMolIcL0puNE1FyLCJaP0B8Y9+DWJLQ==}
 
   '@isaacs/cliui@9.0.0':
     resolution: {integrity: sha512-AokJm4tuBHillT+FpMtxQ60n8ObyXBatq7jD2/JA9dxbDDokKQm8KMht5ibGzLVU9IJDIKK4TPKgMHEYMn3lMg==}
@@ -5356,6 +5368,10 @@ snapshots:
       '@types/node': 22.19.17
 
   '@ioredis/commands@1.5.1': {}
+
+  '@ip-location-db/dbip-asn-mmdb@2.3.2026040119': {}
+
+  '@ip-location-db/dbip-country-mmdb@2.3.2026040119': {}
 
   '@isaacs/cliui@9.0.0': {}
 
