@@ -25,7 +25,7 @@ class StubDriver implements CurrencyDriver {
 }
 
 function baseConfig(dir: string, overrides: Record<string, unknown> = {}) {
-  return ServerConfigSchema.parse({
+  return ServerConfigSchema.parse({ geoipBackend: "none",
     network: 'test',
     dataDir: dir,
     signerDriver: 'rpc',

@@ -117,13 +117,11 @@ export async function adminAuthRoutes(app: FastifyInstance, ctx: AppContext): Pr
       if (!ok) {
         return reply.code(401).send({ error: 'invalid credentials' });
       }
-      if (existing.totpSecret) {
-        if (!totp) {
-          return reply.code(401).send({ error: 'totp required' });
-        }
-        if (!verifyTotp(existing.totpSecret, totp)) {
-          return reply.code(401).send({ error: 'invalid totp' });
-        }
+      // Unified error for all TOTP failures — prevents authentication
+      // enumeration where distinct messages reveal password correctness
+      // or TOTP enrolment status (#55).
+      if (existing.totpSecret && (!totp || !verifyTotp(existing.totpSecret, totp))) {
+        return reply.code(401).send({ error: 'invalid credentials' });
       }
       const { token, expiresAt } = await issueSession(
         ctx.db,

@@ -11,7 +11,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "dev": "tsx watch src/index.ts",
     "start": "node dist/index.js",
-    "test": "vitest run",
+    "test": "FAUCET_GEOIP_BACKEND=none vitest run",
     "freeze:openapi": "tsx scripts/freeze-openapi.ts"
   },
   "dependencies": {

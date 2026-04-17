@@ -53,7 +53,7 @@ describe('MCP (/mcp)', () => {
   beforeAll(async () => {
     process.env.FAUCET_ADMIN_MCP_TOKEN = ADMIN_TOKEN;
     tmp = mkdtempSync(join(tmpdir(), 'faucet-mcp-e2e-'));
-    const config = ServerConfigSchema.parse({
+    const config = ServerConfigSchema.parse({ geoipBackend: "none",
       network: 'test',
       dataDir: tmp,
       signerDriver: 'rpc',

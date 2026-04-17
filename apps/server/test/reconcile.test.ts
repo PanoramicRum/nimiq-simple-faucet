@@ -1,7 +1,7 @@
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { eq } from 'drizzle-orm';
 import { DriverError, type CurrencyDriver } from '@faucet/core';
 import { buildApp } from '../src/app.js';
@@ -30,7 +30,7 @@ class MockDriver implements CurrencyDriver {
 }
 
 function baseConfig(dir: string) {
-  return ServerConfigSchema.parse({
+  return ServerConfigSchema.parse({ geoipBackend: "none",
     network: 'test',
     dataDir: dir,
     signerDriver: 'rpc',

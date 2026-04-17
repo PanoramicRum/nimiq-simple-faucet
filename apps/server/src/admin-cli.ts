@@ -7,7 +7,6 @@
  * The CLI shares the server's DB schema so it can safely read/write the
  * same SQLite file without schema drift.
  */
-import { join } from 'node:path';
 import { openDb } from './db/index.js';
 import { adminUsers, adminSessions } from './db/schema.js';
 

@@ -50,7 +50,7 @@ class NeverReadyDriver implements CurrencyDriver {
 }
 
 function baseConfig(dir: string) {
-  return ServerConfigSchema.parse({
+  return ServerConfigSchema.parse({ geoipBackend: "none",
     network: 'test',
     dataDir: dir,
     signerDriver: 'rpc',

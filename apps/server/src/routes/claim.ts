@@ -7,7 +7,7 @@ import { DriverError, HostContextSchema, type ClaimRequest } from '@faucet/core'
 import { mintChallenge } from '@faucet/abuse-hashcash';
 import { claims, integratorKeys } from '../db/schema.js';
 import type { AppContext } from '../context.js';
-import { incrementIpCounter } from '../abuse/rateLimit.js';
+import { incrementIpCounter, decrementIpCounter } from '../abuse/rateLimit.js';
 import { verifyIntegratorRequest, type IntegratorKey } from '../hmac.js';
 import { claimsTotal, claimDuration } from '../metrics.js';
 
@@ -139,6 +139,11 @@ export async function claimRoutes(app: FastifyInstance, ctx: AppContext): Promis
         .send({ error: 'invalid address', message: (err as Error).message });
     }
 
+    // Increment the IP counter BEFORE the abuse pipeline to close the TOCTOU
+    // window (#52). Concurrent requests from the same IP now see the incremented
+    // counter immediately. Rejected/challenged claims decrement below.
+    await incrementIpCounter(ctx.db, req.ip, now);
+
     const claimReq: ClaimRequest = {
       address,
       ip: req.ip,
@@ -156,6 +161,7 @@ export async function claimRoutes(app: FastifyInstance, ctx: AppContext): Promis
     const id = nanoid();
 
     if (evaluation.decision === 'deny' || evaluation.decision === 'review') {
+      await decrementIpCounter(ctx.db, req.ip, now);
       await ctx.db.insert(claims).values({
         id,
         address,
@@ -180,6 +186,7 @@ export async function claimRoutes(app: FastifyInstance, ctx: AppContext): Promis
     }
 
     if (evaluation.decision === 'challenge') {
+      await decrementIpCounter(ctx.db, req.ip, now);
       await ctx.db.insert(claims).values({
         id,
         address,
@@ -217,6 +224,7 @@ export async function claimRoutes(app: FastifyInstance, ctx: AppContext): Promis
       txId = await ctx.driver.send(address, ctx.config.claimAmountLuna);
     } catch (err) {
       inflightClaims.delete(address);
+      await decrementIpCounter(ctx.db, req.ip, now);
       if (err instanceof DriverError && err.code === 'RPC_-32602') {
         return reply.code(400).send({
           error: 'invalid address',
@@ -239,7 +247,7 @@ export async function claimRoutes(app: FastifyInstance, ctx: AppContext): Promis
       signalsJson: JSON.stringify(evaluation.signals),
     });
     inflightClaims.delete(address);
-    await incrementIpCounter(ctx.db, req.ip, now);
+    // IP counter was already incremented before the pipeline (see #52 fix above).
     claimsTotal.inc({ status: 'broadcast', decision: 'allow' });
     claimDuration.observe({ phase: 'total' }, (Date.now() - now) / 1000);
     ctx.stream.publish({ type: 'claim.broadcast', id, address, txId });

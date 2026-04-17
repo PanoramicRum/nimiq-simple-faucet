@@ -1,6 +1,6 @@
 import { createHash, randomBytes } from 'node:crypto';
 import type { FastifyInstance } from 'fastify';
-import { desc, eq } from 'drizzle-orm';
+import { and, desc, eq } from 'drizzle-orm';
 import { z } from 'zod';
 import type { AppContext } from '../../context.js';
 import { integratorKeys } from '../../db/schema.js';
@@ -76,10 +76,17 @@ export async function adminIntegratorsRoutes(
       if (!row) return reply.code(404).send({ error: 'not found' });
       const apiKey = mintApiKey();
       const hmacSecret = mintHmacSecret();
-      await ctx.db
+      // Optimistic locking: only update if the key hash hasn't changed
+      // since we read it. Prevents concurrent rotations from silently
+      // overwriting each other (#53).
+      const result = ctx.db
         .update(integratorKeys)
         .set({ apiKeyHash: sha256Hex(apiKey), hmacSecret, revokedAt: null })
-        .where(eq(integratorKeys.id, id));
+        .where(and(eq(integratorKeys.id, id), eq(integratorKeys.apiKeyHash, row.apiKeyHash)))
+        .run();
+      if ((result as { changes?: number }).changes === 0) {
+        return reply.code(409).send({ error: 'concurrent rotation detected, retry' });
+      }
       await writeAudit(ctx.db, {
         actor: req.adminUser?.id ?? 'admin',
         action: 'integrator.rotate',

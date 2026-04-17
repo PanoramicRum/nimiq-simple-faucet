@@ -23,8 +23,11 @@ export function rateLimitCheck(db: Db, config: RateLimitCheckConfig): AbuseCheck
         .from(ipCounters)
         .where(and(eq(ipCounters.ip, req.ip), eq(ipCounters.day, day)))
         .limit(1);
+      // Counter is incremented BEFORE the pipeline runs (see #52 fix in
+      // claim.ts), so `count` already includes the current request. Use
+      // strict > so that exactly `cap` claims are allowed.
       const count = row?.count ?? 0;
-      if (count >= config.perIpPerDay) {
+      if (count > config.perIpPerDay) {
         return {
           score: 1,
           decision: 'deny',
@@ -47,4 +50,12 @@ export async function incrementIpCounter(db: Db, ip: string, now: number): Promi
       target: [ipCounters.ip, ipCounters.day],
       set: { count: sql`${ipCounters.count} + 1` },
     });
+}
+
+export async function decrementIpCounter(db: Db, ip: string, now: number): Promise<void> {
+  const day = utcDay(now);
+  await db
+    .update(ipCounters)
+    .set({ count: sql`MAX(${ipCounters.count} - 1, 0)` })
+    .where(and(eq(ipCounters.ip, ip), eq(ipCounters.day, day)));
 }

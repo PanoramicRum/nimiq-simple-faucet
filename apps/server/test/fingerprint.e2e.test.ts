@@ -36,7 +36,7 @@ describe('fingerprint abuse layer', () => {
 
   beforeAll(async () => {
     tmp = mkdtempSync(join(tmpdir(), 'faucet-fp-'));
-    const config = ServerConfigSchema.parse({
+    const config = ServerConfigSchema.parse({ geoipBackend: "none",
       network: 'test',
       dataDir: tmp,
       signerDriver: 'rpc',

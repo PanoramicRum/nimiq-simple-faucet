@@ -6,6 +6,44 @@ This project uses [changesets](https://github.com/changesets/changesets) for
 versioning. Run `pnpm changeset` to add entries, then `pnpm changeset version`
 (invoked by the release workflow) to regenerate this file.
 
+## 1.6.0 (2026-04-17)
+
+### Security
+- **Per-IP rate limit no longer bypassable via concurrent requests.**
+  Counter increments at the start of the claim handler (before the
+  abuse pipeline), not after. Rejected/challenged claims decrement.
+  Closes the TOCTOU window where all concurrent requests saw count=0.
+  Fixes [#52](https://github.com/PanoramicRum/nimiq-simple-faucet/issues/52).
+- **Login endpoint returns a single error for all failure modes.**
+  "invalid credentials" for wrong password, missing TOTP, and invalid
+  TOTP — no more authentication enumeration. Fixes
+  [#55](https://github.com/PanoramicRum/nimiq-simple-faucet/issues/55).
+- **Source maps no longer served in production.** Vite builds with
+  `sourcemap: false` when `NODE_ENV=production`. Local dev retains
+  source maps. Fixes
+  [#54](https://github.com/PanoramicRum/nimiq-simple-faucet/issues/54).
+
+### Fixed
+- Concurrent integrator key rotation returns `409 Conflict` instead
+  of silently overwriting. Optimistic locking via
+  `WHERE api_key_hash = <old>`. Fixes
+  [#53](https://github.com/PanoramicRum/nimiq-simple-faucet/issues/53).
+- Unused imports in `admin-cli.ts` and `reconcile.test.ts` (CodeQL
+  alerts #315, #316).
+- Test configs now explicitly set `geoipBackend: 'none'` to avoid
+  unhandled rejections from the DB-IP MMDB resolver in test
+  environments where the MMDB files aren't installed.
+
+### Added
+- **DB-IP Lite as zero-config default GeoIP backend.** Country + ASN
+  lookup works out of the box — no MaxMind signup, no env vars.
+  Default `FAUCET_GEOIP_BACKEND` changed from `none` to `dbip`.
+  CC BY 4.0 attribution included in `/v1/config` response. (PR #56)
+
+### Changed
+- Helm chart bumped to `1.6.0` / `appVersion: 1.6.0`.
+- Flutter SDK bumped to `1.6.0`.
+
 ## 1.5.1 (2026-04-17)
 
 ### Fixed
