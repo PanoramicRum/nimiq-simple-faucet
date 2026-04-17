@@ -113,71 +113,33 @@ driver-readiness signal.
 
 **Estimated effort:** 1 hour.
 
-### 1.1.2c Refresh bundled `@nimiq/core` + diagnose Node-target peering
+### 1.1.2c Refresh bundled `@nimiq/core` (housekeeping)
 
-**Status:** the original #35 issue (WASM client can't reach
-TestAlbatross consensus) was **resolved in v1.1.4** — the root cause
-was wrong default seed peers (mainnet seeds used for a testnet
-handshake), not a version skew or Node-target bug. The `@nimiq/core`
-refresh and Node-target investigation below remain valuable
-housekeeping but are no longer blocking any user path.
+**Status:** ✅ the original #35 (WASM client can't reach TestAlbatross
+consensus) was **resolved in v1.1.4**. Root cause: `@nimiq/core`'s
+bundled seed list is all mainnet. We now default `seedPeers` to the
+Nimiq-maintainer-confirmed testnet seed on `network: 'test'`.
+Consensus reaches `/readyz` = `ready: true` within ~15 seconds on
+TestAlbatross — verified on the `v1.1.4` image in real-world smoke.
 
-**The upstream situation** (as of 2026-04-16):
+**Optional follow-ups** (not blocking any user path):
 
-- `@nimiq/core` on npm is the WASM web-client subcrate of
-  [`nimiq/core-rs-albatross`](https://github.com/nimiq/core-rs-albatross)
-  — same codebase, same release cadence.
-- Latest `core-rs-albatross` stable is
-  [v1.3.0](https://github.com/nimiq/core-rs-albatross/releases/tag/v1.3.0)
-  (2026-03-27), declared **backwards-compatible with all v1.x clients**.
-- `@nimiq/core` on npm is stuck at `2.2.2` (embedding
-  `core-rs-albatross/1.2.2`) because the
-  [`Publish web-client to npm` workflow for v1.3.0](https://github.com/nimiq/core-rs-albatross/actions/runs/23671580580)
-  failed on 2026-04-01 with a `wasm-bindgen` version mismatch
-  (installed `wasm-bindgen-cli 0.2.117`; `Cargo.lock` pins
-  `wasm-bindgen 0.2.114`). A one-line fix would unblock it.
+1. **Bump `@nimiq/core`** when a refresh (2.3.x+) ships to npm.
+   `@nimiq/core@2.2.2` works today thanks to the seed-peer fix, but
+   v1.3.0 includes libp2p-layer hardening
+   (peer contact-book poisoning fix, discovery-handler underflow, stale
+   response-channels, etc.) worth picking up. Their
+   [`Publish web-client to npm` v1.3.0](https://github.com/nimiq/core-rs-albatross/actions/runs/23671580580)
+   workflow failed on 2026-04-01 with a wasm-bindgen version mismatch
+   — a one-line fix on their side.
+2. **Drop our testnet-seed default** if a future `@nimiq/core` ships
+   network-aware seed defaults itself (so callers don't need per-network
+   overrides).
+3. **Remove the "does not currently reach claim-ready state" caveat**
+   from the README smoke-test footnote (the footnote is stale after
+   v1.1.4).
 
-**What we need to verify before blaming upstream for #35** (Node-target
-WASM client can't reach TestAlbatross consensus):
-
-- Backwards-compat claim says 1.2.2 clients should peer with 1.3.0
-  nodes → wire-protocol skew is **probably not** the root cause.
-- Our Node.js repro logs `addEventListener is not a function` warnings
-  before the peer-close loop — hints at a Node-target-specific issue.
-- Plausible alternative causes: stale seed list in `@nimiq/core 2.2.2`,
-  Node-specific WASM path bug, libp2p transport bug fixed in 1.3.0 but
-  not yet on npm.
-
-**Scope:**
-
-1. **Upstream ask:** nudge the Nimiq team to re-run the failed
-   [v1.3.0 publish workflow](https://github.com/nimiq/core-rs-albatross/actions/runs/23671580580).
-   After `@nimiq/core@2.3.x` lands, bump in
-   `packages/driver-nimiq-wasm/package.json`.
-2. **Narrowing experiments** (in parallel, don't wait on upstream):
-   - Reproduce the WASM client in a browser (minimal Vite page) against
-     TestAlbatross. If it peers, our bug is Node-target-specific.
-   - Override `seedPeers` with our local compose
-     `core-rs-albatross:1.4.0-pre1` node; if a known-good peer accepts
-     us, the cause is seed-list staleness.
-   - Raise the client to `config.logLevel('debug')` and capture
-     libp2p close-reason codes; converts the opaque
-     `Connection closed with peer` log into actionable evidence.
-3. **Once a hypothesis is confirmed** — file a tighter upstream bug
-   with the narrowed evidence, OR ship a seed-peer override in our
-   driver config if it's a seed-list issue.
-4. **CI:** re-enable the WASM consensus path in the docker-smoke step
-   (today it warns-but-doesn't-fail — see
-   `.github/workflows/ci.yml` lines 85-89) once WASM consensus is
-   reliable end-to-end in our test pipeline.
-5. **Docs:** drop the "does not currently reach claim-ready state"
-   caveat from the README smoke-test footnote; update
-   [#35](https://github.com/PanoramicRum/nimiq-simple-faucet/issues/35)
-   and close.
-
-**Estimated effort:** 1 day for the narrowing experiments; a few
-hours to consume a refreshed `@nimiq/core`; unknown for any
-Node-target fix if one is needed.
+**Estimated effort:** a few hours once upstream publishes.
 
 ### 1.1.2d Sign RPC transactions locally (no key at the node)
 

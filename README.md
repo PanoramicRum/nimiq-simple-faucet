@@ -70,7 +70,7 @@ docker run -d --name nimiq-faucet -p 8080:8080 -v faucet-data:/data \
   ghcr.io/panoramicrum/nimiq-simple-faucet:latest
 ```
 
-Boots the container; proves the image is intact. **Not a working faucet on its own**: the bundled WASM client cannot currently peer with TestAlbatross ([#35](https://github.com/PanoramicRum/nimiq-simple-faucet/issues/35)), and pre-1.1 Fastify blocks listening until consensus ([#36](https://github.com/PanoramicRum/nimiq-simple-faucet/issues/36)). Use the compose path above for an end-to-end demo.
+Boots a self-contained WASM faucet. The WASM client reaches TestAlbatross consensus within ~15 seconds (fixed in v1.1.4); `/healthz` and `/admin` are reachable immediately (v1.1.0). For a full end-to-end demo with a local RPC node, use the compose path above.
 
 ## Integrate into your app
 
