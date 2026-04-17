@@ -79,7 +79,7 @@ jobs:
 
       - name: Build and push multi-arch image
         id: docker
-        uses: docker/build-push-action@v6.9.0
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: deploy/docker/Dockerfile
