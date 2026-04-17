@@ -62,10 +62,15 @@ function migrate(db: Db): void {
   )`);
   db.run(sql`CREATE UNIQUE INDEX IF NOT EXISTS idx_blocklist_kv ON blocklist(kind, value)`);
 
-  db.run(sql`CREATE TABLE IF NOT EXISTS ip_counters (
-    ip TEXT PRIMARY KEY,
+  // Migration: ip_counters PK changed from (ip) to (ip, day) in v1.2.2.
+  // SQLite can't ALTER a PK; drop and recreate. Rate-limit counters are
+  // ephemeral per-day data — losing them on upgrade is acceptable.
+  db.run(sql`DROP TABLE IF EXISTS ip_counters`);
+  db.run(sql`CREATE TABLE ip_counters (
+    ip TEXT NOT NULL,
     day TEXT NOT NULL,
-    count INTEGER NOT NULL DEFAULT 0
+    count INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (ip, day)
   )`);
 
   db.run(sql`CREATE TABLE IF NOT EXISTS nonces (

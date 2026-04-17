@@ -265,6 +265,96 @@ function registerRoutes(): void {
     responses: { 200: { description: 'Entries', content: jsonContent(AuditListResponse) } },
   });
 
+  // -- Admin routes missing from pre-1.2.2 spec --
+
+  registry.registerPath({
+    method: 'get',
+    path: '/admin/claims/{id}/explain',
+    tags: ['Admin'],
+    summary: 'Return structured abuse signals for a claim',
+    security: [{ adminSession: [] }],
+    request: { params: z.object({ id: z.string() }) },
+    responses: {
+      200: { description: 'Claim with expanded signals' },
+      404: { description: 'Claim not found', content: jsonContent(ErrorResponse) },
+    },
+  });
+
+  registry.registerPath({
+    method: 'delete',
+    path: '/admin/blocklist/{id}',
+    tags: ['Admin'],
+    summary: 'Remove a blocklist entry',
+    security: [{ adminSession: [] }],
+    request: { params: z.object({ id: z.string() }) },
+    responses: {
+      200: { description: 'Removed', content: jsonContent(OkResponse) },
+      404: { description: 'Entry not found', content: jsonContent(ErrorResponse) },
+    },
+  });
+
+  registry.registerPath({
+    method: 'post',
+    path: '/admin/integrators/{id}/rotate',
+    tags: ['Admin'],
+    summary: 'Rotate an integrator API key + HMAC secret',
+    security: [{ adminSession: [] }],
+    request: { params: z.object({ id: z.string() }) },
+    responses: {
+      200: {
+        description: 'Rotated credentials',
+        content: jsonContent(IntegratorCredential),
+      },
+      404: { description: 'Integrator not found', content: jsonContent(ErrorResponse) },
+    },
+  });
+
+  registry.registerPath({
+    method: 'delete',
+    path: '/admin/integrators/{id}',
+    tags: ['Admin'],
+    summary: 'Revoke an integrator (soft-delete)',
+    security: [{ adminSession: [] }],
+    request: { params: z.object({ id: z.string() }) },
+    responses: {
+      200: { description: 'Revoked', content: jsonContent(OkResponse) },
+      404: { description: 'Integrator not found', content: jsonContent(ErrorResponse) },
+    },
+  });
+
+  registry.registerPath({
+    method: 'post',
+    path: '/admin/auth/totp/enroll',
+    tags: ['Admin'],
+    summary: 'Pre-enrolment TOTP provisioning (first-time admin setup)',
+    description: 'Returns a TOTP secret and provisioning URI. Only usable before any admin user exists.',
+    responses: {
+      200: {
+        description: 'TOTP provisioning',
+        content: jsonContent(z.object({ secret: z.string(), provisioningUri: z.string() })),
+      },
+      409: { description: 'Already enrolled', content: jsonContent(ErrorResponse) },
+    },
+  });
+
+  registry.registerPath({
+    method: 'post',
+    path: '/admin/auth/reset',
+    tags: ['Admin'],
+    summary: 'Dev-only: wipe all faucet state (password-protected)',
+    description: 'Requires FAUCET_DEV=1 and FAUCET_ADMIN_PASSWORD in the request body. Returns 404 in production.',
+    request: {
+      body: {
+        content: jsonContent(z.object({ password: z.string() })),
+      },
+    },
+    responses: {
+      200: { description: 'State wiped', content: jsonContent(OkResponse) },
+      401: { description: 'Wrong or missing password', content: jsonContent(ErrorResponse) },
+      404: { description: 'Not available (production mode)', content: jsonContent(ErrorResponse) },
+    },
+  });
+
   // ---------- MCP ----------
   registry.registerPath({
     method: 'get',

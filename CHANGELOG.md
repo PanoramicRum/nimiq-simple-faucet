@@ -6,6 +6,36 @@ This project uses [changesets](https://github.com/changesets/changesets) for
 versioning. Run `pnpm changeset` to add entries, then `pnpm changeset version`
 (invoked by the release workflow) to regenerate this file.
 
+## 1.2.2 (2026-04-17)
+
+### Fixed
+- **`ip_counters` table uses composite PK `(ip, day)`.** Previously
+  `ip TEXT PRIMARY KEY` caused `SQLITE_CONSTRAINT_PRIMARYKEY 500` for
+  every returning IP after UTC midnight. The schema, raw SQL, and
+  `incrementIpCounter()` are fixed with an atomic upsert; existing
+  counters are dropped and recreated on upgrade (ephemeral rate-limit
+  data). Fixes
+  [#47](https://github.com/PanoramicRum/nimiq-simple-faucet/issues/47).
+- **Admin Config "Saved" toast now says "restart required"** and the
+  restart-required note in the UI is styled as a visible warning banner
+  with clear language. Fixes
+  [#48](https://github.com/PanoramicRum/nimiq-simple-faucet/issues/48)
+  (UX portion; config hot-reload is planned for a future release).
+
+### Added
+- 6 missing routes in the OpenAPI spec:
+  `GET /admin/claims/{id}/explain`,
+  `DELETE /admin/blocklist/{id}`,
+  `POST /admin/integrators/{id}/rotate`,
+  `DELETE /admin/integrators/{id}`,
+  `POST /admin/auth/totp/enroll`,
+  `POST /admin/auth/reset`. Frozen spec regenerated. Fixes
+  [#49](https://github.com/PanoramicRum/nimiq-simple-faucet/issues/49).
+
+### Changed
+- Helm chart bumped to `1.2.2` / `appVersion: 1.2.2`.
+- Flutter SDK bumped to `1.2.2`.
+
 ## 1.2.0 (2026-04-17)
 
 ### Added

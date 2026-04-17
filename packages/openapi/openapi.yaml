@@ -1111,6 +1111,170 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AuditListResponse"
+  /admin/claims/{id}/explain:
+    get:
+      tags:
+        - Admin
+      summary: Return structured abuse signals for a claim
+      security:
+        - adminSession: []
+      parameters:
+        - schema:
+            type: string
+          required: true
+          name: id
+          in: path
+      responses:
+        "200":
+          description: Claim with expanded signals
+        "404":
+          description: Claim not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /admin/blocklist/{id}:
+    delete:
+      tags:
+        - Admin
+      summary: Remove a blocklist entry
+      security:
+        - adminSession: []
+      parameters:
+        - schema:
+            type: string
+          required: true
+          name: id
+          in: path
+      responses:
+        "200":
+          description: Removed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+        "404":
+          description: Entry not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /admin/integrators/{id}/rotate:
+    post:
+      tags:
+        - Admin
+      summary: Rotate an integrator API key + HMAC secret
+      security:
+        - adminSession: []
+      parameters:
+        - schema:
+            type: string
+          required: true
+          name: id
+          in: path
+      responses:
+        "200":
+          description: Rotated credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IntegratorCredential"
+        "404":
+          description: Integrator not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /admin/integrators/{id}:
+    delete:
+      tags:
+        - Admin
+      summary: Revoke an integrator (soft-delete)
+      security:
+        - adminSession: []
+      parameters:
+        - schema:
+            type: string
+          required: true
+          name: id
+          in: path
+      responses:
+        "200":
+          description: Revoked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+        "404":
+          description: Integrator not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /admin/auth/totp/enroll:
+    post:
+      tags:
+        - Admin
+      summary: Pre-enrolment TOTP provisioning (first-time admin setup)
+      description: Returns a TOTP secret and provisioning URI. Only usable before any
+        admin user exists.
+      responses:
+        "200":
+          description: TOTP provisioning
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  secret:
+                    type: string
+                  provisioningUri:
+                    type: string
+                required:
+                  - secret
+                  - provisioningUri
+        "409":
+          description: Already enrolled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /admin/auth/reset:
+    post:
+      tags:
+        - Admin
+      summary: "Dev-only: wipe all faucet state (password-protected)"
+      description: Requires FAUCET_DEV=1 and FAUCET_ADMIN_PASSWORD in the request
+        body. Returns 404 in production.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                password:
+                  type: string
+              required:
+                - password
+      responses:
+        "200":
+          description: State wiped
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+        "401":
+          description: Wrong or missing password
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not available (production mode)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /mcp:
     get:
       tags:

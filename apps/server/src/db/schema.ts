@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
+import { integer, primaryKey, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 
 export const claims = sqliteTable('claims', {
   id: text('id').primaryKey(),
@@ -31,10 +31,12 @@ export const blocklist = sqliteTable('blocklist', {
 });
 
 export const ipCounters = sqliteTable('ip_counters', {
-  ip: text('ip').primaryKey(),
+  ip: text('ip').notNull(),
   day: text('day').notNull(), // YYYY-MM-DD in UTC
   count: integer('count').notNull().default(0),
-});
+}, (table) => ({
+  pk: primaryKey({ columns: [table.ip, table.day] }),
+}));
 
 export const nonces = sqliteTable('nonces', {
   nonce: text('nonce').primaryKey(),

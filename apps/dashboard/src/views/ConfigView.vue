@@ -85,7 +85,7 @@ async function onSave(): Promise<void> {
       layers: { ...form.layers },
     };
     const res = await api.patch<{ ok: true; persistedKeys: string[] }>('/admin/config', body);
-    status.value = `Saved: ${res.persistedKeys.join(', ')}`;
+    status.value = `Saved \u2014 restart the faucet to apply: ${res.persistedKeys.join(', ')}`;
     await load();
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'failed';
@@ -108,8 +108,9 @@ onMounted(load);
       class="rounded-md border border-[color:var(--color-warning)]/30 bg-[color:var(--color-warning)]/10 p-3 text-sm"
       role="note"
     >
-      Overrides persist to the runtime config table but live-reload into the running pipeline is
-      pending an M3 follow-up. Restart the faucet to pick up new values.
+      <strong>Restart required.</strong> Saved overrides are persisted but not applied to the
+      running server until the faucet container is restarted. Hot-reload is planned for a future
+      release.
     </div>
 
     <p

@@ -1,4 +1,4 @@
-import { and, eq } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 import type { AbuseCheck, CheckResult } from '@faucet/core';
 import type { Db } from '../db/index.js';
 import { ipCounters } from '../db/schema.js';
@@ -40,17 +40,11 @@ export function rateLimitCheck(db: Db, config: RateLimitCheckConfig): AbuseCheck
 
 export async function incrementIpCounter(db: Db, ip: string, now: number): Promise<void> {
   const day = utcDay(now);
-  const [existing] = await db
-    .select()
-    .from(ipCounters)
-    .where(and(eq(ipCounters.ip, ip), eq(ipCounters.day, day)))
-    .limit(1);
-  if (!existing) {
-    await db.insert(ipCounters).values({ ip, day, count: 1 });
-    return;
-  }
   await db
-    .update(ipCounters)
-    .set({ count: existing.count + 1 })
-    .where(and(eq(ipCounters.ip, ip), eq(ipCounters.day, day)));
+    .insert(ipCounters)
+    .values({ ip, day, count: 1 })
+    .onConflictDoUpdate({
+      target: [ipCounters.ip, ipCounters.day],
+      set: { count: sql`${ipCounters.count} + 1` },
+    });
 }
