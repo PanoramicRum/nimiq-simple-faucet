@@ -26,7 +26,7 @@
     "@faucet/core": "workspace:*",
     "@ip-location-db/dbip-asn-mmdb": "^2.3.2026040119",
     "@ip-location-db/dbip-country-mmdb": "^2.3.2026040119",
-    "maxmind": "^4.3.22",
+    "maxmind": "^5.0.6",
     "undici": "^6.19.8"
   },
   "devDependencies": {

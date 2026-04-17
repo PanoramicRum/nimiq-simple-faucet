@@ -6,6 +6,22 @@ This project uses [changesets](https://github.com/changesets/changesets) for
 versioning. Run `pnpm changeset` to add entries, then `pnpm changeset version`
 (invoked by the release workflow) to regenerate this file.
 
+## 1.9.0 (2026-04-17)
+
+### Changed
+- **Dependency sweep: 6 major-version upgrades.**
+  - `@noble/hashes` 1→2 (crypto primitives)
+  - `maxmind` 4→5 (GeoIP MMDB reader)
+  - `@fastify/helmet` 12→13 (security headers)
+  - `pinia` 2→3 (Vue store, dashboard)
+  - `@types/node` 22→25 (TypeScript types)
+  - `@vitejs/plugin-vue` 5→6 (Vue Vite plugin)
+- **Deferred to next Vite upgrade cycle:** `tailwindcss` 3→4 (requires
+  PostCSS plugin split + CSS-first config migration) and
+  `@vitejs/plugin-react` 4→6 (requires Vite 6+).
+- Helm chart bumped to `1.9.0` / `appVersion: 1.9.0`.
+- Flutter SDK bumped to `1.9.0`.
+
 ## 1.8.3 (2026-04-17)
 
 ### Changed
