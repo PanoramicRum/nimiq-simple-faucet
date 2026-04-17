@@ -5,6 +5,7 @@
 [![Release](https://img.shields.io/github/v/release/PanoramicRum/nimiq-simple-faucet?include_prereleases&label=release)](https://github.com/PanoramicRum/nimiq-simple-faucet/releases)
 [![CodeQL](https://img.shields.io/github/actions/workflow/status/PanoramicRum/nimiq-simple-faucet/codeql.yml?branch=main&label=CodeQL)](https://github.com/PanoramicRum/nimiq-simple-faucet/actions/workflows/codeql.yml)
 [![npm](https://img.shields.io/npm/v/@nimiq-faucet/sdk?label=%40nimiq-faucet%2Fsdk)](https://www.npmjs.com/package/@nimiq-faucet/sdk)
+[![Docker](https://img.shields.io/badge/ghcr.io-nimiq--simple--faucet-blue?logo=docker)](https://github.com/PanoramicRum/nimiq-simple-faucet/pkgs/container/nimiq-simple-faucet)
 
 📘 [Docs](./docs) · 🤝 [Contributing](./CONTRIBUTING.md) · 🛡️ [Security](./SECURITY.md) · 🗺️ [Roadmap](./ROADMAP.md) · 🤖 [AI agents](./AGENTS.md)
 

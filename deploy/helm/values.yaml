@@ -189,9 +189,13 @@ livenessProbe:
   timeoutSeconds: 3
   failureThreshold: 3
 
+# /readyz reflects driver readiness (RPC reachable, WASM consensus).
+# Kubernetes stops routing traffic to pods whose driver isn't ready.
+# /healthz (livenessProbe) stays as pure "process alive" — restarts
+# only on genuine crashes, not transient driver hiccups.
 readinessProbe:
   httpGet:
-    path: /healthz
+    path: /readyz
     port: http
   initialDelaySeconds: 5
   periodSeconds: 10

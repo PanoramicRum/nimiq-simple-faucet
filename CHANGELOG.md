@@ -6,6 +6,27 @@ This project uses [changesets](https://github.com/changesets/changesets) for
 versioning. Run `pnpm changeset` to add entries, then `pnpm changeset version`
 (invoked by the release workflow) to regenerate this file.
 
+## 1.3.0 (2026-04-17)
+
+### Added
+- **Admin TOTP reset CLI.** `docker exec <container> node
+  apps/server/dist/admin-cli.js reset-totp` wipes the admin user's
+  TOTP secret + sessions so the operator can re-enrol via the login
+  page. No more manual SQLite surgery. (ROADMAP §1.1.4)
+- Docker badge in README linking to the GHCR package page.
+- `.github/FUNDING.yml` with a placeholder for GitHub Sponsors.
+  (ROADMAP §1.2.4)
+
+### Changed
+- **Helm `readinessProbe` now uses `/readyz`** instead of `/healthz`.
+  `livenessProbe` stays on `/healthz`. Kubernetes stops routing traffic
+  to pods whose signer driver isn't ready, while still restarting pods
+  that crash. (ROADMAP §1.1.2b)
+- `docs/admin-first-run.md` "re-enrol TOTP" section updated from
+  manual SQL to the new CLI.
+- Helm chart bumped to `1.3.0` / `appVersion: 1.3.0`.
+- Flutter SDK bumped to `1.3.0`.
+
 ## 1.2.4 (2026-04-17)
 
 ### Fixed

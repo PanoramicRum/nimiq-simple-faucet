@@ -75,15 +75,14 @@ both the password **and** a fresh TOTP code.
 
 ### If you need to re-enrol
 
-Today this is a manual SQL update. On the running container:
+Run the admin CLI inside the running container:
 
 ```bash
-docker compose exec faucet sqlite3 /data/faucet.db \
-  "UPDATE admin_users SET totp_secret = NULL;"
+docker exec <container> node apps/server/dist/admin-cli.js reset-totp
 ```
 
-(Postgres equivalent if you're using it.) Next login will trigger a fresh
-enrolment. A proper "reset my TOTP" flow is on the [roadmap](../ROADMAP.md).
+This wipes the admin user + sessions. The next login triggers a fresh
+TOTP enrolment, showing a new QR code / secret.
 
 ---
 

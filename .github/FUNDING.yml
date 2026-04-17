@@ -1,0 +1,7 @@
+# Funding links displayed on the GitHub "Sponsor" button.
+# Uncomment the relevant lines when sponsorship is enabled.
+
+# github: PanoramicRum
+# open_collective: nimiq-simple-faucet
+custom:
+  - https://nimiq.com
