@@ -1,18 +1,16 @@
 /**
  * Admin config GET/PATCH.
  *
- * NOTE (M3): The running `ServerConfig` is immutable. This route persists
- * overrides to a `runtime_config` KV table; the overrides are NOT hot-reloaded
- * into the running pipeline yet. A follow-up milestone will merge the persisted
- * overrides into a `configOverrides` layer at request time. For now, PATCH
- * accepts and stores the values so the admin UI can roundtrip, but effect on
- * live traffic waits on that follow-up. Intentional for M3.
+ * Layer toggles (fingerprint, onchain, AI) take effect immediately on PATCH —
+ * the abuse pipeline is rebuilt in memory. Other overrides (claim amount, rate
+ * limit thresholds) are persisted but require a restart to apply.
  */
 import type { FastifyInstance } from 'fastify';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 import type { AppContext } from '../../context.js';
 import { runtimeConfig } from '../../db/schema.js';
+import { buildPipeline } from '../../abuse/pipeline.js';
 import { writeAudit } from '../../auth/audit.js';
 import { requireAdminCsrf } from '../../auth/middleware.js';
 
@@ -92,6 +90,16 @@ export async function adminConfigRoutes(app: FastifyInstance, ctx: AppContext): 
           await ctx.db.insert(runtimeConfig).values({ key: k, valueJson });
         }
       }
+      // Rebuild the abuse pipeline with the new layer overrides so they
+      // take effect immediately without a restart.
+      const allOverrides = await readOverrides(ctx);
+      const layers = (allOverrides.layers ?? {}) as Record<string, boolean>;
+      ctx.pipeline = buildPipeline(ctx.db, ctx.config, ctx.driver, {
+        fingerprintEnabled: layers.fingerprint,
+        onchainEnabled: layers.onchain,
+        aiEnabled: layers.ai,
+      });
+
       await writeAudit(ctx.db, {
         actor: req.adminUser?.id ?? 'admin',
         action: 'config.patch',
