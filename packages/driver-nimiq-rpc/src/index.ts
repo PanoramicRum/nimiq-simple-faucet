@@ -49,6 +49,7 @@ export class NimiqRpcDriver implements CurrencyDriver {
   #nextId = 1;
   #ready = false;
   #readyPromise: Promise<void> | null = null;
+  #healthTimer: ReturnType<typeof setInterval> | null = null;
 
   constructor(config: NimiqRpcDriverConfig) {
     this.#config = config;
@@ -99,6 +100,16 @@ export class NimiqRpcDriver implements CurrencyDriver {
     }
     await this.#ensureWalletReady();
     this.#ready = true;
+    this.#healthTimer = setInterval(() => void this.#probe(), 5_000);
+  }
+
+  async #probe(): Promise<void> {
+    try {
+      await this.#rpc<number>('getBlockNumber', []);
+      this.#ready = true;
+    } catch {
+      this.#ready = false;
+    }
   }
 
   async #ensureWalletReady(): Promise<void> {

@@ -6,6 +6,35 @@ This project uses [changesets](https://github.com/changesets/changesets) for
 versioning. Run `pnpm changeset` to add entries, then `pnpm changeset version`
 (invoked by the release workflow) to regenerate this file.
 
+## 1.2.0 (2026-04-17)
+
+### Added
+- **RPC driver ongoing health probe.** `NimiqRpcDriver` now pings
+  `getBlockNumber` every 5 seconds after init. `isReady()` flips false
+  when the RPC node becomes unreachable and back to true when it
+  recovers. `/readyz` reflects real-time RPC health; the admin
+  `DriverReadinessBanner` appears/disappears; and the v1.1.0
+  503-preHandler hook now gates claims when the node is actually down
+  (previously `isReady()` was hardcoded `true` post-init). Fixes
+  [#46](https://github.com/PanoramicRum/nimiq-simple-faucet/issues/46).
+- `pnpm smoke:testnet` now auto-builds dependencies via a `presmoke:testnet`
+  hook — no more `ERR_MODULE_NOT_FOUND` on fresh checkouts. Fixes
+  [#45](https://github.com/PanoramicRum/nimiq-simple-faucet/issues/45).
+
+### Fixed
+- **Admin Account page Refresh button now disables during fetch** and
+  shows loading feedback, matching the Config and Logs pages. Fixes
+  [#40](https://github.com/PanoramicRum/nimiq-simple-faucet/issues/40).
+
+### Changed
+- README, `START.md`, and `AGENTS.md` no longer claim "9-layer abuse
+  prevention" without qualification. The new wording clarifies that
+  rate-limiting is on by default; all other layers (captcha, hashcash,
+  geo-IP, fingerprint, on-chain, AI) are opt-in via env vars. Fixes
+  [#41](https://github.com/PanoramicRum/nimiq-simple-faucet/issues/41).
+- Helm chart bumped to `1.2.0` / `appVersion: 1.2.0`.
+- Flutter SDK bumped to `1.2.0`.
+
 ## 1.1.5 (2026-04-17)
 
 ### Security

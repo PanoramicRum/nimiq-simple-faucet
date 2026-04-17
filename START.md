@@ -1,6 +1,6 @@
 # 🎮 Nimiq Simple Faucet — Choose your adventure
 
-> 👋 **Welcome to Nimiq Simple Faucet.** A self-hosted, stable (1.x) faucet / payout service for Nimiq with 9-layer abuse prevention and 7 SDKs.
+> 👋 **Welcome to Nimiq Simple Faucet.** A self-hosted, stable (1.x) faucet / payout service for Nimiq with 9 pluggable abuse-prevention layers (rate-limiting on by default; others opt-in) and 7 SDKs.
 
 **Pick a quest — reply with a number:**
 

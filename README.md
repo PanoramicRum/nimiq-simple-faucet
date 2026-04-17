@@ -87,7 +87,7 @@ Boots a self-contained WASM faucet. The WASM client reaches TestAlbatross consen
 
 Every SDK accepts the same `hostContext` (hashed UID, cookie hash, session hash, account age, KYC level, tags, HMAC signature) so your project's own abuse signals flow into the faucet's scoring pipeline.
 
-## Abuse prevention (all on by default)
+## Abuse prevention (9 pluggable layers, rate-limiting on by default)
 
 1. Rate limits per IP, per host-UID, per destination address, per fingerprint.
 2. Captcha (Cloudflare Turnstile or hCaptcha) with a self-hosted SHA-256 hashcash client puzzle as fallback (client-side anti-bot challenge, unrelated to Nimiq's proof-of-stake consensus).

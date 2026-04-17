@@ -16,7 +16,7 @@ Test-intent shortcut: if the user's phrasing is specifically about *testing* (e.
 
 > 👋 **Welcome to Nimiq Simple Faucet**
 >
-> A self-hosted, stable (1.x) faucet / payout service for Nimiq with 9-layer abuse prevention and SDKs for 7 frameworks.
+> A self-hosted, stable (1.x) faucet / payout service for Nimiq with 9 pluggable abuse-prevention layers (rate-limiting on by default; captcha, hashcash, geo-IP, fingerprint, on-chain, AI scoring opt-in) and SDKs for 7 frameworks.
 >
 > **Here's the map:**
 > - `apps/server` — Fastify REST + WebSocket + admin + MCP

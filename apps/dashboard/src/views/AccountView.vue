@@ -38,6 +38,7 @@ const rotating = ref<boolean>(false);
 const rotateResult = ref<string | null>(null);
 
 async function load(): Promise<void> {
+  loading.value = true;
   try {
     data.value = await api.get<AccountResponse>('/admin/account');
     error.value = null;

@@ -21,6 +21,7 @@
     "test": "turbo run test --filter=!@nimiq-faucet/e2e",
     "test:e2e": "pnpm --filter @nimiq-faucet/e2e test",
     "test:e2e:install": "cd tests/e2e && npx playwright install --with-deps",
+    "presmoke:testnet": "pnpm build",
     "smoke:testnet": "tsx scripts/smoke-testnet.mts",
     "generate:wallet": "tsx scripts/generate-wallet.mts",
     "typecheck": "turbo run typecheck",
