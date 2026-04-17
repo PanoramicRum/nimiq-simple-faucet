@@ -40,7 +40,7 @@
     "drizzle-orm": "^0.45.2",
     "fastify": "^5.0.0",
     "fastify-type-provider-zod": "^4.0.2",
-    "nanoid": "^5.0.7",
+    "nanoid": "^5.1.9",
     "pino": "^9.4.0",
     "undici": "^6.19.8",
     "yaml": "^2.6.0",
