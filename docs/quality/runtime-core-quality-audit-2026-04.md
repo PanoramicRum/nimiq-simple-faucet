@@ -24,7 +24,7 @@
 ## PR Ledger
 | PR | Title | Purpose | Risk | Test evidence | Merge status |
 | --- | --- | --- | --- | --- | --- |
-| PENDING_PR_URL | Runtime core quality audit (low-risk simplification tranche) | Implement F1-F4 plus report deliverables | Low | Docker: `pnpm build`, `pnpm typecheck`, `pnpm test`, `pnpm test:e2e` | Open |
+| [#61](https://github.com/PanoramicRum/nimiq-simple-faucet/pull/61) | Runtime core quality audit (low-risk simplification tranche) | Implement F1-F4 plus report deliverables | Low | Docker: `pnpm build`, `pnpm typecheck`, `pnpm test`, `pnpm test:e2e` | Open |
 
 ## Issue Ledger
 | Issue | Problem statement | Why deferred from PR | Priority | Recommended owner |
