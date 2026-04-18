@@ -14,7 +14,9 @@ but themes can ship in parallel.
 Small items that improve the public-facing experience without feature
 work. Shipped as point releases (1.0.1, 1.0.2, …) between 1.0.0 and 1.1.
 
-### 1.0.3 — Docs directory restructure (optional, non-breaking)
+### 1.0.3 — Docs directory restructure
+
+**Status:** → absorbed into §3.0.4 (playground docs integration).
 
 **Goal:** make `docs/` navigable at scale by grouping by audience.
 
@@ -42,14 +44,7 @@ work. Shipped as point releases (1.0.1, 1.0.2, …) between 1.0.0 and 1.1.
 
 ### 1.0.5 — README / docs polish follow-ons
 
-**Goal:** catch gaps that surface once real contributors start browsing.
-
-**Scope:**
-- Screenshots / GIFs in README + admin-first-run (previously deferred)
-- Consider a `DEVELOPER.md` landing page that's more tour-oriented than `CONTRIBUTING.md`
-- Badges for npm version of each SDK once they're published
-
-**Estimated effort:** 1 day.
+**Status:** → absorbed into §3.0 (screenshots replaced by live playground; badges already shipped in v1.3.0).
 
 ---
 
@@ -243,6 +238,8 @@ we go the shared-wallet route).
 
 ### 1.2.2 Live `/snippets/<framework>` URLs
 
+**Status:** → absorbed into §3.0.3 (interactive SDK showcase in the playground).
+
 **Goal:** the "latest working snippet" URL referenced from each integration doc is actually generated and served.
 
 **Scope:**
@@ -280,6 +277,8 @@ we go the shared-wallet route).
 **Estimated effort:** 10 min.
 
 ### 1.2.5 Hosted public demo
+
+**Status:** → absorbed into §3.0.5 (the playground IS the hosted demo).
 
 **Goal:** a permanent `https://faucet-demo.panoramicrum.com` integrators can point at.
 
@@ -511,6 +510,102 @@ Low-risk fixes shipped in PR #61; these are the larger follow-ups.
 **Tracked as:** [#60](https://github.com/PanoramicRum/nimiq-simple-faucet/issues/60)
 
 **Estimated effort:** 2 days.
+
+---
+
+## 3.0 — Developer Playground & UI Overhaul
+
+A public-facing developer playground that demonstrates the faucet,
+showcases every SDK, and serves as both the "try it" onboarding
+experience and the documentation hub. The claim UI and admin dashboard
+get a visual overhaul to match.
+
+Absorbs §1.0.3 (docs restructure), §1.0.5 (screenshots), §1.2.2
+(snippets), and §1.2.5 (hosted demo).
+
+### 3.0.0 — Branding & design system
+
+**Goal:** establish the visual language before writing UI code.
+
+**Deliverable:** `docs/design/playground-design-brief.md` containing:
+- Brand identity (Nimiq gold/amber, dark-mode-first, developer-tool aesthetic)
+- Component inventory (buttons, cards, inputs, status indicators, code
+  blocks, data tables, charts, badges)
+- Page layout wireframes (claim flow, admin dashboard, playground landing,
+  SDK showcase)
+- Color system, typography, motion/animation specs
+- Ready-to-use **Stitch prompts** — structured descriptions of each
+  page/component for AI design generation. Each prompt includes purpose,
+  exact content, visual references, and layout constraints.
+
+**Estimated effort:** 1-2 days.
+
+### 3.0.1 — Claim UI redesign
+
+**Goal:** step-by-step claim flow with polished visuals.
+
+**Scope:**
+- 4-step flow: address → challenge → submitting → confirmed/rejected
+- Animated transitions, real-time status card with Nimiq explorer link
+- Mobile-responsive, dark/light mode, Nimiq brand identity
+- Keep Vue 3 + Tailwind 4
+
+**Estimated effort:** 2-3 days.
+
+### 3.0.2 — Admin Dashboard redesign
+
+**Goal:** modern admin experience matching the claim UI's visual identity.
+
+**Scope:**
+- Data tables with sorting/filtering/pagination
+- Inline charts (claim rate, balance, latency — reuse `/metrics` data)
+- Improved claims explain drawer with visual signal breakdown
+- Config editor with live-preview of layer toggles
+- Consistent Nimiq brand identity
+
+**Estimated effort:** 3 days.
+
+### 3.0.3 — Interactive SDK Showcase (Playground app)
+
+**Goal:** "Try the Nimiq Faucet" for every framework.
+
+**Scope:**
+- New `apps/playground/` (Vue or VitePress + interactive components)
+- Landing page: hero → framework picker
+- For each SDK (TS, React, Vue, Python, Go, Flutter, Capacitor, React
+  Native): live code panel + "Run" button + unified result card
+- Server-side examples (Python, Go) show terminal-style
+  request/response; client-side (React, Vue) show embedded live UI
+- API explorer: interactive OpenAPI-backed request builder
+
+**Estimated effort:** 3-4 days.
+
+### 3.0.4 — Docs integration
+
+**Goal:** merge docs + playground into one coherent site.
+
+**Scope:**
+- VitePress docs site gains playground links and "try it" buttons
+- Each SDK's README becomes a guided tutorial
+- AGENTS.md and `llms.txt` reference playground URLs
+- Replaces the current standalone docs directory structure (§1.0.3)
+
+**Estimated effort:** 1-2 days.
+
+### 3.0.5 — Public hosting
+
+**Goal:** permanent public playground on testnet.
+
+**Scope:**
+- Deploy: playground + faucet server + testnet node (Docker Compose on
+  VPS initially, Helm/k8s when traffic justifies)
+- Public URL (e.g., `playground.nimiq-faucet.dev`)
+- Restricted rate limits (1 claim/IP/day), testnet only
+- DB-IP GeoIP enabled by default
+- Linked from README, START.md, AGENTS.md
+- Optional: embedded Grafana public snapshot with live metrics
+
+**Estimated effort:** 1-2 days + ongoing hosting.
 
 ---
 
