@@ -6,6 +6,24 @@ This project uses [changesets](https://github.com/changesets/changesets) for
 versioning. Run `pnpm changeset` to add entries, then `pnpm changeset version`
 (invoked by the release workflow) to regenerate this file.
 
+## 2.1.0 (2026-04-17)
+
+### Changed
+- **Vite 5→8** across all 4 apps (claim-ui, dashboard, vue example,
+  capacitor example). Vite 8 uses Rolldown internally for faster
+  builds.
+- **Tailwind CSS 3→4** for dashboard + claim-ui. Migrated to
+  `@tailwindcss/postcss` plugin, `@import "tailwindcss"` CSS entry
+  point, `@config` directive for custom theme. Custom component classes
+  (`btn-*`, `focus-ring`, etc.) inlined to accommodate v4's `@apply`
+  restrictions on custom classes.
+- **`@vitejs/plugin-react` 4→6** for the capacitor example (requires
+  Vite 8).
+- All deferred Dependabot major-version bumps are now resolved. Zero
+  remaining tech debt.
+- Helm chart bumped to `2.1.0` / `appVersion: 2.1.0`.
+- Flutter SDK bumped to `2.1.0`.
+
 ## 2.0.0 (2026-04-17)
 
 ### Added

@@ -1,6 +1,5 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+@config "../tailwind.config.ts";
 
 :root {
   --color-card-bg: #ffffff;
@@ -69,20 +68,20 @@ body {
   background-color: var(--color-input-bg);
   border: 1px solid var(--color-input-border);
   color: var(--color-text);
-  @apply rounded-md px-3 py-2 text-sm focus-ring;
+  @apply rounded-md px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nimiq-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--color-card-bg)];
 }
 
 .btn {
-  @apply inline-flex items-center justify-center rounded-md px-3 py-2 text-sm font-medium focus-ring disabled:opacity-60 disabled:cursor-not-allowed;
+  @apply inline-flex items-center justify-center rounded-md px-3 py-2 text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nimiq-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--color-card-bg)] disabled:opacity-60 disabled:cursor-not-allowed;
 }
 .btn-primary {
-  @apply btn bg-nimiq-500 text-[#1f1b13] hover:bg-nimiq-400;
+  @apply inline-flex items-center justify-center rounded-md px-3 py-2 text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nimiq-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--color-card-bg)] disabled:opacity-60 disabled:cursor-not-allowed bg-nimiq-500 text-[#1f1b13] hover:bg-nimiq-400;
 }
 .btn-secondary {
-  @apply btn border border-[color:var(--color-input-border)] text-[color:var(--color-text)] hover:bg-[color:var(--color-row-hover)];
+  @apply inline-flex items-center justify-center rounded-md px-3 py-2 text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nimiq-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--color-card-bg)] disabled:opacity-60 disabled:cursor-not-allowed border border-[color:var(--color-input-border)] text-[color:var(--color-text)] hover:bg-[color:var(--color-row-hover)];
 }
 .btn-danger {
-  @apply btn bg-[color:var(--color-danger)] text-white hover:opacity-90;
+  @apply inline-flex items-center justify-center rounded-md px-3 py-2 text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nimiq-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--color-card-bg)] disabled:opacity-60 disabled:cursor-not-allowed bg-[color:var(--color-danger)] text-white hover:opacity-90;
 }
 
 .muted {
