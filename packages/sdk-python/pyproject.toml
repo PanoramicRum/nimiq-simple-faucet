@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "nimiq-faucet"
+version = "2.2.0"
+description = "Pure-stdlib Python client for the Nimiq Simple Faucet"
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.10"
+authors = [{ name = "Nimiq Simple Faucet Maintainers", email = "richy@nimiq.com" }]
+keywords = ["nimiq", "faucet", "blockchain", "crypto"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries",
+]
+
+[project.urls]
+Homepage = "https://github.com/PanoramicRum/nimiq-simple-faucet"
+Documentation = "https://github.com/PanoramicRum/nimiq-simple-faucet/tree/main/packages/sdk-python"
+Repository = "https://github.com/PanoramicRum/nimiq-simple-faucet"
+
+[tool.setuptools.packages.find]
+include = ["nimiq_faucet*"]

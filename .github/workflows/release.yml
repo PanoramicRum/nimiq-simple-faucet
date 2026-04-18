@@ -114,7 +114,7 @@ jobs:
           pnpm changeset version || true
           # Publish only packages under the @nimiq-faucet scope. Internal
           # @faucet/* packages carry "private": true and are skipped by npm.
-          pnpm changeset publish --access public --tag latest
+          pnpm changeset publish
 
       - name: Package Helm chart
         run: |

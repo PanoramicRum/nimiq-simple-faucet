@@ -6,6 +6,25 @@ This project uses [changesets](https://github.com/changesets/changesets) for
 versioning. Run `pnpm changeset` to add entries, then `pnpm changeset version`
 (invoked by the release workflow) to regenerate this file.
 
+## 2.2.0 (2026-04-18)
+
+### Added
+- **Python SDK** (`nimiq-faucet` on PyPI). Pure-stdlib client mirroring
+  the Go and TypeScript SDKs: `claim()`, `status()`,
+  `wait_for_confirmation()`, `solve_and_claim()`,
+  `sign_host_context()`, plus `solve_hashcash()` utility. Zero
+  external dependencies. Python 3.10+. (ROADMAP §1.5.2)
+- `examples/python-backend-integration/` — minimal example with
+  Dockerfile showing HMAC auth + signed host context flow.
+
+### Fixed
+- Release workflow: removed unsupported `--access public` flag from
+  `changeset publish` (changesets v2.31.0 dropped it).
+
+### Changed
+- Helm chart bumped to `2.2.0` / `appVersion: 2.2.0`.
+- Flutter SDK bumped to `2.2.0`.
+
 ## 2.1.0 (2026-04-17)
 
 ### Changed
