@@ -33,3 +33,4 @@ docker-compose.override.yml
 
 # Claude Code local tooling state (session IDs, locks, settings)
 .claude/
+docs/design/
