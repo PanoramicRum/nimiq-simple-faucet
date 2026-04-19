@@ -166,8 +166,8 @@ test.describe('claim ui — navigation', () => {
     await page.goto('/');
     await expect(page.locator('#nq-address')).toBeVisible();
 
-    // Navigate to Status via the navbar link
-    await page.getByRole('link', { name: 'Status' }).click();
+    // Navigate to Status via the navbar link (scoped to header to avoid footer duplicate)
+    await page.locator('header').getByRole('link', { name: 'Status' }).click();
     await expect(page.getByText('Faucet Performance')).toBeVisible();
 
     // Navigate back home
