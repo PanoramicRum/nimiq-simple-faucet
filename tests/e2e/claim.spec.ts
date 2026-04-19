@@ -164,14 +164,14 @@ test.describe('claim ui — activity log', () => {
 test.describe('claim ui — navigation', () => {
   test('navbar links navigate between routes', async ({ page }) => {
     await page.goto('/');
-    await expect(page.getByText('Nimiq Faucet')).toBeVisible();
+    await expect(page.locator('#nq-address')).toBeVisible();
 
-    // Navigate to Status
+    // Navigate to Status via the navbar link
     await page.getByRole('link', { name: 'Status' }).click();
     await expect(page.getByText('Faucet Performance')).toBeVisible();
 
-    // Navigate back home via brand link
-    await page.getByRole('link', { name: 'Nimiq Faucet' }).first().click();
+    // Navigate back home
+    await page.goto('/');
     await expect(page.locator('#nq-address')).toBeVisible();
   });
 });

@@ -18,7 +18,7 @@ defineProps<{ network?: string | undefined }>();
           href="https://github.com/PanoramicRum/nimiq-simple-faucet"
           target="_blank"
           rel="noopener"
-          class="text-[#1F2348]/60 font-medium font-body hover:text-primary-container transition-colors flex items-center gap-2"
+          class="text-[#1F2348]/70 font-medium font-body hover:text-primary-container transition-colors flex items-center gap-2"
         >
           Developer Playground
         </a>
@@ -26,7 +26,7 @@ defineProps<{ network?: string | undefined }>();
           href="https://github.com/PanoramicRum/nimiq-simple-faucet"
           target="_blank"
           rel="noopener"
-          class="text-[#1F2348]/60 font-medium font-body hover:text-primary-container transition-colors"
+          class="text-[#1F2348]/70 font-medium font-body hover:text-primary-container transition-colors"
         >
           GitHub
         </a>
@@ -35,7 +35,7 @@ defineProps<{ network?: string | undefined }>();
           class="font-medium font-body transition-colors"
           :class="$route.path === '/status'
             ? 'text-primary-container border-b-2 border-primary-container pb-1 font-bold'
-            : 'text-[#1F2348]/60 hover:text-primary-container'"
+            : 'text-[#1F2348]/70 hover:text-primary-container'"
         >
           Status
         </RouterLink>

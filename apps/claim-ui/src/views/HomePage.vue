@@ -141,13 +141,13 @@ async function submit() {
             placeholder="NQXX  XXXX  XXXX  XXXX  XXXX  XXXX  XXXX  XXXX  XXXX"
             :aria-invalid="showAddressError"
             :aria-describedby="showAddressError ? 'nq-address-error' : undefined"
-            class="block w-full px-6 py-6 rounded-2xl font-mono text-base tracking-widest text-center transition-all duration-300 bg-surface-container-lowest focus:outline-none focus:ring-1 focus:ring-primary-container placeholder:text-on-surface-variant/40"
+            class="block w-full px-6 py-6 rounded-2xl font-mono text-base tracking-widest text-center transition-all duration-300 bg-surface-container-lowest focus:outline-none focus:ring-1 focus:ring-primary-container placeholder:text-on-surface-variant/60"
             :class="showAddressError ? 'ring-2 ring-error' : ''"
           />
           <p v-if="showAddressError" id="nq-address-error" class="text-xs text-error font-body ml-1">
             {{ t('addressInvalid') }}
           </p>
-          <p v-else class="text-xs text-on-surface-variant/60 font-body">
+          <p v-else class="text-xs text-on-surface-variant font-body">
             Enter a valid Nimiq {{ config?.network === 'main' ? '' : 'Testnet ' }}address to receive funds.
           </p>
         </div>
