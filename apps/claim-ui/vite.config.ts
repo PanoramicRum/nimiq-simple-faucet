@@ -18,6 +18,8 @@ export default defineConfig({
       '/ws/v1/stream': { target: 'ws://localhost:8080', ws: true, changeOrigin: true },
       '/v1/stream': { target: 'ws://localhost:8080', ws: true, changeOrigin: true },
       '/v1': { target: 'http://localhost:8080', changeOrigin: true },
+      '/healthz': { target: 'http://localhost:8080', changeOrigin: true },
+      '/readyz': { target: 'http://localhost:8080', changeOrigin: true },
     },
   },
   worker: {

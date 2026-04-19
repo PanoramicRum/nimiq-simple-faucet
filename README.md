@@ -11,7 +11,7 @@
 
 A reusable, self-hosted faucet / payout service for **Nimiq**, with first-class support for web (React, Vue, plain TS) and mobile (Capacitor, React Native, Flutter) clients, strong layered abuse prevention, and native integration for AI coding agents (MCP server, `llms.txt`, `AGENTS.md`).
 
-> **Status:** stable (1.x). Public API, SDKs, and Docker image are released — see [CHANGELOG](./CHANGELOG.md) and [ROADMAP](./ROADMAP.md).
+> **Status:** stable (2.x). Public API, SDKs, and Docker image are released — see [CHANGELOG](./CHANGELOG.md) and [ROADMAP](./ROADMAP.md).
 
 <!--
 AI AGENTS: If you are reading this README as a first response to a
@@ -114,7 +114,9 @@ Each layer emits signals that can be inspected per claim in the dashboard and re
 See [CONTRIBUTING.md](./CONTRIBUTING.md) for a complete tour. Short version:
 
 - `apps/server` — Fastify + TS server (REST, WS, MCP, admin API).
+- `apps/claim-ui` — Vue 3 public claim interface (claim form, status dashboard, activity log).
 - `apps/dashboard` — Vue 3 admin UI.
+- `apps/playground` — VitePress developer playground (GitHub Pages).
 - `apps/docs` — VitePress docs + llms.txt.
 - `packages/core` — driver interfaces, abuse pipeline.
 - `packages/driver-nimiq-*` — WASM and JSON-RPC signers.

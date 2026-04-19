@@ -107,6 +107,37 @@ function registerRoutes(): void {
     responses: { 200: { description: 'Stats', content: jsonContent(StatsResponse) } },
   });
 
+  registry.registerPath({
+    method: 'get',
+    path: '/v1/stats/summary',
+    tags: ['Public'],
+    summary: 'Time-windowed stats summary with balance and recent claims',
+    responses: { 200: { description: 'Summary (cached 30s)' } },
+  });
+
+  registry.registerPath({
+    method: 'get',
+    path: '/v1/claims/recent',
+    tags: ['Public'],
+    summary: 'Recent public claims (paginated, no sensitive fields)',
+    request: {
+      query: z.object({
+        limit: z.coerce.number().int().optional(),
+        offset: z.coerce.number().int().optional(),
+        status: z.string().optional(),
+      }),
+    },
+    responses: { 200: { description: 'Public claims list' } },
+  });
+
+  registry.registerPath({
+    method: 'get',
+    path: '/v1/events',
+    tags: ['Public'],
+    summary: 'Recent faucet system events',
+    responses: { 200: { description: 'System events from in-memory ring buffer' } },
+  });
+
   // ---------- Admin ----------
   registry.registerPath({
     method: 'post',

@@ -19,6 +19,7 @@ import { registerUi } from './ui.js';
 import { applyHardening, buildRedactPaths } from './hardening.js';
 import type { AppContext } from './context.js';
 import { registry, driverReady, walletBalance } from './metrics.js';
+import { EventRing } from './events.js';
 
 export interface BuildAppOptions {
   /** Replace the Nimiq driver (useful for tests). */
@@ -72,9 +73,25 @@ export async function buildApp(
   );
   const stream = new EventStream();
 
-  const ctx: AppContext = { config, db, driver, pipeline, stream };
+  const events = new EventRing();
+  events.push({ type: 'faucet_started', message: 'Faucet started' });
+
+  const ctx: AppContext = { config, db, driver, pipeline, stream, events };
 
   const isDriverReady = (): boolean => driver.isReady?.() !== false;
+
+  // Push a one-time event when the driver becomes ready.
+  if (!isDriverReady()) {
+    const readyPoll = setInterval(() => {
+      if (isDriverReady()) {
+        events.push({ type: 'driver_ready', message: 'Node connected and synced' });
+        clearInterval(readyPoll);
+      }
+    }, 2000);
+    app.addHook('onClose', () => clearInterval(readyPoll));
+  } else {
+    events.push({ type: 'driver_ready', message: 'Node connected and synced' });
+  }
 
   // 503-gate routes that must wait for the driver to finish initial sync
   // (WASM consensus, RPC network handshake). Other routes — /healthz,

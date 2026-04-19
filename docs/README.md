@@ -15,6 +15,7 @@ the [root README](../README.md).
 - [integrator-hmac.md](./integrator-hmac.md) — HMAC-signed backend requests with Node / Go / curl examples
 - Per-SDK READMEs: [sdk-ts](../packages/sdk-ts/), [sdk-react](../packages/sdk-react/), [sdk-vue](../packages/sdk-vue/), [sdk-capacitor](../packages/sdk-capacitor/), [sdk-react-native](../packages/sdk-react-native/), [sdk-flutter](../packages/sdk-flutter/), [sdk-go](../packages/sdk-go/)
 - [../AGENTS.md](../AGENTS.md) — per-framework recipes for AI coding agents
+- [Developer Playground](../apps/playground/) — interactive VitePress sandbox with paths, SDK guides, and runnable examples (deployed to GitHub Pages)
 
 ## Maintainers (contributing to this repo)
 

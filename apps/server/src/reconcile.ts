@@ -70,15 +70,24 @@ export function startReconciler(ctx: AppContext): () => void {
 
   const intervalMs = ctx.config.reconcileIntervalMs;
 
-  const timer = setInterval(() => {
-    void sweep(ctx).catch((err) => {
+  const runSweep = (): void => {
+    void sweep(ctx).then((flipped) => {
+      if (flipped > 0) {
+        ctx.events.push({
+          type: 'reconciler_sweep',
+          message: `${flipped} claim${flipped > 1 ? 's' : ''} reconciled`,
+        });
+      }
+    }).catch((err) => {
       // Log but don't crash — reconciler is best-effort.
       console.error('[reconcile] sweep error:', err);
     });
-  }, intervalMs);
+  };
+
+  const timer = setInterval(runSweep, intervalMs);
 
   // Run once immediately on startup.
-  void sweep(ctx).catch(() => {});
+  runSweep();
 
   return () => clearInterval(timer);
 }

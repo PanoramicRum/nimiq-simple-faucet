@@ -42,21 +42,24 @@ async function waitForHashcashSolved(page: Page): Promise<void> {
     .toBeGreaterThanOrEqual(100);
 }
 
-test.describe('claim ui', () => {
-  test('golden path: type address → solve hashcash → broadcast → confirmed', async ({ page }) => {
+test.describe('claim ui — homepage', () => {
+  test('golden path: type address → solve hashcash → click cat → broadcast → confirmed', async ({ page }) => {
     await page.goto('/');
     await expect(page.locator('#nq-address')).toBeVisible();
+
+    // Cat button should be disabled initially
+    const cat = page.getByTestId('claim-cat');
+    await expect(cat).toBeDisabled();
 
     await page.fill('#nq-address', VALID_ADDRESS);
 
     // The hashcash runner auto-starts and, at difficulty 8, typically resolves
     // in well under a second. Wait until the progress bar is 100% so the
-    // submit button becomes enabled.
+    // cat button becomes enabled.
     await waitForHashcashSolved(page);
 
-    const submit = page.locator('button[type="submit"]');
-    await expect(submit).toBeEnabled();
-    await submit.click();
+    await expect(cat).toBeEnabled();
+    await cat.click();
 
     const status = page.locator('[role="status"]');
     await expect(status).toBeVisible();
@@ -66,15 +69,15 @@ test.describe('claim ui', () => {
     await expect(status.getByText(/tx_e2e_/)).toBeVisible({ timeout: 10_000 });
   });
 
-  test('invalid address keeps submit disabled and surfaces inline error', async ({ page }) => {
+  test('invalid address keeps cat button disabled and surfaces inline error', async ({ page }) => {
     await page.goto('/');
     await page.fill('#nq-address', 'not-a-nimiq-address');
-    const submit = page.locator('button[type="submit"]');
-    await expect(submit).toBeDisabled();
+    const cat = page.getByTestId('claim-cat');
+    await expect(cat).toBeDisabled();
     await expect(page.locator('#nq-address-error')).toBeVisible();
   });
 
-  test('hashcash is advertised + progress bar reaches 100 before submit enables', async ({
+  test('hashcash is advertised + progress bar reaches 100 before cat enables', async ({
     page,
     request,
   }) => {
@@ -87,7 +90,7 @@ test.describe('claim ui', () => {
     await page.goto('/');
     await page.fill('#nq-address', ANOTHER_ADDRESS);
     await waitForHashcashSolved(page);
-    await expect(page.locator('button[type="submit"]')).toBeEnabled();
+    await expect(page.getByTestId('claim-cat')).toBeEnabled();
   });
 
   test('rate limit: sixth claim from the same IP hits the daily cap', async ({ request }) => {
@@ -123,5 +126,52 @@ test.describe('claim ui', () => {
     const body = last!.body as { decision?: string; reason?: string; error?: string } | null;
     const reasonBlob = `${body?.decision ?? ''} ${body?.reason ?? ''} ${body?.error ?? ''}`.toLowerCase();
     expect(reasonBlob).toMatch(/cap|rate|limit|too many/);
+  });
+});
+
+test.describe('claim ui — status page', () => {
+  test('status page loads and shows performance section', async ({ page }) => {
+    await page.goto('/status');
+    await expect(page.getByText('Faucet Performance')).toBeVisible();
+    await expect(page.getByText('Successful Claims')).toBeVisible();
+    await expect(page.getByText('Abuse Attempts Stopped')).toBeVisible();
+    await expect(page.getByText('System Health')).toBeVisible();
+  });
+
+  test('status page shows recent claims log', async ({ page }) => {
+    await page.goto('/status');
+    await expect(page.getByText('Recent Claims Log')).toBeVisible();
+  });
+
+  test('status page shows system events', async ({ page }) => {
+    await page.goto('/status');
+    await expect(page.getByText('System Events')).toBeVisible();
+  });
+});
+
+test.describe('claim ui — activity log', () => {
+  test('activity log page loads', async ({ page }) => {
+    await page.goto('/log');
+    await expect(page.getByText('Full Activity Log')).toBeVisible();
+  });
+
+  test('activity log has status filter', async ({ page }) => {
+    await page.goto('/log');
+    await expect(page.locator('select')).toBeVisible();
+  });
+});
+
+test.describe('claim ui — navigation', () => {
+  test('navbar links navigate between routes', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.getByText('Nimiq Faucet')).toBeVisible();
+
+    // Navigate to Status
+    await page.getByRole('link', { name: 'Status' }).click();
+    await expect(page.getByText('Faucet Performance')).toBeVisible();
+
+    // Navigate back home via brand link
+    await page.getByRole('link', { name: 'Nimiq Faucet' }).first().click();
+    await expect(page.locator('#nq-address')).toBeVisible();
   });
 });

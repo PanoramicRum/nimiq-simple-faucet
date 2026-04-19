@@ -1,0 +1,15 @@
+{
+  "name": "@nimiq-faucet/playground",
+  "version": "2.2.0",
+  "private": true,
+  "description": "Nimiq Simple Faucet — Developer Playground (GitHub Pages)",
+  "scripts": {
+    "dev": "vitepress dev",
+    "build": "vitepress build",
+    "preview": "vitepress preview"
+  },
+  "devDependencies": {
+    "vitepress": "^1.4.0",
+    "vue": "^3.5.10"
+  }
+}
