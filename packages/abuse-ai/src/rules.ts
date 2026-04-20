@@ -32,12 +32,16 @@ export function defaultRulesModel(): AiModel {
         raw.push({ feature: 'claimsByUid24h', weight: 0.15, contribution: 0.15 });
       }
 
+      // Missing or low-entropy fingerprint is a strong indicator of scripted
+      // access — real browsers have diverse fingerprint components.
       if (f.fingerprintEntropy < 0.3) {
-        raw.push({ feature: 'fingerprintEntropy', weight: 0.2, contribution: 0.2 });
+        raw.push({ feature: 'fingerprintEntropy', weight: 0.25, contribution: 0.25 });
       }
 
+      // No hostContext at all — request likely from a raw HTTP client,
+      // not from a real integrator or the official ClaimUI.
       if (f.hostContextVerified === 0) {
-        raw.push({ feature: 'hostContextVerified', weight: 0.1, contribution: 0.1 });
+        raw.push({ feature: 'hostContextVerified', weight: 0.2, contribution: 0.2 });
       }
 
       // Scoring bonus: signed context with verified identities (§1.4).

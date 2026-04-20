@@ -24,6 +24,7 @@ export function derivePublicConfig(config: ServerConfig) {
   return {
     network: config.network,
     claimAmountLuna: config.claimAmountLuna.toString(),
+    claimAmountNim: (Number(config.claimAmountLuna) / 100_000).toString(),
     abuseLayers: deriveAbuseLayers(config),
     captcha: config.turnstileSiteKey
       ? { provider: 'turnstile' as const, siteKey: config.turnstileSiteKey }

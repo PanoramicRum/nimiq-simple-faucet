@@ -24,13 +24,16 @@ Setting `FAUCET_HASHCASH_SECRET` enables the layer. Use a random string of at le
 
 ### Difficulty tuning
 
-| Difficulty | Approximate client solve time | Use case |
-|-----------|------------------------------|----------|
-| 8 | <100ms | Testing / development |
-| 16 | ~500ms | Low-friction production |
-| 20 | ~1-2s | Standard production |
-| 24 | ~10-30s | High-value faucets |
-| 30 | ~minutes | Maximum friction |
+| Difficulty | Browser (single Worker) | Script (parallel workers) | Use case |
+|-----------|------------------------|--------------------------|----------|
+| 8 | <100ms | <10ms | Testing / development |
+| 16 | ~500ms | ~30ms | Low-friction, dev only |
+| 20 | ~1-2s | ~170ms | Minimum for production |
+| 22 | ~4-8s | ~700ms | Recommended production |
+| 24 | ~15-30s | ~3s | High-value faucets |
+| 30 | ~minutes | ~minutes | Maximum friction |
+
+> **Important:** Hashcash alone is not sufficient for public-facing faucets. A Python script with 7 CPU workers can solve difficulty 20 in ~0.17 seconds. For real protection against automated scripts, combine hashcash with at least one additional layer — either a CAPTCHA provider (Turnstile/hCaptcha), `FAUCET_REQUIRE_BROWSER=true` (Sec-Fetch header enforcement), or both.
 
 ## Decision logic
 

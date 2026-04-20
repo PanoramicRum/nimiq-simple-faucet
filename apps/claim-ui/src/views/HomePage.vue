@@ -24,32 +24,22 @@ const submitting = ref(false);
 const claimResponse = ref<ClaimResponse | null>(null);
 const claimError = ref<FaucetError | Error | null>(null);
 
-const challengeKind = computed<'turnstile' | 'hcaptcha' | 'hashcash' | null>(() => {
-  const c = config.value;
-  if (!c) return null;
-  if (c.captcha?.provider === 'turnstile') return 'turnstile';
-  if (c.captcha?.provider === 'hcaptcha') return 'hcaptcha';
-  if (c.hashcash) return 'hashcash';
-  return null;
-});
+// Which challenge layers are active (multiple can be enabled simultaneously).
+const needsCaptcha = computed(() => !!config.value?.captcha);
+const captchaProvider = computed(() => config.value?.captcha?.provider ?? null);
+const needsHashcash = computed(() => !!config.value?.hashcash);
 
 const addressValid = computed(() => isValidNimiqAddress(address.value));
 const addressTouched = computed(() => address.value.trim().length > 0);
 const showAddressError = computed(() => addressTouched.value && !addressValid.value);
 
 const challengeSatisfied = computed(() => {
-  // Wait for config to load before allowing submission — prevents race
-  // where user clicks before we know which challenge is required.
+  // Wait for config to load before allowing submission.
   if (!config.value) return false;
-  switch (challengeKind.value) {
-    case 'turnstile':
-    case 'hcaptcha':
-      return captchaToken.value.length > 0;
-    case 'hashcash':
-      return hashcashSolution.value.length > 0;
-    default:
-      return true; // no challenge layer enabled
-  }
+  // ALL enabled challenges must be satisfied.
+  if (needsCaptcha.value && captchaToken.value.length === 0) return false;
+  if (needsHashcash.value && hashcashSolution.value.length === 0) return false;
+  return true;
 });
 
 const canSubmit = computed(
@@ -164,20 +154,20 @@ async function submit() {
           </p>
         </div>
 
-        <!-- Challenge widgets — only render after a valid address is entered -->
+        <!-- Challenge widgets — render ALL active layers after valid address -->
         <template v-if="addressValid">
           <TurnstileWidget
-            v-if="challengeKind === 'turnstile' && config?.captcha"
+            v-if="captchaProvider === 'turnstile' && config?.captcha"
             :site-key="config.captcha.siteKey"
             v-model="captchaToken"
           />
           <HCaptchaWidget
-            v-else-if="challengeKind === 'hcaptcha' && config?.captcha"
+            v-else-if="captchaProvider === 'hcaptcha' && config?.captcha"
             :site-key="config.captcha.siteKey"
             v-model="captchaToken"
           />
           <HashcashRunner
-            v-else-if="challengeKind === 'hashcash' && config?.hashcash"
+            v-if="needsHashcash && config?.hashcash"
             :difficulty="config.hashcash.difficulty"
             @solved="(s: string) => (hashcashSolution = s)"
           />

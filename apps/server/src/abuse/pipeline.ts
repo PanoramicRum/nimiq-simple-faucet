@@ -96,6 +96,17 @@ export function buildPipeline(
       }),
     );
   }
+  // Warn if hashcash is the only challenge layer — it's solvable by scripts.
+  const hasCaptcha = !!(config.turnstileSecret || config.hcaptchaSecret);
+  const hasHashcash = !!config.hashcashSecret;
+  if (hasHashcash && !hasCaptcha && !config.dev) {
+    console.warn(
+      '[security] Hashcash is the only challenge layer. It prevents casual abuse but is ' +
+      'solvable by scripts (~0.2s with parallel workers). For public-facing faucets, add ' +
+      'Turnstile or hCaptcha alongside hashcash. See docs/abuse-layers/hashcash.md.',
+    );
+  }
+
   return new AbusePipeline(checks);
 }
 

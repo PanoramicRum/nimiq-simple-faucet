@@ -93,11 +93,13 @@ Layers run in this fixed order:
 
 The order is not currently configurable. Each layer's **weight** affects its contribution to the aggregate score (higher weight = more influence).
 
-### Important: captcha vs hashcash
+### Combining captcha with hashcash
 
-The ClaimUI only shows **one** challenge widget at a time (priority: Turnstile > hCaptcha > Hashcash). If both a captcha provider (Turnstile/hCaptcha) and hashcash are enabled server-side, the ClaimUI will only show the captcha widget and the server will reject claims missing the hashcash solution.
+You can enable both a captcha provider (Turnstile or hCaptcha) **and** hashcash simultaneously. The ClaimUI will render both widgets — the captcha widget and the hashcash progress bar. The claim button only activates when both challenges are satisfied.
 
-**Recommendation:** enable either a captcha provider (Turnstile OR hCaptcha) **or** hashcash, not both simultaneously. If you need both proof-of-work and captcha protection, use a captcha provider — they already include bot detection that achieves similar goals to hashcash.
+This is the **recommended production setup**: captcha verifies the user is human, hashcash adds CPU cost to prevent rapid automated claiming even if the captcha is bypassed.
+
+**Note:** Turnstile and hCaptcha are mutually exclusive (pick one). But either can be combined with hashcash.
 
 ## Layer summary
 
@@ -113,16 +115,27 @@ The ClaimUI only shows **one** challenge widget at a time (priority: Turnstile >
 | 8 | [On-Chain Heuristics](./on-chain.md) | Sweeper wallets, faucet clusters | Free (RPC queries) | `FAUCET_ONCHAIN_ENABLED` |
 | 9 | [AI Anomaly Scoring](./ai-scoring.md) | Novel attack patterns | Free (local CPU) | `FAUCET_AI_ENABLED` |
 
+## Browser-only mode
+
+Set `FAUCET_REQUIRE_BROWSER=true` to reject claim and challenge requests that don't come from a real browser. This checks for the `Sec-Fetch-Site` header (sent by all modern browsers but not by scripts like curl or Python requests).
+
+Integrators with HMAC auth (`X-Faucet-Api-Key`) bypass this check, so SDK-to-server integrations continue to work.
+
+**Limitation:** Determined attackers can spoof `Sec-Fetch-*` headers, but this stops the majority of naive scripts and raises the bar significantly.
+
 ## Recommended production setup
 
 At minimum, enable:
 
 1. **Rate limiting** (always on) — caps claims per IP per day
-2. **Turnstile or hCaptcha** — blocks automated scripts
-3. **Hashcash** — adds CPU cost to every claim
-4. **GeoIP** with country allowlist — restricts to your target regions
+2. **Browser-only mode** (`FAUCET_REQUIRE_BROWSER=true`) — blocks non-browser scripts
+3. **Turnstile or hCaptcha** — blocks automated scripts with human verification
+4. **Hashcash** — adds CPU cost to every claim (use alongside captcha, not as sole defense)
+5. **GeoIP** with country allowlist — restricts to your target regions
 
 For higher-value faucets, add fingerprint correlation, on-chain heuristics, and AI scoring.
+
+> **Warning:** Hashcash alone is NOT sufficient for public-facing faucets. A parallel Python script can solve difficulty 20 in ~0.17 seconds. Always combine hashcash with at least one human-verification layer (Turnstile, hCaptcha, or `FAUCET_REQUIRE_BROWSER`).
 
 ## Adding your own abuse layer
 

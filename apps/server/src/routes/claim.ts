@@ -30,6 +30,17 @@ export async function claimRoutes(app: FastifyInstance, ctx: AppContext): Promis
     if (!ctx.config.hashcashSecret) {
       return reply.code(404).send({ error: 'hashcash not enabled' });
     }
+    // Browser-only enforcement for challenge minting too.
+    if (ctx.config.requireBrowser) {
+      const apiKey = req.headers['x-faucet-api-key'];
+      const hasIntegratorAuth = typeof apiKey === 'string' && apiKey.length > 0;
+      if (!hasIntegratorAuth && !req.headers['sec-fetch-site']) {
+        return reply.code(403).send({
+          error: 'browser_required',
+          message: 'Challenges must be requested from a browser.',
+        });
+      }
+    }
     const uid = typeof (req.body as { uid?: unknown } | null)?.uid === 'string'
       ? (req.body as { uid: string }).uid.slice(0, 128)
       : undefined;
@@ -47,6 +58,33 @@ export async function claimRoutes(app: FastifyInstance, ctx: AppContext): Promis
   const inflightClaims = new Set<string>();
 
   app.post('/v1/claim', { bodyLimit: 16 * 1024 }, async (req, reply) => {
+    // Browser-only enforcement: when enabled, reject requests that don't
+    // originate from a real browser. Integrators bypass this via HMAC auth.
+    if (ctx.config.requireBrowser) {
+      const apiKey = req.headers['x-faucet-api-key'];
+      const hasIntegratorAuth = typeof apiKey === 'string' && apiKey.length > 0;
+      if (!hasIntegratorAuth) {
+        // Sec-Fetch-Site is sent by all modern browsers (Chrome 76+, Firefox 90+,
+        // Safari 16.4+). Scripts (curl, Python requests, etc.) don't send it.
+        const secFetchSite = req.headers['sec-fetch-site'];
+        if (!secFetchSite) {
+          return reply.code(403).send({
+            error: 'browser_required',
+            message: 'Claims must be submitted from a browser. Use the ClaimUI or an authorized integrator SDK.',
+          });
+        }
+        // Also enforce Origin against the CORS allowlist.
+        const origin = req.headers['origin'];
+        const allowedOrigins = ctx.config.corsOrigins;
+        if (origin && Array.isArray(allowedOrigins) && !allowedOrigins.includes(origin)) {
+          return reply.code(403).send({
+            error: 'origin_not_allowed',
+            message: 'Request origin is not in the allowed list.',
+          });
+        }
+      }
+    }
+
     const now = Date.now();
     const rawBody = typeof req.body === 'string' ? req.body : JSON.stringify(req.body ?? {});
     const parsed = ClaimBody.safeParse(req.body);

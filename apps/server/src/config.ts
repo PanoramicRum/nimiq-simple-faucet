@@ -83,6 +83,7 @@ export const ServerConfigSchema = z.object({
   challengeRatePerMinute: z.coerce.number().int().min(1).default(10),
   keyringPath: z.string().optional(),
 
+  requireBrowser: z.coerce.boolean().default(false),
   uiEnabled: z.coerce.boolean().default(true),
   claimUiDir: z.string().optional(),
   dashboardDir: z.string().optional(),
@@ -180,6 +181,7 @@ const ENV_KEYS: Record<string, string> = {
   adminLoginRatePerMinute: 'FAUCET_ADMIN_LOGIN_RATE_PER_MINUTE',
   challengeRatePerMinute: 'FAUCET_CHALLENGE_RATE_PER_MINUTE',
   keyringPath: 'FAUCET_KEYRING_PATH',
+  requireBrowser: 'FAUCET_REQUIRE_BROWSER',
   uiEnabled: 'FAUCET_UI_ENABLED',
   claimUiDir: 'FAUCET_CLAIM_UI_DIR',
   dashboardDir: 'FAUCET_DASHBOARD_DIR',
