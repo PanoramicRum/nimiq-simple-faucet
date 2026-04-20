@@ -38,6 +38,9 @@ const addressTouched = computed(() => address.value.trim().length > 0);
 const showAddressError = computed(() => addressTouched.value && !addressValid.value);
 
 const challengeSatisfied = computed(() => {
+  // Wait for config to load before allowing submission — prevents race
+  // where user clicks before we know which challenge is required.
+  if (!config.value) return false;
   switch (challengeKind.value) {
     case 'turnstile':
     case 'hcaptcha':
@@ -45,7 +48,7 @@ const challengeSatisfied = computed(() => {
     case 'hashcash':
       return hashcashSolution.value.length > 0;
     default:
-      return true;
+      return true; // no challenge layer enabled
   }
 });
 
@@ -161,22 +164,24 @@ async function submit() {
           </p>
         </div>
 
-        <!-- Challenge widgets -->
-        <TurnstileWidget
-          v-if="challengeKind === 'turnstile' && config?.captcha"
-          :site-key="config.captcha.siteKey"
-          v-model="captchaToken"
-        />
-        <HCaptchaWidget
-          v-else-if="challengeKind === 'hcaptcha' && config?.captcha"
-          :site-key="config.captcha.siteKey"
-          v-model="captchaToken"
-        />
-        <HashcashRunner
-          v-else-if="challengeKind === 'hashcash' && config?.hashcash"
-          :difficulty="config.hashcash.difficulty"
-          @solved="(s: string) => (hashcashSolution = s)"
-        />
+        <!-- Challenge widgets — only render after a valid address is entered -->
+        <template v-if="addressValid">
+          <TurnstileWidget
+            v-if="challengeKind === 'turnstile' && config?.captcha"
+            :site-key="config.captcha.siteKey"
+            v-model="captchaToken"
+          />
+          <HCaptchaWidget
+            v-else-if="challengeKind === 'hcaptcha' && config?.captcha"
+            :site-key="config.captcha.siteKey"
+            v-model="captchaToken"
+          />
+          <HashcashRunner
+            v-else-if="challengeKind === 'hashcash' && config?.hashcash"
+            :difficulty="config.hashcash.difficulty"
+            @solved="(s: string) => (hashcashSolution = s)"
+          />
+        </template>
 
         <ClaimStatus
           v-if="config"

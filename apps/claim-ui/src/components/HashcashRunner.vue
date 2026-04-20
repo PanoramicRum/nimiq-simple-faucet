@@ -3,11 +3,7 @@ import { onBeforeUnmount, onMounted, ref } from 'vue';
 import { useClient } from '../lib/client';
 import { t } from '../i18n/en';
 
-interface Props {
-  difficulty: number;
-}
-
-defineProps<Props>();
+const props = defineProps<{ difficulty: number }>();
 const emit = defineEmits<{ (e: 'solved', solution: string): void }>();
 
 const attempts = ref(0);
@@ -18,12 +14,13 @@ const startedAt = ref<number | null>(null);
 let worker: Worker | null = null;
 const client = useClient();
 
-// Expected attempts roughly 2^difficulty, so cap the progress bar at a visual estimate.
+// Linear progress against the expected attempt count (2^difficulty).
+// Clamp at 90% so the bar doesn't stall at 100% before the nonce is verified.
 function progressPct(): number {
   if (done.value) return 100;
-  if (!startedAt.value || attempts.value === 0) return 4;
-  const elapsed = Date.now() - startedAt.value;
-  return Math.min(95, 5 + Math.log2(attempts.value + 2) * 6 + elapsed / 1000);
+  if (attempts.value === 0) return 2;
+  const expected = 2 ** props.difficulty;
+  return Math.min(90, (attempts.value / expected) * 90 + 2);
 }
 
 async function run() {
@@ -80,7 +77,7 @@ onBeforeUnmount(() => {
       :aria-label="t('challenge.solving')"
     >
       <div
-        class="h-full bg-nimiq-500"
+        class="h-full bg-nimiq-500 transition-[width] duration-300 ease-linear"
         :style="{ width: progressPct() + '%' }"
       />
     </div>

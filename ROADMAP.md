@@ -644,6 +644,85 @@ standalone extension, providing a unified experience for faucet management.
 
 **Estimated effort:** 3-4 days.
 
+### 3.0.9 — Abuse layer ordering and weight configuration
+
+**Goal:** let operators configure the pipeline execution order, layer
+weights, and scoring thresholds via env vars or runtime config.
+
+**Current state:** Layer order is hardcoded in `pipeline.ts`. Weights are
+hardcoded per layer. Scoring thresholds (challenge at 0.4, review at 0.7,
+deny at 0.85) are hardcoded defaults.
+
+**Scope:**
+- `FAUCET_PIPELINE_ORDER` env var — CSV of layer IDs to set execution order
+- `FAUCET_PIPELINE_WEIGHTS` env var — CSV of `layer:weight` pairs
+- `FAUCET_PIPELINE_CHALLENGE_THRESHOLD` — override default 0.4
+- `FAUCET_PIPELINE_REVIEW_THRESHOLD` — override default 0.7
+- `FAUCET_PIPELINE_DENY_THRESHOLD` — override default 0.85
+- ClaimUI: support showing multiple challenge widgets simultaneously
+  (currently only shows one: Turnstile > hCaptcha > Hashcash)
+- Document the captcha + hashcash conflict and resolution
+
+**Estimated effort:** 2 days.
+
+### 3.0.10 — Hashcash checkbox widget mode
+
+**Goal:** offer a checkbox-style CAPTCHA experience for the hashcash
+layer, alongside the existing progress bar. The integrator chooses which
+UX to use via config.
+
+**Scope:**
+- New `HashcashCheckbox.vue` component: checkbox → solves PoW in
+  background → shows checkmark when done (familiar CAPTCHA UX)
+- Config toggle: `FAUCET_HASHCASH_WIDGET=progress|checkbox` (default: progress)
+- ClaimUI conditionally renders `HashcashRunner` or `HashcashCheckbox`
+- Both widgets use the same server-side challenge/verify logic
+
+**Estimated effort:** 1 day.
+
+### 3.0.11 — ALTCHA / Cap integration
+
+**Goal:** add open-source, self-hosted CAPTCHA alternatives as pluggable
+abuse layers alongside existing Turnstile/hCaptcha/hashcash.
+
+**Scope:**
+- [ALTCHA](https://altcha.org/) — MIT licensed PoW CAPTCHA with mature
+  widget ecosystem, WCAG 2.2 AA compliant, Docker deployment
+- [Cap](https://capjs.js.org/) — Apache 2.0 PoW + JS instrumentation
+  challenges, single Docker container
+- New `packages/abuse-altcha/` and/or `packages/abuse-cap/` implementing
+  `AbuseCheck` interface
+- ClaimUI widget components for each
+- Can run fully self-hosted with no third-party calls
+
+**Estimated effort:** 2 days per integration.
+
+### 3.0.12 — Image-based CAPTCHA (proof of humanity)
+
+**Goal:** add an image-recognition CAPTCHA layer for operators who want
+visual human verification without relying on commercial services.
+
+**Context:** PoW challenges (hashcash, ALTCHA, Cap) prove the client spent
+CPU but don't prove a human is present. Image CAPTCHAs ("select all
+traffic lights") require visual understanding that is harder for bots.
+However, self-hosted image CAPTCHAs are significantly weaker than
+commercial ones (reCAPTCHA, hCaptcha) because they lack massive labeled
+image datasets. This is a tradeoff between privacy/self-hosting and
+security strength.
+
+**Options to evaluate:**
+- [LibreCaptcha](https://github.com/librecaptcha/lc-core) — self-hosted
+  framework with text distortion + visual puzzles (Scala/JVM)
+- Custom icon-selection challenge using open image datasets
+- Integration with existing PoW layers (image challenge + PoW as fallback)
+
+**Recommendation:** offer as an optional layer alongside Turnstile/hCaptcha.
+Operators who need the strongest protection should still use commercial
+services (free tiers available). Self-hosted image CAPTCHA is for operators
+who prioritize privacy and self-sovereignty over maximum bot resistance.
+
+**Estimated effort:** 3-5 days (research + implementation + image dataset).
+
 ---
 
 # Beyond 1.x — Ongoing quality programs

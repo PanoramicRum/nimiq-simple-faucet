@@ -188,11 +188,13 @@ export async function claimRoutes(app: FastifyInstance, ctx: AppContext): Promis
       });
       claimsTotal.inc({ status: 'rejected', decision: evaluation.decision });
       claimDuration.observe({ phase: 'total' }, (Date.now() - now) / 1000);
+      const reason = evaluation.reasons[0] ?? evaluation.decision;
       return reply.code(evaluation.decision === 'deny' ? 403 : 202).send({
         id,
         status: 'rejected',
         decision: evaluation.decision,
-        reason: evaluation.reasons[0] ?? evaluation.decision,
+        reason,
+        error: reason,
       });
     }
 
@@ -218,6 +220,7 @@ export async function claimRoutes(app: FastifyInstance, ctx: AppContext): Promis
         status: 'challenged',
         decision: 'challenge',
         reason: 'complete additional challenge and retry',
+        error: 'challenge required',
       });
     }
 

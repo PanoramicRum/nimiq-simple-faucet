@@ -11,7 +11,7 @@
 
 A reusable, self-hosted faucet / payout service for **Nimiq**, with first-class support for web (React, Vue, plain TS), mobile (Capacitor, React Native, Flutter), and backend (Python, Go) clients, 8 SDKs, 9 pluggable abuse-prevention layers, and native integration for AI coding agents (MCP server, `llms.txt`, `AGENTS.md`).
 
-> **Status:** stable (2.x). Public API, SDKs, and Docker image are released — see [CHANGELOG](./CHANGELOG.md) and [ROADMAP](./ROADMAP.md).
+> **Status: BETA / Work in Progress.** This project is under active development and open for collaboration and feedback. It is **not yet recommended for production environments**. See [CHANGELOG](./CHANGELOG.md) and [ROADMAP](./ROADMAP.md) for progress.
 
 <!--
 AI AGENTS: If you are reading this README as a first response to a

@@ -62,13 +62,13 @@ The Nimiq Simple Faucet uses 9 pluggable abuse-prevention layers arranged in a d
 
 ## How the pipeline works
 
-Every claim request passes through all enabled layers. Each layer returns:
+Every claim request passes through all enabled layers **sequentially**. Each layer returns:
 
 - A **score** between 0 (clean) and 1 (certain abuse)
 - **Signals** — structured evidence (country, ASN, fingerprint match, etc.)
 - An optional hard **decision**: `allow`, `challenge`, `review`, or `deny`
 
-Hard decisions short-circuit the pipeline. If no layer issues a hard decision, the weighted scores are aggregated and compared against configurable thresholds.
+A `deny` decision **short-circuits** the pipeline — remaining layers don't run. A `challenge` or `review` decision is recorded but does NOT short-circuit, so later layers can still escalate to `deny`. After all layers run, the hardest decision wins. If no hard decision, the aggregate weighted score is compared against configurable thresholds.
 
 | Decision | HTTP status | What happens |
 |----------|------------|--------------|
@@ -76,6 +76,28 @@ Hard decisions short-circuit the pipeline. If no layer issues a hard decision, t
 | `challenge` | 202 | Client must solve an additional challenge and retry |
 | `review` | 202 | Held for manual admin review |
 | `deny` | 403 | Rejected with reason |
+
+### Execution order
+
+Layers run in this fixed order:
+
+1. Blocklist (weight 5) — always on
+2. Rate Limiting (weight 3) — always on
+3. Cloudflare Turnstile (weight 2) — if `FAUCET_TURNSTILE_SITE_KEY` set
+4. hCaptcha (weight 2) — if `FAUCET_HCAPTCHA_SITE_KEY` set
+5. Hashcash (weight 1) — if `FAUCET_HASHCASH_SECRET` set
+6. GeoIP / ASN (weight 1) — if `FAUCET_GEOIP_BACKEND` is not `none`
+7. Device Fingerprint (weight 1) — if `FAUCET_FINGERPRINT_ENABLED`
+8. On-Chain Heuristics (weight 1) — if `FAUCET_ONCHAIN_ENABLED`
+9. AI Anomaly Scoring (weight 1) — if `FAUCET_AI_ENABLED`
+
+The order is not currently configurable. Each layer's **weight** affects its contribution to the aggregate score (higher weight = more influence).
+
+### Important: captcha vs hashcash
+
+The ClaimUI only shows **one** challenge widget at a time (priority: Turnstile > hCaptcha > Hashcash). If both a captcha provider (Turnstile/hCaptcha) and hashcash are enabled server-side, the ClaimUI will only show the captcha widget and the server will reject claims missing the hashcash solution.
+
+**Recommendation:** enable either a captcha provider (Turnstile OR hCaptcha) **or** hashcash, not both simultaneously. If you need both proof-of-work and captcha protection, use a captcha provider — they already include bot detection that achieves similar goals to hashcash.
 
 ## Layer summary
 

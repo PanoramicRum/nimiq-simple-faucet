@@ -92,6 +92,7 @@ pnpm --filter @nimiq-faucet/claim-ui build
 | **Brand name** | `src/views/HomePage.vue` | "Nimiq Faucet" heading |
 | **Colors** | `tailwind.config.ts` | Stitch design tokens (surface tiers, primary gold) |
 | **Fonts** | `index.html` + `src/styles.css` | Plus Jakarta Sans, Manrope, Fira Code |
+| **UI messages** | `src/i18n/en.ts` | All user-facing text (challenge prompts, error messages, labels) |
 | **Footer** | `src/components/FooterBar.vue` | Credit line and links |
 | **NavBar** | `src/components/NavBar.vue` | Brand, badge, navigation links |
 

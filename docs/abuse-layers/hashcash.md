@@ -38,6 +38,26 @@ Setting `FAUCET_HASHCASH_SECRET` enables the layer. Use a random string of at le
 - **Invalid HMAC, expired TTL, or replayed nonce:** `deny`
 - **Valid solution:** `allow` with low score
 
+## ClaimUI experience
+
+The ClaimUI renders a `HashcashRunner` component when hashcash is enabled. The flow:
+
+1. User enters a valid address → the runner mounts and requests a challenge from `POST /v1/challenge`
+2. A Web Worker brute-forces SHA-256 hashes in the background
+3. A progress bar shows linear progress: `attempts / 2^difficulty` (capped at 90% until verified)
+4. A "computations" counter shows the work done
+5. When solved, the progress bar fills to 100% and the claim button activates
+
+The progress bar uses a CSS transition for smooth animation. At difficulty 20, expect ~1-2 seconds on modern hardware.
+
+User-facing messages are customizable in `src/i18n/en.ts`:
+
+| Key | Default | Purpose |
+|-----|---------|---------|
+| `challenge.solving` | "Running a quick anti-spam check ..." | Shown during solving |
+| `challenge.attempts` | "{{n}} computations" | Counter below the progress bar |
+| `challenge.ready` | "Verification complete." | Shown when solved |
+
 ## Trade-offs
 
 - **Zero external dependencies** — entirely self-hosted
@@ -48,3 +68,5 @@ Setting `FAUCET_HASHCASH_SECRET` enables the layer. Use a random string of at le
 ## SDK support
 
 All frontend SDKs include a `HashcashRunner` component that automatically requests a challenge, solves it in a Web Worker, and passes the solution to the claim request. Backend SDKs (Python, Go) include `solveHashcash()` / `SolveAndClaim()` helpers.
+
+3 of 6 examples currently demonstrate hashcash (Vue, Capacitor, Go). Adding hashcash to the remaining examples (Next.js, Flutter, Python) is tracked in [ROADMAP §3.0.7](../../ROADMAP.md).
