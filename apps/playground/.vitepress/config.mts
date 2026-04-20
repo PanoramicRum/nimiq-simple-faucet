@@ -23,8 +23,8 @@ export default defineConfig({
       { text: 'SDKs', link: '/frameworks/' },
       { text: 'Examples', link: '/examples/' },
       { text: 'Abuse Layers', link: '/abuse-layers/' },
+      { text: 'ClaimUI', link: '/claim-ui' },
       { text: 'Monitoring', link: '/monitoring' },
-      { text: 'Analytics', link: '/analytics' },
     ],
 
     sidebar: {

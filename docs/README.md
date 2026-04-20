@@ -12,6 +12,7 @@ the [root README](../README.md).
 
 ## Integrators (embedding in your app)
 
+- [claim-ui.md](./claim-ui.md) — ClaimUI architecture, abuse layer widgets, theming, reuse and customization guide
 - [integrator-hmac.md](./integrator-hmac.md) — HMAC-signed backend requests with Node / Go / curl examples
 - Per-SDK READMEs: [sdk-ts](../packages/sdk-ts/), [sdk-react](../packages/sdk-react/), [sdk-vue](../packages/sdk-vue/), [sdk-capacitor](../packages/sdk-capacitor/), [sdk-react-native](../packages/sdk-react-native/), [sdk-flutter](../packages/sdk-flutter/), [sdk-go](../packages/sdk-go/)
 - [../AGENTS.md](../AGENTS.md) — per-framework recipes for AI coding agents

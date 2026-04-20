@@ -114,7 +114,7 @@ Each layer emits signals that can be inspected per claim in the dashboard and re
 See [CONTRIBUTING.md](./CONTRIBUTING.md) for a complete tour. Short version:
 
 - `apps/server` — Fastify + TS server (REST, WS, MCP, admin API).
-- `apps/claim-ui` — Vue 3 public claim interface (claim form, status dashboard, activity log).
+- `apps/claim-ui` — Vue 3 public claim interface with auto-configuring abuse layer widgets. See [docs/claim-ui.md](./docs/claim-ui.md).
 - `apps/dashboard` — Vue 3 admin UI.
 - `apps/playground` — VitePress developer playground (GitHub Pages).
 - `apps/docs` — VitePress docs + llms.txt.

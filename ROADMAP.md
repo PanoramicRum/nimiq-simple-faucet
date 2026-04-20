@@ -627,6 +627,23 @@ layers (captcha, hashcash, hostContext signing) in its framework.
 
 **Estimated effort:** 1-2 days.
 
+### 3.0.8 — Admin Dashboard
+
+**Goal:** operator-facing admin tools integrated into ClaimUI or as a
+standalone extension, providing a unified experience for faucet management.
+
+**Scope:**
+- Wallet management: display faucet address and balance, withdraw funds
+- Claim review: approve/deny pending claims, view abuse signals per claim
+- Blocklist management: add/remove entries (IP, address, ASN, country)
+- Runtime configuration: toggle abuse layers, adjust rate limits, tune thresholds
+- Audit log: admin action history with timestamps and actor
+- Unified design: match ClaimUI's Porcelain Vault theme
+- Session auth with TOTP step-up for sensitive operations
+- Can reuse ClaimUI's StatusPage as a base, extending with admin-only sections
+
+**Estimated effort:** 3-4 days.
+
 ---
 
 # Beyond 1.x — Ongoing quality programs
