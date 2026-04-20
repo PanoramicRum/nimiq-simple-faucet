@@ -183,6 +183,30 @@ export class NimiqRpcDriver implements CurrencyDriver {
 
   async send(to: Address, amount: bigint, memo?: string): Promise<TxId> {
     if (this.#readyPromise) await this.#readyPromise;
+    try {
+      return await this.#sendOnce(to, amount, memo);
+    } catch (err) {
+      // If the node lost the wallet unlock (e.g. node restarted while
+      // faucet stayed running), re-import + re-unlock and retry once.
+      if (err instanceof DriverError && this.#isRetryableRpcError(err)) {
+        await this.#ensureWalletReady();
+        return this.#sendOnce(to, amount, memo);
+      }
+      throw err;
+    }
+  }
+
+  #isRetryableRpcError(err: DriverError): boolean {
+    // The Nimiq node returns -32603 "Internal error" when the wallet is
+    // locked, as well as "No unlocked wallet" in some versions. Treat
+    // any internal RPC error during send as potentially a lost-lock and
+    // attempt re-unlock before retrying.
+    return err.code === 'RPC_-32603'
+      || err.message.toLowerCase().includes('no unlocked wallet')
+      || err.message.toLowerCase().includes('unlocked account');
+  }
+
+  async #sendOnce(to: Address, amount: bigint, memo?: string): Promise<TxId> {
     // Albatross requires an explicit validity-start-height on every tx. Using
     // the current head means the tx is valid for the next ~120 blocks.
     const validityStartHeight = await this.#rpc<number>('getBlockNumber', []);

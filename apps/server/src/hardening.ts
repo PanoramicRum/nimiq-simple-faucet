@@ -74,7 +74,7 @@ const SCRUB_HEADERS = [
   'x-faucet-admin-token',
 ];
 
-const SCRUB_FIELDS = /^(password|totp|apiKey|hmacSecret|privateKey|signature|csrf|sessionToken)$/i;
+const SCRUB_FIELDS = /^(password|passphrase|totp|apiKey|hmacSecret|privateKey|signature|csrf|sessionToken)$/i;
 
 /** Pino redact paths cover header + known secret body fields. Pino's `redact` runs before transports. */
 export function buildRedactPaths(): string[] {
@@ -86,6 +86,10 @@ export function buildRedactPaths(): string[] {
   ]);
   const fieldPaths = [
     'password',
+    'passphrase',
+    'walletPassphrase',
+    'keyPassphrase',
+    'adminPassword',
     'totp',
     'apiKey',
     'hmacSecret',
@@ -94,6 +98,10 @@ export function buildRedactPaths(): string[] {
     'csrf',
     'sessionToken',
     '*.password',
+    '*.passphrase',
+    '*.walletPassphrase',
+    '*.keyPassphrase',
+    '*.adminPassword',
     '*.totp',
     '*.apiKey',
     '*.hmacSecret',

@@ -15,7 +15,7 @@ interface Props {
 const props = defineProps<Props>();
 const emit = defineEmits<{ (e: 'retry'): void }>();
 
-type UiStatus = 'idle' | 'pending' | ClaimStatus;
+type UiStatus = 'idle' | 'pending' | 'timeout' | ClaimStatus;
 
 const status = ref<UiStatus>('idle');
 const txId = ref<string | null>(null);
@@ -28,6 +28,7 @@ let pollTimer: ReturnType<typeof setInterval> | null = null;
 
 function mapReason(code?: string, message?: string): string {
   const src = `${code ?? ''} ${message ?? ''}`.toLowerCase();
+  if (src.includes('send_failed') || src.includes('unavailable') || src.includes('503')) return 'reason.serverError';
   if (src.includes('rate') || src.includes('too many') || src.includes('daily cap')) return 'reason.rateLimited';
   if (src.includes('invalid address')) return 'reason.invalidAddress';
   if (src.includes('geo') || src.includes('country')) return 'reason.geoBlocked';
@@ -35,6 +36,8 @@ function mapReason(code?: string, message?: string): string {
   if (src.includes('captcha') || src.includes('turnstile') || src.includes('hcaptcha')) return 'reason.captchaFailed';
   return 'reason.unknown';
 }
+
+const isServerError = ref(false);
 
 function cleanup() {
   unsubscribe?.();
@@ -97,11 +100,12 @@ watch(
     cleanup();
     copied.value = false;
     if (err) {
-      status.value = 'rejected';
       reasonKey.value =
         err instanceof FaucetError
           ? mapReason(err.code, err.message)
           : mapReason(undefined, (err as Error).message);
+      isServerError.value = reasonKey.value === 'reason.serverError';
+      status.value = isServerError.value ? 'timeout' : 'rejected';
       txId.value = null;
       return;
     }
@@ -180,6 +184,20 @@ async function copyTx() {
           {{ t('explorerLink') }}
         </a>
       </div>
+    </div>
+
+    <div v-else-if="status === 'timeout' && isServerError" class="space-y-2">
+      <p class="font-medium text-on-surface-variant">{{ t('status.serverError') }}</p>
+      <p class="text-on-surface-variant">
+        {{ t('reason.serverError') }}
+      </p>
+      <button
+        type="button"
+        class="focus-ring rounded border border-[color:var(--color-card-border)] px-3 py-1 text-sm"
+        @click="emit('retry')"
+      >
+        {{ t('tryAgain') }}
+      </button>
     </div>
 
     <div v-else-if="status === 'rejected'" class="space-y-2">

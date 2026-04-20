@@ -249,7 +249,7 @@ export async function claimRoutes(app: FastifyInstance, ctx: AppContext): Promis
         id,
         address,
         amountLuna: ctx.config.claimAmountLuna.toString(),
-        status: 'rejected',
+        status: 'timeout',
         ip: req.ip,
         userAgent: claimReq.userAgent ?? null,
         integratorId: integratorId ?? null,
@@ -259,13 +259,13 @@ export async function claimRoutes(app: FastifyInstance, ctx: AppContext): Promis
         rejectionReason: `system error: ${errMsg}`.slice(0, 256),
         idempotencyKey: parsed.data.idempotencyKey ?? null,
       });
-      claimsTotal.inc({ status: 'rejected', decision: 'allow' });
+      claimsTotal.inc({ status: 'timeout', decision: 'allow' });
       claimDuration.observe({ phase: 'total' }, (Date.now() - now) / 1000);
       return reply.code(503).send({
         id,
-        status: 'rejected',
+        status: 'error',
         error: 'send_failed',
-        message: 'Transaction could not be sent. Please try again shortly.',
+        message: 'Faucet is temporarily unavailable. Please try again shortly.',
       });
     }
     await ctx.db.insert(claims).values({

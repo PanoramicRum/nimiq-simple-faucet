@@ -1,7 +1,12 @@
 import { defineConfig } from 'vite';
 import vue from '@vitejs/plugin-vue';
 
-// Proxy targets the Fastify app on 8080 so `pnpm dev` mirrors prod single-origin.
+// Proxy targets the Fastify server. Default 8080 (Docker internal port).
+// Override with FAUCET_PORT for local dev when compose maps to a different host port.
+const faucetPort = process.env.FAUCET_PORT ?? '8080';
+const httpTarget = `http://localhost:${faucetPort}`;
+const wsTarget = `ws://localhost:${faucetPort}`;
+
 export default defineConfig({
   plugins: [vue()],
   base: '/',
@@ -15,11 +20,11 @@ export default defineConfig({
     port: 5173,
     proxy: {
       // WebSocket entries must come first so Vite picks them over the generic /v1 rule.
-      '/ws/v1/stream': { target: 'ws://localhost:8080', ws: true, changeOrigin: true },
-      '/v1/stream': { target: 'ws://localhost:8080', ws: true, changeOrigin: true },
-      '/v1': { target: 'http://localhost:8080', changeOrigin: true },
-      '/healthz': { target: 'http://localhost:8080', changeOrigin: true },
-      '/readyz': { target: 'http://localhost:8080', changeOrigin: true },
+      '/ws/v1/stream': { target: wsTarget, ws: true, changeOrigin: true },
+      '/v1/stream': { target: wsTarget, ws: true, changeOrigin: true },
+      '/v1': { target: httpTarget, changeOrigin: true },
+      '/healthz': { target: httpTarget, changeOrigin: true },
+      '/readyz': { target: httpTarget, changeOrigin: true },
     },
   },
   worker: {

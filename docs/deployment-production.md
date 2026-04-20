@@ -38,6 +38,14 @@ transactions; you pick *where the private key lives*.
 will refuse to start if this is unset or if it can't produce the same
 address from the supplied key.
 
+> **RPC security note:** When using `FAUCET_SIGNER_DRIVER=rpc`, the faucet
+> sends the private key and wallet passphrase to the Nimiq node via
+> `importRawKey` and `unlockAccount` RPC calls. Inside a Docker Compose
+> network this is safe (traffic stays on the isolated bridge network), but
+> if the RPC node is on a separate host, **always use HTTPS** for
+> `FAUCET_RPC_URL` to protect key material in transit. Never expose the
+> RPC port to the public internet.
+
 ---
 
 ## 2. Pre-flight checklist

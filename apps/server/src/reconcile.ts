@@ -78,9 +78,10 @@ export function startReconciler(ctx: AppContext): () => void {
           message: `${flipped} claim${flipped > 1 ? 's' : ''} reconciled`,
         });
       }
-    }).catch((err) => {
-      // Log but don't crash — reconciler is best-effort.
-      console.error('[reconcile] sweep error:', err);
+    }).catch(() => {
+      // Don't crash — reconciler is best-effort. Avoid console.error with
+      // raw error objects to prevent leaking credentials via Pino bypass.
+      ctx.events.push({ type: 'reconciler_error', message: 'Reconciler sweep failed' });
     });
   };
 

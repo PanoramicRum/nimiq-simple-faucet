@@ -104,13 +104,22 @@ async function submit() {
         data-testid="claim-cat"
         :disabled="!canSubmit"
         :aria-busy="submitting"
-        class="w-40 h-40 md:w-48 md:h-48 rounded-full ring-4 flex items-center justify-center text-6xl transition-all duration-300"
-        :class="canSubmit
-          ? 'bg-surface-container-high ring-primary-container cursor-pointer hover:scale-105 active:scale-95 hover:ring-primary'
-          : 'bg-surface-container-high ring-surface-container-low opacity-50 cursor-not-allowed'"
+        aria-label="Claim NIM"
+        class="cat-btn rounded-full ring-4 overflow-hidden transition-all duration-300"
+        :class="[
+          submitting ? 'cat-btn--loading' : '',
+          canSubmit
+            ? 'ring-primary-container cursor-pointer hover:ring-primary'
+            : 'ring-surface-container-low grayscale opacity-60 cursor-not-allowed',
+        ]"
         @click="submit"
       >
-        🐱
+        <img
+          src="/cat.png"
+          alt="Maneki-Neko"
+          class="w-40 h-40 md:w-48 md:h-48 object-cover pointer-events-none select-none"
+          draggable="false"
+        />
       </button>
     </div>
 
@@ -181,3 +190,30 @@ async function submit() {
     </div>
   </main>
 </template>
+
+<style scoped>
+.cat-btn {
+  transition: transform 0.3s, filter 0.3s, box-shadow 0.3s;
+}
+
+/* Idle hover: gentle float up */
+.cat-btn:not(:disabled):hover {
+  transform: scale(1.06);
+  box-shadow: 0 10px 40px rgba(233, 178, 19, 0.15);
+}
+
+/* Click: press down */
+.cat-btn:not(:disabled):active {
+  transform: scale(0.94);
+}
+
+/* Loading: slow pulse while claim is in flight */
+.cat-btn--loading {
+  animation: cat-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes cat-pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.04); opacity: 0.85; }
+}
+</style>

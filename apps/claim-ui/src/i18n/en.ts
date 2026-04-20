@@ -16,7 +16,9 @@ export type MessageKey =
   | 'reason.geoBlocked'
   | 'reason.vpnBlocked'
   | 'reason.captchaFailed'
+  | 'reason.serverError'
   | 'reason.unknown'
+  | 'status.serverError'
   | 'explorerLink'
   | 'tryAgain'
   | 'copyTx'
@@ -46,7 +48,9 @@ export const messages: Record<MessageKey, string> = {
   'reason.geoBlocked': 'The faucet is not available in your region.',
   'reason.vpnBlocked': 'Please disable VPN or proxy services and try again.',
   'reason.captchaFailed': 'Captcha verification failed. Please try again.',
+  'reason.serverError': 'The faucet is temporarily unavailable. Please try again in a moment.',
   'reason.unknown': 'Something went wrong. Please try again in a moment.',
+  'status.serverError': 'Faucet not accessible',
   explorerLink: 'View on block explorer',
   tryAgain: 'Try again',
   copyTx: 'Copy transaction id',
