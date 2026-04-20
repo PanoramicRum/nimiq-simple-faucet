@@ -12,6 +12,9 @@ hero:
     - theme: alt
       text: View SDKs
       link: /frameworks/
+    - theme: alt
+      text: Faucet Frontend →
+      link: /claim-ui
 ---
 
 <script setup>

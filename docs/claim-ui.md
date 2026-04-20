@@ -1,4 +1,6 @@
-# ClaimUI
+# Faucet Frontend (ClaimUI)
+
+> Known as **ClaimUI** (`apps/claim-ui/`) in the project codebase.
 
 The public-facing claim interface for the Nimiq Simple Faucet. Built with Vue 3, Tailwind 4, and Vue Router. Designed around the "Porcelain Vault" visual identity with the maneki-neko (lucky cat) mascot.
 
