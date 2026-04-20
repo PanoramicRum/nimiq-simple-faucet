@@ -1,18 +1,20 @@
 # Faucet Frontend (ClaimUI)
 
-> Known as **ClaimUI** (`apps/claim-ui/`) in the project codebase.
+> Located at `apps/claim-ui/` in the project codebase.
 
-The public-facing claim interface for the Nimiq Simple Faucet. Built with Vue 3, Tailwind 4, and Vue Router. Designed around the "Porcelain Vault" visual identity with the maneki-neko (lucky cat) mascot.
+The public-facing frontend for the Nimiq Simple Faucet. Built with Vue 3, Tailwind 4, and Vue Router. Designed around the "Porcelain Vault" visual identity with the maneki-neko (lucky cat) mascot.
 
 ## Overview
 
-ClaimUI is a single-page application with 3 routes:
+The Faucet Frontend is a single-page application with 3 areas:
 
-| Route | Purpose |
-|-------|---------|
-| `/` | **Homepage** — maneki-neko hero, address input, challenge widgets, claim button |
-| `/status` | **Status dashboard** — faucet balance, claim/blocked counters, recent claims, system health |
-| `/log` | **Activity log** — paginated claim history with detail modal |
+| Route | Area | Purpose |
+|-------|------|---------|
+| `/` | **ClaimUI** | Claim form — maneki-neko hero, address input, challenge widgets, cat claim button |
+| `/status` | **Dashboard** | Status & analytics — faucet balance, claim/blocked counters, recent claims log, system health |
+| `/log` | **Dashboard** | Activity log — paginated claim history with detail modal |
+
+A future **AdminDashboard** will add operator-only tools (wallet management, fund withdrawal, blocklist, config editing) — see [ROADMAP §3.0.8](../ROADMAP.md).
 
 The app is fully self-configuring: it fetches `/v1/config` on load and adapts its UI based on which abuse layers the server has enabled. No client-side configuration is needed.
 

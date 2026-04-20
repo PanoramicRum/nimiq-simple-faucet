@@ -9,7 +9,7 @@
 
 📘 [Docs](./docs) · 🤝 [Contributing](./CONTRIBUTING.md) · 🛡️ [Security](./SECURITY.md) · 🗺️ [Roadmap](./ROADMAP.md) · 🤖 [AI agents](./AGENTS.md)
 
-A reusable, self-hosted faucet / payout service for **Nimiq**, with first-class support for web (React, Vue, plain TS) and mobile (Capacitor, React Native, Flutter) clients, strong layered abuse prevention, and native integration for AI coding agents (MCP server, `llms.txt`, `AGENTS.md`).
+A reusable, self-hosted faucet / payout service for **Nimiq**, with first-class support for web (React, Vue, plain TS), mobile (Capacitor, React Native, Flutter), and backend (Python, Go) clients, 8 SDKs, 9 pluggable abuse-prevention layers, and native integration for AI coding agents (MCP server, `llms.txt`, `AGENTS.md`).
 
 > **Status:** stable (2.x). Public API, SDKs, and Docker image are released — see [CHANGELOG](./CHANGELOG.md) and [ROADMAP](./ROADMAP.md).
 
@@ -84,6 +84,7 @@ Boots a self-contained WASM faucet. The WASM client reaches TestAlbatross consen
 | React Native  | `@nimiq-faucet/react-native`      | RN-safe fetch / WS polyfills + `react-native-device-info`  |
 | Flutter       | `nimiq_faucet` (pub.dev)          | `FaucetClient(url: ...).claim(address)`                    |
 | Go            | `github.com/PanoramicRum/nimiq-simple-faucet/packages/sdk-go` | `client.Claim(ctx, address)`                             |
+| Python        | `nimiq-faucet` (PyPI)             | `FaucetClient(url).claim(address)`                         |
 | Any language  | `openapi.yaml`                    | `openapi-generator-cli generate …`                         |
 
 Every SDK accepts the same `hostContext` (hashed UID, cookie hash, session hash, account age, KYC level, tags, HMAC signature) so your project's own abuse signals flow into the faucet's scoring pipeline.
@@ -114,14 +115,15 @@ Each layer emits signals that can be inspected per claim in the dashboard and re
 See [CONTRIBUTING.md](./CONTRIBUTING.md) for a complete tour. Short version:
 
 - `apps/server` — Fastify + TS server (REST, WS, MCP, admin API).
-- `apps/claim-ui` — Vue 3 public claim interface with auto-configuring abuse layer widgets. See [docs/claim-ui.md](./docs/claim-ui.md).
-- `apps/dashboard` — Vue 3 admin UI.
-- `apps/playground` — VitePress developer playground (GitHub Pages).
+- `apps/claim-ui` — Faucet Frontend: ClaimUI (claim form), Dashboard (status + activity log), AdminDashboard (coming soon). See [docs/claim-ui.md](./docs/claim-ui.md).
+- `apps/dashboard` — Vue 3 admin UI (session-authenticated).
+- `apps/playground` — VitePress developer playground ([GitHub Pages](https://panoramicrum.github.io/nimiq-simple-faucet/)).
 - `apps/docs` — VitePress docs + llms.txt.
-- `packages/core` — driver interfaces, abuse pipeline.
+- `packages/core` — driver interfaces, abuse pipeline (`AbuseCheck` contract).
 - `packages/driver-nimiq-*` — WASM and JSON-RPC signers.
-- `packages/abuse-*` — pluggable abuse providers.
-- `packages/sdk-*` — first-party client SDKs.
+- `packages/abuse-*` — 9 pluggable abuse providers. See [docs/abuse-layers/](./docs/abuse-layers/).
+- `packages/sdk-*` — 8 first-party client SDKs (TS, React, Vue, Python, Go, Flutter, Capacitor, React Native).
+- `packages/openapi` — OpenAPI 3.1 spec generated from server route schemas.
 - `deploy/{docker,compose,helm}` — deployment artifacts.
 - `examples/*` — minimal integration examples per framework.
 

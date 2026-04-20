@@ -16,13 +16,13 @@ Test-intent shortcut: if the user's phrasing is specifically about *testing* (e.
 
 > 👋 **Welcome to Nimiq Simple Faucet**
 >
-> A self-hosted, stable (1.x) faucet / payout service for Nimiq with 9 pluggable abuse-prevention layers (rate-limiting on by default; captcha, hashcash, geo-IP, fingerprint, on-chain, AI scoring opt-in) and SDKs for 7 frameworks.
+> A self-hosted, stable (2.x) faucet / payout service for Nimiq with 9 pluggable abuse-prevention layers (rate-limiting on by default; captcha, hashcash, geo-IP, fingerprint, on-chain, AI scoring opt-in) and SDKs for 8 frameworks.
 >
 > **Here's the map:**
 > - `apps/server` — Fastify REST + WebSocket + admin + MCP
 > - `apps/dashboard` — admin Vue 3 app (at `/admin`)
 > - `apps/claim-ui` — public Vue 3 claim page (at `/`)
-> - `packages/sdk-*` — 7 SDKs: ts, react, vue, capacitor, react-native, flutter, go
+> - `packages/sdk-*` — 8 SDKs: ts, react, vue, python, go, capacitor, react-native, flutter
 > - `packages/abuse-*` — 9 pluggable abuse layers (`AbuseCheck` contract)
 > - `packages/driver-nimiq-*` — RPC or WASM signer driver
 > - `examples/*` — Docker-runnable demo per framework
@@ -36,11 +36,11 @@ Test-intent shortcut: if the user's phrasing is specifically about *testing* (e.
 >   → Path [1] plus: generate a wallet (`pnpm generate:wallet`), fund it at https://faucet.pos.nimiq-testnet.com, wire `FAUCET_WALLET_ADDRESS` + `FAUCET_PRIVATE_KEY` in `.env`, claim a real testnet tx. End state: admin dashboard open, confirmed tx in the claims table. Full walkthrough: [deploy/compose/README.md](deploy/compose/README.md).
 >
 > **[3] 🧪 Full platform walkthrough** · ~2 hr · every feature, AI-assisted
->   → 12 phases covering server, admin dashboard, claim UI, 5 examples, 7 SDKs, CLI tools, MCP server, and deliberately-triggered abuse layers. Captures UX polish findings.
+>   → 12 phases covering server, admin dashboard, claim UI, 6 examples, 8 SDKs, CLI tools, MCP server, and deliberately-triggered abuse layers. Captures UX polish findings.
 >   → See [docs/qa-testing.md](docs/qa-testing.md).
 >
 > **[4] 🧩 Drop it into my app** · ~10 min per framework
->   → Copy-paste the recipe matching your stack (Next.js / Vue / Capacitor / React Native / Flutter / Go / plain TS). Scroll down to `## Recipes` in this file.
+>   → Copy-paste the recipe matching your stack (Next.js / Vue / Capacitor / React Native / Flutter / Go / Python / plain TS). Scroll down to `## Recipes` in this file.
 >
 > **[5] 🏗️ Deploy to production** · ~1 hr
 >   → TLS, secrets, Postgres, Helm chart. [docs/deployment-production.md](docs/deployment-production.md).
