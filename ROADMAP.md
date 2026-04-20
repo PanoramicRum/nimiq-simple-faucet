@@ -542,13 +542,10 @@ Absorbs §1.0.3 (docs restructure), §1.0.5 (screenshots), §1.2.2
 
 ### 3.0.1 — Claim UI redesign
 
-**Goal:** step-by-step claim flow with polished visuals.
-
-**Scope:**
-- 4-step flow: address → challenge → submitting → confirmed/rejected
-- Animated transitions, real-time status card with Nimiq explorer link
-- Mobile-responsive, dark/light mode, Nimiq brand identity
-- Keep Vue 3 + Tailwind 4
+**Status:** ✅ shipped in v2.2.1. Vue Router (3 routes), Stitch "Porcelain
+Vault" design, cat-as-claim-button, status dashboard, activity log with
+detail modal, public stats API (`/v1/stats/summary`, `/v1/claims/recent`,
+`/v1/events`), system error recording, auto wallet re-unlock.
 
 **Estimated effort:** 2-3 days.
 
@@ -567,30 +564,16 @@ Absorbs §1.0.3 (docs restructure), §1.0.5 (screenshots), §1.2.2
 
 ### 3.0.3 — Interactive SDK Showcase (Playground app)
 
-**Goal:** "Try the Nimiq Faucet" for every framework.
-
-**Scope:**
-- New `apps/playground/` (Vue or VitePress + interactive components)
-- Landing page: hero → framework picker
-- For each SDK (TS, React, Vue, Python, Go, Flutter, Capacitor, React
-  Native): live code panel + "Run" button + unified result card
-- Server-side examples (Python, Go) show terminal-style
-  request/response; client-side (React, Vue) show embedded live UI
-- API explorer: interactive OpenAPI-backed request builder
-
-**Estimated effort:** 3-4 days.
+**Status:** ✅ shipped in v2.2.1. VitePress playground with 8 path pages,
+8 SDK pages, 6 example pages, monitoring, fraud prevention, analytics.
+CardGrid component, build-time data loaders from START.md/frameworks YAML.
+Deployed to GitHub Pages via `playground.yml` workflow.
 
 ### 3.0.4 — Docs integration
 
-**Goal:** merge docs + playground into one coherent site.
-
-**Scope:**
-- VitePress docs site gains playground links and "try it" buttons
-- Each SDK's README becomes a guided tutorial
-- AGENTS.md and `llms.txt` reference playground URLs
-- Replaces the current standalone docs directory structure (§1.0.3)
-
-**Estimated effort:** 1-2 days.
+**Status:** ✅ shipped in v2.2.1. Playground pages use `<!--@include:-->`
+to import from `docs/`, `packages/*/README.md`, `examples/*/README.md`,
+`CONTRIBUTING.md`. Single source of truth — no content duplication.
 
 ### 3.0.5 — Public hosting
 
@@ -606,6 +589,26 @@ Absorbs §1.0.3 (docs restructure), §1.0.5 (screenshots), §1.2.2
 - Optional: embedded Grafana public snapshot with live metrics
 
 **Estimated effort:** 1-2 days + ongoing hosting.
+
+### 3.0.6 — Maneki-Neko visual polish
+
+**Goal:** replace the PNG cat button with a custom SVG maneki-neko that
+supports CSS-driven animations (paw wave, coin shimmer, idle bounce).
+
+**Scope:**
+- Commission or create a vector maneki-neko illustration (Figma/Illustrator)
+  with separately addressable parts: body, paw, coin, ears
+- Convert to inline SVG Vue component (`ManekiNeko.vue`) themed via CSS vars
+  (gold coin = `--primary-container`, body = surface tiers)
+- CSS keyframe animations:
+  - Idle: subtle paw wave every ~4s
+  - Hover: faster paw wave + coin shimmer
+  - Disabled: grayscale, no animation
+  - Loading (claim in flight): continuous paw wave + pulse
+- Responsive design pass for all ClaimUI pages on mobile widths
+- Accessibility: `prefers-reduced-motion` disables all animations
+
+**Estimated effort:** 1-2 days (illustration) + 1 day (Vue component + animations).
 
 ---
 
