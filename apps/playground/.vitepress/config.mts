@@ -3,7 +3,7 @@ import { defineConfig } from 'vitepress'
 export default defineConfig({
   title: 'Nimiq Faucet Playground',
   description: 'Developer playground for the Nimiq Simple Faucet — integrate, deploy, and monitor',
-  base: '/nimiq-simple-faucet/',
+  base: '/',
 
   appearance: 'dark',
   ignoreDeadLinks: true,
