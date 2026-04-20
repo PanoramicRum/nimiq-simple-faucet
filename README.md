@@ -100,7 +100,7 @@ Every SDK accepts the same `hostContext` (hashed UID, cookie hash, session hash,
 8. **On-chain heuristics** — sweeper-address detection, fresh-address scoring.
 9. **AI anomaly scoring** — deterministic rules + small ONNX classifier (CPU-only).
 
-Each layer emits signals that can be inspected per claim in the dashboard and retrieved via the MCP tool `faucet.explain_decision`.
+Each layer emits signals that can be inspected per claim in the dashboard and retrieved via the MCP tool `faucet.explain_decision`. See [detailed per-layer documentation](./docs/abuse-layers/) for configuration, provider options, and how to add your own.
 
 ## AI agent integration
 

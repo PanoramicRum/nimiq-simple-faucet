@@ -26,9 +26,12 @@ the [root README](../README.md).
 - [../CONTRIBUTING.md](../CONTRIBUTING.md) — dev setup, repository layout, code style
 - [../ROADMAP.md](../ROADMAP.md) — post-1.0 plans + ongoing quality programs
 
-## Security
+## Abuse Prevention
 
-- [fraud-prevention.md](./fraud-prevention.md) — one-pager on anti-abuse stack + trust connectors (for stakeholders)
+- [abuse-layers/](./abuse-layers/) — detailed documentation for all 9 abuse layers, providers, configuration, and how to add your own
+- [fraud-prevention.md](./fraud-prevention.md) — one-pager on the defense-in-depth strategy + trust connectors (for stakeholders)
+
+## Security
 - [security/threat-model.md](./security/threat-model.md) — STRIDE analysis per component
 - [security/hardening-checklist.md](./security/hardening-checklist.md) — production hardening items
 - [security/owasp-top10.md](./security/owasp-top10.md) — OWASP Top 10 per endpoint

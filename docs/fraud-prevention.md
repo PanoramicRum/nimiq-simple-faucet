@@ -158,6 +158,21 @@ Always-on layers + Turnstile + hashcash + GeoIP allowlist aligned with your lega
 
 ---
 
+## Detailed layer documentation
+
+For configuration, provider options, decision logic, and trade-offs for each layer, see the per-layer docs:
+
+- [Blocklist](./abuse-layers/blocklist.md) — admin-managed deny-list
+- [Rate Limiting](./abuse-layers/rate-limiting.md) — per-IP daily cap
+- [Cloudflare Turnstile](./abuse-layers/turnstile.md) — invisible human-presence challenge
+- [hCaptcha](./abuse-layers/hcaptcha.md) — visual/invisible CAPTCHA
+- [Hashcash](./abuse-layers/hashcash.md) — self-hosted client puzzle
+- [GeoIP / ASN](./abuse-layers/geoip.md) — country, VPN, datacenter detection
+- [Device Fingerprint](./abuse-layers/fingerprint.md) — multi-account farming detection
+- [On-Chain Heuristics](./abuse-layers/on-chain.md) — sweeper and cluster detection
+- [AI Anomaly Scoring](./abuse-layers/ai-scoring.md) — rules + optional ML classifier
+- [Adding your own layer](./abuse-layers/README.md#adding-your-own-abuse-layer) — how to create a custom layer
+
 ## See also
 
 - [docs/integrator-hmac.md](./integrator-hmac.md) — how to sign `hostContext` from your backend

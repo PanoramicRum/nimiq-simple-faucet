@@ -610,6 +610,23 @@ supports CSS-driven animations (paw wave, coin shimmer, idle bounce).
 
 **Estimated effort:** 1-2 days (illustration) + 1 day (Vue component + animations).
 
+### 3.0.7 — Example abuse layer integration
+
+**Goal:** each example app demonstrates how to configure and use abuse
+layers (captcha, hashcash, hostContext signing) in its framework.
+
+**Scope:**
+- Update Next.js, Vue, Capacitor, Flutter, Go, Python examples to show:
+  - Enabling Turnstile/hCaptcha widget
+  - Configuring hashcash difficulty
+  - Passing `hostContext` with HMAC signing (backend examples)
+  - Device fingerprint integration (Capacitor, React Native)
+- Each example README gets an "Abuse layers" section explaining which
+  layers are demonstrated and how to enable others
+- Add env var examples to each project's `.env.example`
+
+**Estimated effort:** 1-2 days.
+
 ---
 
 # Beyond 1.x — Ongoing quality programs

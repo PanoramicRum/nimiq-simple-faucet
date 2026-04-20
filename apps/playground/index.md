@@ -18,6 +18,7 @@ hero:
 import { data as pathsData } from './paths.data'
 import { data as sdksData } from './sdks.data'
 import { data as examplesData } from './examples.data'
+import { data as abuseData } from './abuseLayers.data'
 
 const pathItems = pathsData.adventures.map(a => ({
   icon: a.icon,
@@ -41,16 +42,25 @@ const exampleItems = examplesData.examples.map(e => ({
   details: e.details,
   link: e.link,
 }))
+
+const abuseItems = abuseData.layers.map(l => ({
+  icon: l.icon,
+  title: l.name,
+  details: l.details,
+  badge: l.enabledBy,
+  link: l.link,
+}))
 </script>
 
 <CardGrid title="Getting Started" :items="pathItems" open />
 
-<CardGrid title="Frameworks & SDKs" :items="sdkItems" open />
+<CardGrid title="Abuse Prevention" :items="abuseItems" open />
+
+<CardGrid title="Frameworks & SDKs" :items="sdkItems" />
 
 <CardGrid title="Examples" :items="exampleItems" />
 
 <CardGrid title="More" :items="[
-  { icon: '🛡️', title: 'Fraud Prevention', details: '9 pluggable abuse-prevention layers', link: '/fraud-prevention' },
   { icon: '📊', title: 'Monitoring', details: 'Health checks, observability & alerting', link: '/monitoring' },
   { icon: '📈', title: 'Analytics', details: 'Live faucet statistics', link: '/analytics' },
 ]" />
