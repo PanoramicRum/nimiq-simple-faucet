@@ -182,8 +182,8 @@ importers:
         specifier: ^1.0.0
         version: 1.29.0(zod@3.25.76)
       '@noble/ciphers':
-        specifier: ^1.0.0
-        version: 1.3.0
+        specifier: ^2.2.0
+        version: 2.2.0
       '@noble/hashes':
         specifier: ^2.2.0
         version: 2.2.0
@@ -1742,9 +1742,9 @@ packages:
   '@nimiq/core@2.4.0':
     resolution: {integrity: sha512-tkcvQTTy0tbOLEBQDOxDAcCv7KRS+riuEcd4gWulwyRU2rLziiTKOXD1WNszikHFKQ6S3zmbq1RQpJGTjQVBIg==}
 
-  '@noble/ciphers@1.3.0':
-    resolution: {integrity: sha512-2I0gnIVPtfnMw9ee9h1dJG7tp81+8Ob3OJb3Mv37rx5L40/b0i7djjCVvGOVqc9AEIQyvyu1i6ypKdFw8R8gQw==}
-    engines: {node: ^14.21.3 || >=16}
+  '@noble/ciphers@2.2.0':
+    resolution: {integrity: sha512-Z6pjIZ/8IJcCGzb2S/0Px5J81yij85xASuk1teLNeg75bfT07MV3a/O2Mtn1I2se43k3lkVEcFaR10N4cgQcZA==}
+    engines: {node: '>= 20.19.0'}
 
   '@noble/hashes@2.2.0':
     resolution: {integrity: sha512-IYqDGiTXab6FniAgnSdZwgWbomxpy9FtYvLKs7wCUs2a8RkITG+DFGO1DM9cr+E3/RgADRpFjrKVaJ1z6sjtEg==}
@@ -5914,7 +5914,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@noble/ciphers@1.3.0': {}
+  '@noble/ciphers@2.2.0': {}
 
   '@noble/hashes@2.2.0': {}
 
