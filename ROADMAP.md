@@ -723,6 +723,67 @@ who prioritize privacy and self-sovereignty over maximum bot resistance.
 
 **Estimated effort:** 3-5 days (research + implementation + image dataset).
 
+### 3.0.13 — FCaptcha integration
+
+**Goal:** add [FCaptcha](https://github.com/WebDecoy/FCaptcha) as a
+pluggable self-hosted abuse layer, complementing §3.0.11 (ALTCHA/Cap).
+
+**Context:** FCaptcha is an MIT-licensed, fully self-hosted CAPTCHA
+stack that bundles SHA-256 proof-of-work with a behavioural + environmental
+signal ensemble (mouse trajectory, micro-tremor, click precision, WebDriver
+detection, headless-browser probing, typing rhythm). Offered in both
+interactive-checkbox and invisible zero-click modes. Server ships in Go,
+Python, and Node.js flavours; Docker-first, optional Redis for distributed
+state.
+
+**Why alongside §3.0.11:** FCaptcha is peer to ALTCHA / Cap in licensing
+and self-hosting posture, but combines PoW with behavioural and
+environmental signals in a single widget — a richer default than the
+pure-PoW alternatives. Its invisible mode is a UX win for low-risk claims.
+
+**Reuse, don't reinvent.** FCaptcha's detection pipeline (behavioural
+scoring, environmental probes, PoW token issuance, verification) lives
+in its own service — the widget produces a token that only FCaptcha's
+`/api/verify` can validate. Do **not** port detection code into this
+repo; our integration is a thin driver that delegates verification to
+the upstream FCaptcha service, same pattern as `abuse-hcaptcha`. If
+FCaptcha is missing a feature we need, contribute it upstream.
+
+**Scope:**
+- `packages/abuse-fcaptcha/` implementing the existing `AbuseCheck`
+  interface, mirroring [`packages/abuse-hcaptcha`](packages/abuse-hcaptcha/)
+  line-for-line: the driver's only job is `POST /api/verify` on the
+  operator's FCaptcha service and translating the response into a
+  `CheckResult`. No scoring logic lives in our package.
+- Claim UI integration by embedding FCaptcha's own `fcaptcha.js`
+  widget (script tag + host element), not a re-implementation. A small
+  `FCaptchaWidget.vue` wrapper handles lifecycle + token handoff, the
+  same way [`TurnstileWidget.vue`](apps/claim-ui/src/components/TurnstileWidget.vue)
+  and [`HCaptchaWidget.vue`](apps/claim-ui/src/components/HCaptchaWidget.vue)
+  wrap their upstream scripts.
+- Config: `FAUCET_FCAPTCHA_URL`, `FAUCET_FCAPTCHA_SITE_KEY` (public,
+  passed to the widget), `FAUCET_FCAPTCHA_SECRET` (server-side
+  verification), `FAUCET_FCAPTCHA_MODE=checkbox|invisible` (default
+  `checkbox`).
+- Docker-compose profile under `deploy/compose/fcaptcha.yml` that pulls
+  the upstream FCaptcha image, wires it next to the faucet, and
+  documents the env-var handoff. No custom build.
+- Docs page under `docs/abuse-layers/fcaptcha.md` covering setup, the
+  upstream project link, threat model, and trade-offs vs. Turnstile /
+  hCaptcha / ALTCHA / hashcash.
+- Playground example under `apps/playground/abuse-layers/fcaptcha.md`.
+
+**Out of scope (explicitly):**
+- Re-implementing FCaptcha's behavioural-signal collection, PoW
+  issuance, scoring, or verification inside this repo. If operators
+  want those mechanics, they run FCaptcha — we don't fork it.
+- Extending `abuse-fingerprint` with mouse/keyboard telemetry derived
+  from FCaptcha's client code. That's FCaptcha's responsibility; our
+  `hostContext` stays focused on integrator-supplied identity signals.
+
+**Estimated effort:** 1 day (thin driver + widget wrapper + compose
+profile + docs).
+
 ---
 
 # Beyond 1.x — Ongoing quality programs
