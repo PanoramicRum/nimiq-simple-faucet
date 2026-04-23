@@ -1,0 +1,3 @@
+# @faucet/abuse-fcaptcha
+
+FCaptcha token verifier. Thin driver over the self-hosted FCaptcha service (https://github.com/WebDecoy/FCaptcha, MIT). Config: `{ secret, serverUrl }`. POSTs `{ token, secret }` to `<serverUrl>/api/token/verify` and reads `{ valid, score }`. Denies when `valid: false` or token missing. When FCaptcha returns a `score`, it is used directly as the check score (0 = clean, 1 = abusive). No detection logic lives in this package — all scoring is upstream.

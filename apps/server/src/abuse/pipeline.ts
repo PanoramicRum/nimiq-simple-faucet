@@ -1,6 +1,7 @@
 import { AbusePipeline, type AbuseCheck, type CurrencyDriver } from '@faucet/core';
 import { hashcashCheck } from '@faucet/abuse-hashcash';
 import { hcaptchaCheck } from '@faucet/abuse-hcaptcha';
+import { fcaptchaCheck } from '@faucet/abuse-fcaptcha';
 import {
   DbipResolver,
   IpinfoResolver,
@@ -41,6 +42,9 @@ export function buildPipeline(
   }
   if (config.hcaptchaSecret) {
     checks.push(hcaptchaCheck({ secret: config.hcaptchaSecret }));
+  }
+  if (config.fcaptchaSecret && config.fcaptchaUrl) {
+    checks.push(fcaptchaCheck({ secret: config.fcaptchaSecret, serverUrl: config.fcaptchaUrl }));
   }
   if (config.hashcashSecret) {
     checks.push(
@@ -97,7 +101,7 @@ export function buildPipeline(
     );
   }
   // Warn if hashcash is the only challenge layer — it's solvable by scripts.
-  const hasCaptcha = !!(config.turnstileSecret || config.hcaptchaSecret);
+  const hasCaptcha = !!(config.turnstileSecret || config.hcaptchaSecret || config.fcaptchaSecret);
   const hasHashcash = !!config.hashcashSecret;
   if (hasHashcash && !hasCaptcha && !config.dev) {
     console.warn(

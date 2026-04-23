@@ -1,0 +1,34 @@
+# FCaptcha service overlay. Start with:
+#
+#   docker compose -f docker-compose.yml -f fcaptcha.yml up -d
+#
+# Expects the following in `.env` (alongside the existing faucet vars):
+#
+#   FAUCET_FCAPTCHA_URL=http://fcaptcha:3000
+#   FAUCET_FCAPTCHA_SITE_KEY=<site-key>
+#   FAUCET_FCAPTCHA_SECRET=<secret>
+#   FCAPTCHA_SECRET=<secret>        # same value; FCaptcha's own env name
+#
+# Upstream: https://github.com/WebDecoy/FCaptcha (MIT). This overlay only
+# wires the image alongside the faucet — no detection logic lives here.
+
+services:
+  fcaptcha:
+    image: ghcr.io/webdecoy/fcaptcha:latest
+    restart: unless-stopped
+    environment:
+      PORT: "3000"
+      FCAPTCHA_SECRET: ${FCAPTCHA_SECRET:?set FCAPTCHA_SECRET in .env}
+    ports:
+      # Exposed so the browser can fetch /fcaptcha.js from the same host
+      # the claim UI is served from. Put the faucet + fcaptcha behind the
+      # same reverse proxy in production and drop this port binding.
+      - "3000:3000"
+
+  faucet:
+    environment:
+      FAUCET_FCAPTCHA_URL: ${FAUCET_FCAPTCHA_URL:-http://fcaptcha:3000}
+      FAUCET_FCAPTCHA_SITE_KEY: ${FAUCET_FCAPTCHA_SITE_KEY}
+      FAUCET_FCAPTCHA_SECRET: ${FAUCET_FCAPTCHA_SECRET}
+    depends_on:
+      - fcaptcha

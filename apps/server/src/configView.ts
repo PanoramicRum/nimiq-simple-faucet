@@ -12,6 +12,7 @@ export function deriveAbuseLayers(config: ServerConfig) {
   return {
     turnstile: !!config.turnstileSiteKey,
     hcaptcha: !!config.hcaptchaSiteKey,
+    fcaptcha: !!(config.fcaptchaSiteKey && config.fcaptchaUrl),
     hashcash: !!config.hashcashSecret,
     geoip: config.geoipBackend !== 'none',
     fingerprint: config.fingerprintEnabled,
@@ -30,7 +31,13 @@ export function derivePublicConfig(config: ServerConfig) {
       ? { provider: 'turnstile' as const, siteKey: config.turnstileSiteKey }
       : config.hcaptchaSiteKey
         ? { provider: 'hcaptcha' as const, siteKey: config.hcaptchaSiteKey }
-        : null,
+        : config.fcaptchaSiteKey && config.fcaptchaUrl
+          ? {
+              provider: 'fcaptcha' as const,
+              siteKey: config.fcaptchaSiteKey,
+              serverUrl: config.fcaptchaUrl,
+            }
+          : null,
     hashcash: config.hashcashSecret
       ? { difficulty: config.hashcashDifficulty, ttlMs: config.hashcashTtlMs }
       : null,
