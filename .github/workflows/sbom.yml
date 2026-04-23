@@ -90,7 +90,7 @@ jobs:
           fi
 
       - name: Upload SBOM to release
-        uses: softprops/action-gh-release@v2.0.8
+        uses: softprops/action-gh-release@v3.0.0
         with:
           tag_name: ${{ steps.resolve.outputs.tag }}
           files: sbom-workspace.cyclonedx.json
