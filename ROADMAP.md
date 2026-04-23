@@ -741,49 +741,48 @@ and self-hosting posture, but combines PoW with behavioural and
 environmental signals in a single widget — a richer default than the
 pure-PoW alternatives. Its invisible mode is a UX win for low-risk claims.
 
+**Reuse, don't reinvent.** FCaptcha's detection pipeline (behavioural
+scoring, environmental probes, PoW token issuance, verification) lives
+in its own service — the widget produces a token that only FCaptcha's
+`/api/verify` can validate. Do **not** port detection code into this
+repo; our integration is a thin driver that delegates verification to
+the upstream FCaptcha service, same pattern as `abuse-hcaptcha`. If
+FCaptcha is missing a feature we need, contribute it upstream.
+
 **Scope:**
 - `packages/abuse-fcaptcha/` implementing the existing `AbuseCheck`
-  interface, mirroring the hCaptcha driver (HTTP POST to `/api/verify`
-  on the FCaptcha service with the integrator-configured secret).
-- `FCaptchaWidget.vue` in `apps/claim-ui/src/components/`, peer to
-  `TurnstileWidget.vue` / `HCaptchaWidget.vue` / `HashcashRunner.vue`.
-  Supports both checkbox and invisible modes.
-- Config: `FAUCET_FCAPTCHA_URL`, `FAUCET_FCAPTCHA_SECRET`,
-  `FAUCET_FCAPTCHA_MODE=checkbox|invisible` (default `checkbox`).
-- Docker-compose profile under `deploy/compose/fcaptcha.yml` so operators
-  can bring up FCaptcha alongside the faucet with a one-liner.
-- Docs page under `docs/abuse-layers/fcaptcha.md` covering setup, threat
-  model, and trade-offs vs. Turnstile / hCaptcha / ALTCHA / hashcash.
+  interface, mirroring [`packages/abuse-hcaptcha`](packages/abuse-hcaptcha/)
+  line-for-line: the driver's only job is `POST /api/verify` on the
+  operator's FCaptcha service and translating the response into a
+  `CheckResult`. No scoring logic lives in our package.
+- Claim UI integration by embedding FCaptcha's own `fcaptcha.js`
+  widget (script tag + host element), not a re-implementation. A small
+  `FCaptchaWidget.vue` wrapper handles lifecycle + token handoff, the
+  same way [`TurnstileWidget.vue`](apps/claim-ui/src/components/TurnstileWidget.vue)
+  and [`HCaptchaWidget.vue`](apps/claim-ui/src/components/HCaptchaWidget.vue)
+  wrap their upstream scripts.
+- Config: `FAUCET_FCAPTCHA_URL`, `FAUCET_FCAPTCHA_SITE_KEY` (public,
+  passed to the widget), `FAUCET_FCAPTCHA_SECRET` (server-side
+  verification), `FAUCET_FCAPTCHA_MODE=checkbox|invisible` (default
+  `checkbox`).
+- Docker-compose profile under `deploy/compose/fcaptcha.yml` that pulls
+  the upstream FCaptcha image, wires it next to the faucet, and
+  documents the env-var handoff. No custom build.
+- Docs page under `docs/abuse-layers/fcaptcha.md` covering setup, the
+  upstream project link, threat model, and trade-offs vs. Turnstile /
+  hCaptcha / ALTCHA / hashcash.
 - Playground example under `apps/playground/abuse-layers/fcaptcha.md`.
 
-**Estimated effort:** 2 days.
+**Out of scope (explicitly):**
+- Re-implementing FCaptcha's behavioural-signal collection, PoW
+  issuance, scoring, or verification inside this repo. If operators
+  want those mechanics, they run FCaptcha — we don't fork it.
+- Extending `abuse-fingerprint` with mouse/keyboard telemetry derived
+  from FCaptcha's client code. That's FCaptcha's responsibility; our
+  `hostContext` stays focused on integrator-supplied identity signals.
 
-### 3.0.14 — Port FCaptcha behavioural signals into `abuse-fingerprint`
-
-**Goal:** adopt FCaptcha's client-side behavioural-signal collection
-(mouse micro-tremor, pointer velocity, click precision, WebDriver
-probing) inside `abuse-fingerprint`, so operators get stronger bot
-detection without running a second service.
-
-**Why independent of §3.0.13:** these are client-side telemetry
-techniques. Feeding them into the existing `hostContext` and
-`abuse-ai` rules layer produces a measurable uplift regardless of
-which CAPTCHA (if any) is configured. Operators who already use
-Turnstile / hCaptcha benefit immediately; operators who later adopt
-§3.0.13 avoid double-collection.
-
-**Scope:**
-- Port relevant MIT-licensed detection code from FCaptcha's client into
-  `packages/abuse-fingerprint/src/`; keep an attribution comment.
-- Extend `hostContext` schema with the new optional fields (don't break
-  existing integrators; defaults keep scores flat for claims without
-  the new fields).
-- Add rules in `packages/abuse-ai` that weight the new signals; document
-  the scoring impact in [docs/abuse-layers/ai-scoring.md](docs/abuse-layers/ai-scoring.md).
-- Tests asserting the signals round-trip through `canonicalizeHostContext`
-  and contribute to the abuse score.
-
-**Estimated effort:** 1 day.
+**Estimated effort:** 1 day (thin driver + widget wrapper + compose
+profile + docs).
 
 ---
 
