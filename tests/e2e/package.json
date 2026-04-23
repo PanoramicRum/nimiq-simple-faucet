@@ -7,7 +7,7 @@
     "test": "playwright test --config=../../playwright.config.ts"
   },
   "devDependencies": {
-    "@axe-core/playwright": "^4.10.0",
+    "@axe-core/playwright": "^4.11.2",
     "@faucet/abuse-hashcash": "workspace:*",
     "@faucet/core": "workspace:*",
     "@playwright/test": "^1.48.0",
