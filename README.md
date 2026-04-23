@@ -138,6 +138,55 @@ publishes `@nimiq-faucet/*` npm packages, pushes the Helm chart to
 GitHub Release. `.github/workflows/sbom.yml` then attaches CycloneDX SBOMs
 for both the image and the workspace.
 
+## Acknowledgements
+
+This faucet stands on the shoulders of the open-source projects below. Huge thanks to every maintainer and contributor behind them.
+
+**Nimiq ecosystem**
+- [Nimiq](https://nimiq.com) — [`@nimiq/core`](https://github.com/nimiq/core-rs-albatross) WASM web-client and [core-rs-albatross](https://github.com/nimiq/core-rs-albatross) node. Testnet seed peers confirmed by the Nimiq maintainers.
+
+**Server runtime**
+- [Fastify](https://fastify.dev/) + [`@fastify/cors`](https://github.com/fastify/fastify-cors), [`@fastify/helmet`](https://github.com/fastify/fastify-helmet), [`@fastify/rate-limit`](https://github.com/fastify/fastify-rate-limit), [`@fastify/static`](https://github.com/fastify/fastify-static), [`@fastify/cookie`](https://github.com/fastify/fastify-cookie), [`@fastify/websocket`](https://github.com/fastify/fastify-websocket)
+- [Zod](https://zod.dev/) with [zod-to-openapi](https://github.com/asteasolutions/zod-to-openapi) and [fastify-type-provider-zod](https://github.com/turkerdev/fastify-type-provider-zod)
+- [Drizzle ORM](https://orm.drizzle.team/), [better-sqlite3](https://github.com/WiseLibs/better-sqlite3), [node-postgres](https://node-postgres.com/), [ioredis](https://github.com/redis/ioredis)
+- [pino](https://getpino.io/), [prom-client](https://github.com/siimon/prom-client), [undici](https://undici.nodejs.org/), [nanoid](https://github.com/ai/nanoid)
+
+**Cryptography**
+- [`@noble/ciphers`](https://github.com/paulmillr/noble-ciphers) + [`@noble/hashes`](https://github.com/paulmillr/noble-hashes) by [Paul Miller](https://paulmillr.com/) — XChaCha20-Poly1305, SHA-256
+- [`@node-rs/argon2`](https://github.com/napi-rs/node-rs) — Argon2id KDF
+- [otplib](https://github.com/yeojz/otplib) — TOTP
+
+**Abuse-prevention providers**
+- [Cloudflare Turnstile](https://www.cloudflare.com/application-services/products/turnstile/), [hCaptcha](https://www.hcaptcha.com/)
+- [MaxMind GeoLite2](https://dev.maxmind.com/geoip/geolite2-free-geolocation-data/), [IPinfo](https://ipinfo.io/), [DB-IP](https://db-ip.com/) (via [ip-location-db](https://github.com/sapics/ip-location-db))
+- [ONNX Runtime](https://onnxruntime.ai/)
+
+**Frontend + playground**
+- [Vue 3](https://vuejs.org/), [Vue Router](https://router.vuejs.org/), [Pinia](https://pinia.vuejs.org/)
+- [Vite](https://vitejs.dev/), [VitePress](https://vitepress.dev/)
+- [Tailwind CSS](https://tailwindcss.com/)
+- [shadcn-vue](https://www.shadcn-vue.com/) — accessible component primitives for the admin dashboard
+
+**Cross-platform SDKs**
+- [Capacitor](https://capacitorjs.com/) (Ionic), [React Native](https://reactnative.dev/), [Flutter](https://flutter.dev/)
+
+**AI-agent integration**
+- [Model Context Protocol](https://modelcontextprotocol.io/) — [`@modelcontextprotocol/sdk`](https://github.com/modelcontextprotocol/typescript-sdk) by Anthropic
+
+**Tooling + QA**
+- [TypeScript](https://www.typescriptlang.org/), [pnpm](https://pnpm.io/), [Turborepo](https://turbo.build/)
+- [Vitest](https://vitest.dev/), [Playwright](https://playwright.dev/) + [axe-core](https://github.com/dequelabs/axe-core)
+- [Changesets](https://github.com/changesets/changesets), [Prettier](https://prettier.io/), [tsx](https://github.com/privatenumber/tsx)
+
+**Security scanning (CI)**
+- [CodeQL](https://codeql.github.com/), [Trivy](https://trivy.dev/) (Aqua Security), [Gitleaks](https://github.com/gitleaks/gitleaks)
+
+**Infrastructure + ops**
+- [Docker](https://www.docker.com/), [Kubernetes](https://kubernetes.io/) + [Helm](https://helm.sh/)
+- [Prometheus](https://prometheus.io/) + [Grafana](https://grafana.com/)
+
+If you maintain one of these projects and we've misattributed or missed something, please open an issue — we'd like to get it right.
+
 ## License
 
 MIT. See [LICENSE](./LICENSE).
