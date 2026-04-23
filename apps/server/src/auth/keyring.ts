@@ -17,7 +17,7 @@ import { mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { randomBytes, scrypt as _scrypt } from 'node:crypto';
 import { promisify } from 'node:util';
-import { xchacha20poly1305 } from '@noble/ciphers/chacha';
+import { xchacha20poly1305 } from '@noble/ciphers/chacha.js';
 
 const scrypt = promisify(_scrypt) as (
   password: string | Buffer,

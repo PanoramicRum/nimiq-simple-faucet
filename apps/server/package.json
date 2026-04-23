@@ -32,7 +32,7 @@
     "@faucet/driver-nimiq-rpc": "workspace:*",
     "@faucet/driver-nimiq-wasm": "workspace:*",
     "@modelcontextprotocol/sdk": "^1.0.0",
-    "@noble/ciphers": "^1.0.0",
+    "@noble/ciphers": "^2.2.0",
     "@noble/hashes": "^2.2.0",
     "@otplib/preset-default": "^12.0.1",
     "better-sqlite3": "^12.9.0",
