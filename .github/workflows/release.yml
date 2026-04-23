@@ -193,7 +193,7 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
       - name: Create GitHub release
-        uses: softprops/action-gh-release@v2.0.8
+        uses: softprops/action-gh-release@v3.0.0
         with:
           tag_name: ${{ needs.build-and-publish.outputs.tag }}
           name: ${{ needs.build-and-publish.outputs.tag }}
