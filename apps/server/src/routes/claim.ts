@@ -57,7 +57,10 @@ export async function claimRoutes(app: FastifyInstance, ctx: AppContext): Promis
 
   const inflightClaims = new Set<string>();
 
-  app.post('/v1/claim', { bodyLimit: 16 * 1024 }, async (req, reply) => {
+  app.post('/v1/claim', {
+    bodyLimit: 16 * 1024,
+    preHandler: app.rateLimit({ max: ctx.config.rateLimitPerMinute, timeWindow: '1 minute' }),
+  }, async (req, reply) => {
     // Browser-only enforcement: when enabled, reject requests that don't
     // originate from a real browser. Integrators bypass this via HMAC auth.
     if (ctx.config.requireBrowser) {
