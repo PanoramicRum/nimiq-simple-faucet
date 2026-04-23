@@ -723,6 +723,68 @@ who prioritize privacy and self-sovereignty over maximum bot resistance.
 
 **Estimated effort:** 3-5 days (research + implementation + image dataset).
 
+### 3.0.13 — FCaptcha integration
+
+**Goal:** add [FCaptcha](https://github.com/WebDecoy/FCaptcha) as a
+pluggable self-hosted abuse layer, complementing §3.0.11 (ALTCHA/Cap).
+
+**Context:** FCaptcha is an MIT-licensed, fully self-hosted CAPTCHA
+stack that bundles SHA-256 proof-of-work with a behavioural + environmental
+signal ensemble (mouse trajectory, micro-tremor, click precision, WebDriver
+detection, headless-browser probing, typing rhythm). Offered in both
+interactive-checkbox and invisible zero-click modes. Server ships in Go,
+Python, and Node.js flavours; Docker-first, optional Redis for distributed
+state.
+
+**Why alongside §3.0.11:** FCaptcha is peer to ALTCHA / Cap in licensing
+and self-hosting posture, but combines PoW with behavioural and
+environmental signals in a single widget — a richer default than the
+pure-PoW alternatives. Its invisible mode is a UX win for low-risk claims.
+
+**Scope:**
+- `packages/abuse-fcaptcha/` implementing the existing `AbuseCheck`
+  interface, mirroring the hCaptcha driver (HTTP POST to `/api/verify`
+  on the FCaptcha service with the integrator-configured secret).
+- `FCaptchaWidget.vue` in `apps/claim-ui/src/components/`, peer to
+  `TurnstileWidget.vue` / `HCaptchaWidget.vue` / `HashcashRunner.vue`.
+  Supports both checkbox and invisible modes.
+- Config: `FAUCET_FCAPTCHA_URL`, `FAUCET_FCAPTCHA_SECRET`,
+  `FAUCET_FCAPTCHA_MODE=checkbox|invisible` (default `checkbox`).
+- Docker-compose profile under `deploy/compose/fcaptcha.yml` so operators
+  can bring up FCaptcha alongside the faucet with a one-liner.
+- Docs page under `docs/abuse-layers/fcaptcha.md` covering setup, threat
+  model, and trade-offs vs. Turnstile / hCaptcha / ALTCHA / hashcash.
+- Playground example under `apps/playground/abuse-layers/fcaptcha.md`.
+
+**Estimated effort:** 2 days.
+
+### 3.0.14 — Port FCaptcha behavioural signals into `abuse-fingerprint`
+
+**Goal:** adopt FCaptcha's client-side behavioural-signal collection
+(mouse micro-tremor, pointer velocity, click precision, WebDriver
+probing) inside `abuse-fingerprint`, so operators get stronger bot
+detection without running a second service.
+
+**Why independent of §3.0.13:** these are client-side telemetry
+techniques. Feeding them into the existing `hostContext` and
+`abuse-ai` rules layer produces a measurable uplift regardless of
+which CAPTCHA (if any) is configured. Operators who already use
+Turnstile / hCaptcha benefit immediately; operators who later adopt
+§3.0.13 avoid double-collection.
+
+**Scope:**
+- Port relevant MIT-licensed detection code from FCaptcha's client into
+  `packages/abuse-fingerprint/src/`; keep an attribution comment.
+- Extend `hostContext` schema with the new optional fields (don't break
+  existing integrators; defaults keep scores flat for claims without
+  the new fields).
+- Add rules in `packages/abuse-ai` that weight the new signals; document
+  the scoring impact in [docs/abuse-layers/ai-scoring.md](docs/abuse-layers/ai-scoring.md).
+- Tests asserting the signals round-trip through `canonicalizeHostContext`
+  and contribute to the abuse score.
+
+**Estimated effort:** 1 day.
+
 ---
 
 # Beyond 1.x — Ongoing quality programs
