@@ -59,9 +59,7 @@ export async function claimRoutes(app: FastifyInstance, ctx: AppContext): Promis
 
   app.post('/v1/claim', {
     bodyLimit: 16 * 1024,
-    config: {
-      rateLimit: { max: ctx.config.rateLimitPerMinute, timeWindow: '1 minute' },
-    },
+    preHandler: app.rateLimit({ max: ctx.config.rateLimitPerMinute, timeWindow: '1 minute' }),
   }, async (req, reply) => {
     // Browser-only enforcement: when enabled, reject requests that don't
     // originate from a real browser. Integrators bypass this via HMAC auth.
