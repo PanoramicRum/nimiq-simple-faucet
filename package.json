@@ -33,7 +33,7 @@
   "devDependencies": {
     "@changesets/cli": "^2.27.9",
     "@faucet/abuse-hashcash": "workspace:*",
-    "@nimiq/core": "^2.0.0",
+    "@nimiq/core": "^2.4.0",
     "@types/node": "^25.6.0",
     "prettier": "^3.8.3",
     "tsx": "^4.19.0",

@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@nimiq-faucet/vue": "workspace:*",
-    "vue": "^3.5.10"
+    "vue": "^3.5.33"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^6.0.6",

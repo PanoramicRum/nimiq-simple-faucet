@@ -12,7 +12,7 @@
   "dependencies": {
     "@faucet/core": "workspace:*",
     "@nimiq-faucet/sdk": "workspace:*",
-    "vue": "^3.5.10",
+    "vue": "^3.5.33",
     "vue-router": "^4.4.5"
   },
   "devDependencies": {
