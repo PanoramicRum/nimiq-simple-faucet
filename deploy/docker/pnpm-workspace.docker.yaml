@@ -15,6 +15,7 @@ packages:
   - "packages/core"
   - "packages/driver-nimiq-rpc"
   - "packages/driver-nimiq-wasm"
+  - "packages/abuse-fcaptcha"
   - "packages/abuse-hashcash"
   - "packages/abuse-hcaptcha"
   - "packages/abuse-geoip"

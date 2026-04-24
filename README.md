@@ -9,7 +9,7 @@
 
 📘 [Docs](./docs) · 🤝 [Contributing](./CONTRIBUTING.md) · 🛡️ [Security](./SECURITY.md) · 🗺️ [Roadmap](./ROADMAP.md) · 🤖 [AI agents](./AGENTS.md)
 
-A reusable, self-hosted faucet / payout service for **Nimiq**, with first-class support for web (React, Vue, plain TS), mobile (Capacitor, React Native, Flutter), and backend (Python, Go) clients, 8 SDKs, 9 pluggable abuse-prevention layers, and native integration for AI coding agents (MCP server, `llms.txt`, `AGENTS.md`).
+A reusable, self-hosted faucet / payout service for **Nimiq**, with first-class support for web (React, Vue, plain TS), mobile (Capacitor, React Native, Flutter), and backend (Python, Go) clients, 8 SDKs, 10 pluggable abuse-prevention layers, and native integration for AI coding agents (MCP server, `llms.txt`, `AGENTS.md`).
 
 > **Status: BETA / Work in Progress.** This project is under active development and open for collaboration and feedback. It is **not yet recommended for production environments**. See [CHANGELOG](./CHANGELOG.md) and [ROADMAP](./ROADMAP.md) for progress.
 
@@ -89,17 +89,18 @@ Boots a self-contained WASM faucet. The WASM client reaches TestAlbatross consen
 
 Every SDK accepts the same `hostContext` (hashed UID, cookie hash, session hash, account age, KYC level, tags, HMAC signature) so your project's own abuse signals flow into the faucet's scoring pipeline.
 
-## Abuse prevention (9 pluggable layers, rate-limiting on by default)
+## Abuse prevention (10 pluggable layers, rate-limiting on by default)
 
 1. **Blocklist** — IP, address, UID, ASN, or country deny-list with optional expiry.
 2. **Rate limiting** — per-IP daily cap (default 5 claims/day).
 3. **Cloudflare Turnstile** — captcha challenge (opt-in via env).
 4. **hCaptcha** — alternative captcha provider (opt-in via env).
-5. **Hashcash** — self-hosted SHA-256 client puzzle; anti-bot without third-party deps (unrelated to Nimiq's proof-of-stake consensus).
-6. **Geo-IP / ASN** — DB-IP Lite (zero-config default), MaxMind, or IPinfo. VPN/datacenter/Tor blocking, country allow/deny-list.
-7. **Device fingerprint** — visitor-ID + host-provided UID / cookie correlation.
-8. **On-chain heuristics** — sweeper-address detection, fresh-address scoring.
-9. **AI anomaly scoring** — deterministic rules + small ONNX classifier (CPU-only).
+5. **FCaptcha** — self-hosted MIT CAPTCHA combining PoW with behavioural + environmental detection ([upstream](https://github.com/WebDecoy/FCaptcha)).
+6. **Hashcash** — self-hosted SHA-256 client puzzle; anti-bot without third-party deps (unrelated to Nimiq's proof-of-stake consensus).
+7. **Geo-IP / ASN** — DB-IP Lite (zero-config default), MaxMind, or IPinfo. VPN/datacenter/Tor blocking, country allow/deny-list.
+8. **Device fingerprint** — visitor-ID + host-provided UID / cookie correlation.
+9. **On-chain heuristics** — sweeper-address detection, fresh-address scoring.
+10. **AI anomaly scoring** — deterministic rules + small ONNX classifier (CPU-only).
 
 Each layer emits signals that can be inspected per claim in the dashboard and retrieved via the MCP tool `faucet.explain_decision`. See [detailed per-layer documentation](./docs/abuse-layers/) for configuration, provider options, and how to add your own.
 
@@ -121,7 +122,7 @@ See [CONTRIBUTING.md](./CONTRIBUTING.md) for a complete tour. Short version:
 - `apps/docs` — VitePress docs + llms.txt.
 - `packages/core` — driver interfaces, abuse pipeline (`AbuseCheck` contract).
 - `packages/driver-nimiq-*` — WASM and JSON-RPC signers.
-- `packages/abuse-*` — 9 pluggable abuse providers. See [docs/abuse-layers/](./docs/abuse-layers/).
+- `packages/abuse-*` — 10 pluggable abuse providers. See [docs/abuse-layers/](./docs/abuse-layers/).
 - `packages/sdk-*` — 8 first-party client SDKs (TS, React, Vue, Python, Go, Flutter, Capacitor, React Native).
 - `packages/openapi` — OpenAPI 3.1 spec generated from server route schemas.
 - `deploy/{docker,compose,helm}` — deployment artifacts.

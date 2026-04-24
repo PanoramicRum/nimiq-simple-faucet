@@ -10,6 +10,7 @@ import { isValidNimiqAddress, normalizeNimiqAddress } from '../lib/validate';
 import { t } from '../i18n/en';
 import TurnstileWidget from '../components/TurnstileWidget.vue';
 import HCaptchaWidget from '../components/HCaptchaWidget.vue';
+import FCaptchaWidget from '../components/FCaptchaWidget.vue';
 import HashcashRunner from '../components/HashcashRunner.vue';
 import ClaimStatus from '../components/ClaimStatus.vue';
 
@@ -164,6 +165,12 @@ async function submit() {
           <HCaptchaWidget
             v-else-if="captchaProvider === 'hcaptcha' && config?.captcha"
             :site-key="config.captcha.siteKey"
+            v-model="captchaToken"
+          />
+          <FCaptchaWidget
+            v-else-if="captchaProvider === 'fcaptcha' && config?.captcha?.serverUrl"
+            :site-key="config.captcha.siteKey"
+            :server-url="config.captcha.serverUrl"
             v-model="captchaToken"
           />
           <HashcashRunner

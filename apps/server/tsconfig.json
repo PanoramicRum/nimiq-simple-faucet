@@ -9,6 +9,7 @@
   "include": ["src/**/*"],
   "references": [
     { "path": "../../packages/abuse-ai" },
+    { "path": "../../packages/abuse-fcaptcha" },
     { "path": "../../packages/abuse-fingerprint" },
     { "path": "../../packages/abuse-geoip" },
     { "path": "../../packages/abuse-hashcash" },

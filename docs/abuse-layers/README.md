@@ -25,30 +25,36 @@ layers:
     enabledBy: "FAUCET_HCAPTCHA_SITE_KEY"
     link: /abuse-layers/hcaptcha
   - number: 5
+    icon: "🧩"
+    name: FCaptcha
+    details: "Self-hosted MIT CAPTCHA combining PoW with behavioural + environmental bot detection."
+    enabledBy: "FAUCET_FCAPTCHA_URL"
+    link: /abuse-layers/fcaptcha
+  - number: 6
     icon: "⛏️"
     name: Hashcash
     details: "Self-hosted SHA-256 client puzzle — no third-party dependency."
     enabledBy: "FAUCET_HASHCASH_SECRET"
     link: /abuse-layers/hashcash
-  - number: 6
+  - number: 7
     icon: "🌍"
     name: GeoIP / ASN
     details: "Country, ASN, VPN, Tor, and datacenter detection with pluggable providers."
     enabledBy: "FAUCET_GEOIP_BACKEND"
     link: /abuse-layers/geoip
-  - number: 7
+  - number: 8
     icon: "🔍"
     name: Device Fingerprint
     details: "Browser fingerprint correlation to detect multi-account farming."
     enabledBy: "FAUCET_FINGERPRINT_ENABLED"
     link: /abuse-layers/fingerprint
-  - number: 8
+  - number: 9
     icon: "⛓️"
     name: On-Chain Heuristics
     details: "Sweeper detection, fresh-address scoring, sibling-faucet analysis."
     enabledBy: "FAUCET_ONCHAIN_ENABLED"
     link: /abuse-layers/on-chain
-  - number: 9
+  - number: 10
     icon: "🧠"
     name: AI Anomaly Scoring
     details: "Deterministic rules engine with optional ONNX classifier hook."
@@ -58,7 +64,7 @@ layers:
 
 # Abuse Prevention Layers
 
-The Nimiq Simple Faucet uses 9 pluggable abuse-prevention layers arranged in a defense-in-depth pipeline. Rate limiting is on by default; all other layers are opt-in via environment variables.
+The Nimiq Simple Faucet uses 10 pluggable abuse-prevention layers arranged in a defense-in-depth pipeline. Rate limiting is on by default; all other layers are opt-in via environment variables.
 
 ## How the pipeline works
 
@@ -85,11 +91,12 @@ Layers run in this fixed order:
 2. Rate Limiting (weight 3) — always on
 3. Cloudflare Turnstile (weight 2) — if `FAUCET_TURNSTILE_SITE_KEY` set
 4. hCaptcha (weight 2) — if `FAUCET_HCAPTCHA_SITE_KEY` set
-5. Hashcash (weight 1) — if `FAUCET_HASHCASH_SECRET` set
-6. GeoIP / ASN (weight 1) — if `FAUCET_GEOIP_BACKEND` is not `none`
-7. Device Fingerprint (weight 1) — if `FAUCET_FINGERPRINT_ENABLED`
-8. On-Chain Heuristics (weight 1) — if `FAUCET_ONCHAIN_ENABLED`
-9. AI Anomaly Scoring (weight 1) — if `FAUCET_AI_ENABLED`
+5. FCaptcha (weight 2) — if `FAUCET_FCAPTCHA_URL` + site key + secret set
+6. Hashcash (weight 1) — if `FAUCET_HASHCASH_SECRET` set
+7. GeoIP / ASN (weight 1) — if `FAUCET_GEOIP_BACKEND` is not `none`
+8. Device Fingerprint (weight 1) — if `FAUCET_FINGERPRINT_ENABLED`
+9. On-Chain Heuristics (weight 1) — if `FAUCET_ONCHAIN_ENABLED`
+10. AI Anomaly Scoring (weight 1) — if `FAUCET_AI_ENABLED`
 
 The order is not currently configurable. Each layer's **weight** affects its contribution to the aggregate score (higher weight = more influence).
 
@@ -99,7 +106,7 @@ You can enable both a captcha provider (Turnstile or hCaptcha) **and** hashcash 
 
 This is the **recommended production setup**: captcha verifies the user is human, hashcash adds CPU cost to prevent rapid automated claiming even if the captcha is bypassed.
 
-**Note:** Turnstile and hCaptcha are mutually exclusive (pick one). But either can be combined with hashcash.
+**Note:** Turnstile, hCaptcha, and FCaptcha are mutually exclusive (pick one). Any of them can be combined with hashcash.
 
 ## Layer summary
 
@@ -109,11 +116,12 @@ This is the **recommended production setup**: captcha verifies the user is human
 | 2 | [Rate Limiting](./rate-limiting.md) | Volume abuse | Free | Always on |
 | 3 | [Cloudflare Turnstile](./turnstile.md) | Bots | Free tier available | `FAUCET_TURNSTILE_SITE_KEY` |
 | 4 | [hCaptcha](./hcaptcha.md) | Bots | Free tier available | `FAUCET_HCAPTCHA_SITE_KEY` |
-| 5 | [Hashcash](./hashcash.md) | Scripted flooding | Free (self-hosted) | `FAUCET_HASHCASH_SECRET` |
-| 6 | [GeoIP / ASN](./geoip.md) | Geo-evasion, VPN, datacenter | Free (DB-IP) or paid | `FAUCET_GEOIP_BACKEND` |
-| 7 | [Device Fingerprint](./fingerprint.md) | Multi-account farming | Free (client-side) | `FAUCET_FINGERPRINT_ENABLED` |
-| 8 | [On-Chain Heuristics](./on-chain.md) | Sweeper wallets, faucet clusters | Free (RPC queries) | `FAUCET_ONCHAIN_ENABLED` |
-| 9 | [AI Anomaly Scoring](./ai-scoring.md) | Novel attack patterns | Free (local CPU) | `FAUCET_AI_ENABLED` |
+| 5 | [FCaptcha](./fcaptcha.md) | Bots (behavioural + PoW) | Free (self-hosted) | `FAUCET_FCAPTCHA_URL` |
+| 6 | [Hashcash](./hashcash.md) | Scripted flooding | Free (self-hosted) | `FAUCET_HASHCASH_SECRET` |
+| 7 | [GeoIP / ASN](./geoip.md) | Geo-evasion, VPN, datacenter | Free (DB-IP) or paid | `FAUCET_GEOIP_BACKEND` |
+| 8 | [Device Fingerprint](./fingerprint.md) | Multi-account farming | Free (client-side) | `FAUCET_FINGERPRINT_ENABLED` |
+| 9 | [On-Chain Heuristics](./on-chain.md) | Sweeper wallets, faucet clusters | Free (RPC queries) | `FAUCET_ONCHAIN_ENABLED` |
+| 10 | [AI Anomaly Scoring](./ai-scoring.md) | Novel attack patterns | Free (local CPU) | `FAUCET_AI_ENABLED` |
 
 ## Browser-only mode
 
@@ -129,13 +137,13 @@ At minimum, enable:
 
 1. **Rate limiting** (always on) — caps claims per IP per day
 2. **Browser-only mode** (`FAUCET_REQUIRE_BROWSER=true`) — blocks non-browser scripts
-3. **Turnstile or hCaptcha** — blocks automated scripts with human verification
+3. **Turnstile, hCaptcha, or FCaptcha** — blocks automated scripts with human verification
 4. **Hashcash** — adds CPU cost to every claim (use alongside captcha, not as sole defense)
 5. **GeoIP** with country allowlist — restricts to your target regions
 
 For higher-value faucets, add fingerprint correlation, on-chain heuristics, and AI scoring.
 
-> **Warning:** Hashcash alone is NOT sufficient for public-facing faucets. A parallel Python script can solve difficulty 20 in ~0.17 seconds. Always combine hashcash with at least one human-verification layer (Turnstile, hCaptcha, or `FAUCET_REQUIRE_BROWSER`).
+> **Warning:** Hashcash alone is NOT sufficient for public-facing faucets. A parallel Python script can solve difficulty 20 in ~0.17 seconds. Always combine hashcash with at least one human-verification layer (Turnstile, hCaptcha, FCaptcha, or `FAUCET_REQUIRE_BROWSER`).
 
 ## Adding your own abuse layer
 

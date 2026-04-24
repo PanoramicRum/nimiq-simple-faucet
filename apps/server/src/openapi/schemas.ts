@@ -88,6 +88,7 @@ export const FaucetConfig = registry.register(
     abuseLayers: z.object({
       turnstile: z.boolean(),
       hcaptcha: z.boolean(),
+      fcaptcha: z.boolean(),
       hashcash: z.boolean(),
       geoip: z.boolean(),
       fingerprint: z.boolean(),
@@ -95,7 +96,11 @@ export const FaucetConfig = registry.register(
       ai: z.boolean(),
     }),
     captcha: z
-      .object({ provider: z.enum(['turnstile', 'hcaptcha']), siteKey: z.string() })
+      .object({
+        provider: z.enum(['turnstile', 'hcaptcha', 'fcaptcha']),
+        siteKey: z.string(),
+        serverUrl: z.string().url().optional(),
+      })
       .nullable(),
     hashcash: z.object({ difficulty: z.number().int(), ttlMs: z.number().int() }).nullable(),
   }),
@@ -258,6 +263,7 @@ export const AdminConfigPatch = registry.register(
         .object({
           turnstile: z.boolean().optional(),
           hcaptcha: z.boolean().optional(),
+          fcaptcha: z.boolean().optional(),
           hashcash: z.boolean().optional(),
           geoip: z.boolean().optional(),
           fingerprint: z.boolean().optional(),

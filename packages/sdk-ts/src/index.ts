@@ -44,7 +44,12 @@ export interface FaucetConfig {
   network: 'main' | 'test';
   claimAmountLuna: string;
   abuseLayers: Record<string, boolean>;
-  captcha: { provider: 'turnstile' | 'hcaptcha'; siteKey: string } | null;
+  captcha: {
+    provider: 'turnstile' | 'hcaptcha' | 'fcaptcha';
+    siteKey: string;
+    /** Present only when provider is 'fcaptcha' — base URL of the operator's FCaptcha service. */
+    serverUrl?: string;
+  } | null;
   hashcash: { difficulty: number; ttlMs: number } | null;
 }
 
