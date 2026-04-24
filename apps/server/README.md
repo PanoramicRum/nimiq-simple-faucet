@@ -47,7 +47,7 @@ src/
     stream.ts           WS /v1/stream (live events)
     admin/*.ts          /admin/* routes (auth, claims, blocklist, integrators, config, account, audit)
   abuse/
-    pipeline.ts         Orchestrates all 9 abuse checks into allow/challenge/review/deny
+    pipeline.ts         Orchestrates all 10 abuse checks into allow/challenge/review/deny
   auth/
     session.ts          Cookie sessions + TOTP
     keyring.ts          Faucet key encryption at rest (Argon2id + XChaCha20-Poly1305)

@@ -1,6 +1,6 @@
 ---
 title: "Nimiq Simple Faucet — Choose your adventure"
-tagline: "Welcome to Nimiq Simple Faucet. A self-hosted, stable (2.x) faucet / payout service for Nimiq with 9 pluggable abuse-prevention layers (rate-limiting on by default; others opt-in) and 8 SDKs."
+tagline: "Welcome to Nimiq Simple Faucet. A self-hosted, stable (2.x) faucet / payout service for Nimiq with 10 pluggable abuse-prevention layers (rate-limiting on by default; others opt-in) and 8 SDKs."
 
 adventures:
   - number: 1
@@ -21,7 +21,7 @@ adventures:
     icon: "🧪"
     title: Full platform walkthrough
     time: "~2 hr"
-    details: "Exercise every feature — server, admin dashboard, claim UI, 6 examples, 8 SDKs, CLI tools, MCP server, 9 abuse layers."
+    details: "Exercise every feature — server, admin dashboard, claim UI, 6 examples, 8 SDKs, CLI tools, MCP server, 10 abuse layers."
     docs: "[docs/qa-testing.md](./docs/qa-testing.md)"
     link: /paths/full-walkthrough
   - number: 4
@@ -63,7 +63,7 @@ adventures:
 
 # 🎮 Nimiq Simple Faucet — Choose your adventure
 
-> 👋 **Welcome to Nimiq Simple Faucet.** A self-hosted, stable (2.x) faucet / payout service for Nimiq with 9 pluggable abuse-prevention layers (rate-limiting on by default; others opt-in) and 8 SDKs.
+> 👋 **Welcome to Nimiq Simple Faucet.** A self-hosted, stable (2.x) faucet / payout service for Nimiq with 10 pluggable abuse-prevention layers (rate-limiting on by default; others opt-in) and 8 SDKs.
 
 **Pick a quest — reply with a number:**
 
@@ -74,7 +74,7 @@ adventures:
   Path [1] plus generate a wallet, fund it at https://faucet.pos.nimiq-testnet.com, wire the credentials into `.env`, and claim a real testnet tx. End state: admin dashboard open, confirmed tx in the claims table. Full walkthrough: [deploy/compose/README.md](./deploy/compose/README.md).
 
 **[3] 🧪 Full platform walkthrough** · ~2 hr
-  Exercise every feature — server, admin dashboard, claim UI, 6 examples, 8 SDKs, CLI tools, MCP server, 9 abuse layers. See [docs/qa-testing.md](./docs/qa-testing.md).
+  Exercise every feature — server, admin dashboard, claim UI, 6 examples, 8 SDKs, CLI tools, MCP server, 10 abuse layers. See [docs/qa-testing.md](./docs/qa-testing.md).
 
 **[4] 🧩 Drop into my app** · ~10 min
   Framework recipe (Next.js, Vue, Capacitor, React Native, Flutter, Go, plain TS). See [AGENTS.md](./AGENTS.md#recipes).

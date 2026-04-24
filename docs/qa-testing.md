@@ -224,7 +224,7 @@ Open http://localhost:8080/ in an incognito/private window (to avoid dashboard s
 2. The 2nd claim returns status `rejected` with a friendly message.
 
 ### Path D — captcha (optional)
-If you configured Turnstile or hCaptcha in `.env`, verify the widget renders, returns a token, and the server accepts it. If you haven't, skip this.
+If you configured Turnstile, hCaptcha, or FCaptcha in `.env`, verify the widget renders, returns a token, and the server accepts it. If you haven't, skip this.
 
 ### Path E — WS vs polling
 Kill the WebSocket in DevTools. The status should still converge via the `GET /v1/claim/:id` polling fallback.
@@ -396,7 +396,7 @@ Work through each layer. After each deliberate rejection, check the admin dashbo
 - `FAUCET_AI_ENABLED=true`. Submit unusual request patterns (velocity bursts, weird entropy in hostContext). Score rises.
 
 ### Ask your AI
-> "Help me trigger each of the 9 abuse layers deliberately so I can see them in action. For each one, tell me what flag to set, what request to send, and what the expected rejection reason should look like in the admin claims drawer."
+> "Help me trigger each of the 10 abuse layers deliberately so I can see them in action. For each one, tell me what flag to set, what request to send, and what the expected rejection reason should look like in the admin claims drawer."
 
 ---
 
