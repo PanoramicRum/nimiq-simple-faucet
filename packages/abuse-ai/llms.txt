@@ -15,4 +15,4 @@ The caller provides a `RecentClaimsQuery` with `byIp`, `byAddress`, `byUid` coun
 5. Surfaces model id, score, top-3 contributions, and the full feature bundle in `signals` for the dashboard's explain drawer.
 6. Soft-skips on any error — a bad counter source must not block the pipeline.
 
-Pair with `@faucet/abuse-geoip`, `@faucet/abuse-hashcash`, and the captcha packages for a full anti-abuse pipeline.
+Pair with `@faucet/abuse-geoip`, `@faucet/abuse-hashcash`, and a captcha layer (`@faucet/abuse-turnstile`, `@faucet/abuse-hcaptcha`, or self-hosted `@faucet/abuse-fcaptcha`) for a full anti-abuse pipeline.

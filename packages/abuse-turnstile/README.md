@@ -20,14 +20,17 @@ Implements `AbuseCheck` from [@faucet/core](../core/) — registered in
 - `allow` when the Turnstile service returns success.
 - One outbound call per claim (fast).
 
-## Turnstile vs hCaptcha
+## Turnstile vs hCaptcha vs FCaptcha
 
-Turnstile is the lighter-weight alternative (no checkbox UI in most
-cases). Pick one — don't run both simultaneously. See
-[`/v1/config`](../../apps/server/src/routes/claim.ts) for how the server
-advertises the active provider to clients.
+Turnstile is the lighter-weight hosted alternative (no checkbox UI in
+most cases); hCaptcha is the hosted privacy-first option; FCaptcha is
+the self-hosted, MIT-licensed option with behavioural + PoW signals.
+Pick one — don't run more than one captcha provider simultaneously.
+See [`/v1/config`](../../apps/server/src/routes/claim.ts) for how the
+server advertises the active provider to clients.
 
 ## See also
 
 - Sibling: [@faucet/abuse-hcaptcha](../abuse-hcaptcha/)
+- Sibling: [@faucet/abuse-fcaptcha](../abuse-fcaptcha/) (self-hosted)
 - [@faucet/core](../core/) — `AbuseCheck` interface
