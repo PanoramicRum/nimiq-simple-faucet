@@ -147,8 +147,11 @@ Before you expose this instance to real users:
 - [ ] Set `FAUCET_CORS_ORIGINS` to your integrator's actual origins —
       don't leave `*` in production.
 - [ ] Enable a captcha provider: `FAUCET_TURNSTILE_SITE_KEY` +
-      `FAUCET_TURNSTILE_SECRET`, or the hCaptcha equivalents. Without one,
-      your faucet will burn through its balance in minutes under bot load.
+      `FAUCET_TURNSTILE_SECRET`, the hCaptcha equivalents, or self-hosted
+      FCaptcha (`FAUCET_FCAPTCHA_URL` + `FAUCET_FCAPTCHA_SITE_KEY` +
+      `FAUCET_FCAPTCHA_SECRET`; see `deploy/compose/fcaptcha.yml`).
+      Without one, your faucet will burn through its balance in minutes
+      under bot load.
 - [ ] Tune rate limits: `FAUCET_RATE_LIMIT_PER_IP_PER_DAY` (default 5) is
       almost always too generous for mainnet. 1-2 is more typical.
 - [ ] Configure GeoIP to match your legal footprint — see the `geoip*`

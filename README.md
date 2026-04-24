@@ -158,7 +158,7 @@ This faucet stands on the shoulders of the open-source projects below. Huge than
 - [otplib](https://github.com/yeojz/otplib) — TOTP
 
 **Abuse-prevention providers**
-- [Cloudflare Turnstile](https://www.cloudflare.com/application-services/products/turnstile/), [hCaptcha](https://www.hcaptcha.com/)
+- [Cloudflare Turnstile](https://www.cloudflare.com/application-services/products/turnstile/), [hCaptcha](https://www.hcaptcha.com/), [FCaptcha](https://github.com/WebDecoy/FCaptcha) (self-hosted)
 - [MaxMind GeoLite2](https://dev.maxmind.com/geoip/geolite2-free-geolocation-data/), [IPinfo](https://ipinfo.io/), [DB-IP](https://db-ip.com/) (via [ip-location-db](https://github.com/sapics/ip-location-db))
 - [ONNX Runtime](https://onnxruntime.ai/)
 

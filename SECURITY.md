@@ -59,7 +59,9 @@ We will keep you updated at least weekly until the issue is closed.
 - Downstream integrator applications that embed the SDKs. Report those to the
   respective maintainers.
 - Third-party services (MaxMind, IPinfo, Cloudflare Turnstile, hCaptcha,
-  upstream Nimiq nodes) — report to the vendor.
+  upstream Nimiq nodes) — report to the vendor. Self-hosted CAPTCHA
+  services like [FCaptcha](https://github.com/WebDecoy/FCaptcha) are
+  operator-run and upstream bugs should be reported to that project.
 - Denial of service by exhausting a paid third-party quota (captcha, GeoIP) —
   this is an integrator-side capacity concern, not a faucet vulnerability.
 - Social engineering of maintainers or integrators.

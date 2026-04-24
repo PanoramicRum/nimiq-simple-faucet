@@ -14,7 +14,7 @@ remaining work is scheduled.
 | A07 Identification and Authentication Failures | TOTP on admin login and sensitive admin mutations; Argon2id with OWASP-recommended parameters; per-endpoint login rate limit (5/min/IP); generic auth error messages | Session-store + lockout policy ships with M3.1 | M3.1, M6.2 |
 | A08 Software and Data Integrity Failures | `pnpm --frozen-lockfile=false` today but lockfile committed; release images will ship with SBOM attached; Docker image built reproducibly via multi-stage Dockerfile | Release signing (cosign) and SLSA provenance not yet wired | M9 |
 | A09 Security Logging and Monitoring Failures | Every claim row persists signals + decision + score; audit log table for admin actions; live `admin.audit` stream via WS; log scrubber forbids secrets | Audit log + WS stream implemented in M3.4; structured error IDs for support flow pending | M3.4, M6.2 |
-| A10 Server-Side Request Forgery | Only outbound traffic is: captcha verify endpoints (fixed hostnames), GeoIP provider (fixed hostname or local MMDB file), configured Nimiq RPC node, Turnstile/hCaptcha; no user-supplied URLs in server code paths | Confirm no future admin feature forwards operator URLs without an allow-list | M6.4 |
+| A10 Server-Side Request Forgery | Only outbound traffic is: captcha verify endpoints (fixed hostnames for Turnstile/hCaptcha; operator-configured URL for self-hosted FCaptcha), GeoIP provider (fixed hostname or local MMDB file), configured Nimiq RPC node; no user-supplied URLs in server code paths | Confirm no future admin feature forwards operator URLs without an allow-list | M6.4 |
 
 ## Per-endpoint cross-reference
 

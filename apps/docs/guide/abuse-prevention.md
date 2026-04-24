@@ -9,7 +9,7 @@ score and one of `allow`, `review`, or `deny`.
 1. **Transport & rate limits** — per-minute global cap, per-IP daily cap, CORS.
 2. **Blocklist** — exact matches on `ip`, `address`, `uid`, `asn`, `country`.
 3. **Hashcash** — client puzzle, required when `FAUCET_HASHCASH_SECRET` is set.
-4. **Captcha** — Turnstile or hCaptcha, required when configured.
+4. **Captcha** — Turnstile, hCaptcha, or self-hosted FCaptcha, required when configured.
 5. **GeoIP / ASN / VPN / Tor / hosting** — offline MaxMind or online IPinfo.
 6. **On-chain Nimiq heuristics** — address age, balance, activity.
 7. **Host context** — signed signals from the integrator (see [Host context](./host-context.md)).
@@ -40,6 +40,7 @@ can queue manual approval. The admin dashboard surfaces all `review` rows.
 | Hashcash | `@faucet/abuse-hashcash` | `FAUCET_HASHCASH_SECRET` |
 | Turnstile | `@faucet/abuse-turnstile` | `FAUCET_TURNSTILE_*` |
 | hCaptcha | `@faucet/abuse-hcaptcha` | `FAUCET_HCAPTCHA_*` |
+| FCaptcha | `@faucet/abuse-fcaptcha` | `FAUCET_FCAPTCHA_*` |
 | GeoIP | `@faucet/abuse-geoip` | `FAUCET_GEOIP_BACKEND` |
 | Fingerprint | `@faucet/abuse-fingerprint` | built-in |
 | Nimiq on-chain | `@faucet/abuse-onchain-nimiq` | built-in |
