@@ -124,6 +124,28 @@ export const ServerConfigSchema = z.object({
   tlsRequired: z.coerce.boolean().default(true),
   helmetCsp: z.enum(['strict', 'relaxed-for-ui', 'off']).default('relaxed-for-ui'),
 
+  /**
+   * CIDR allow-list of upstream proxies whose `X-Forwarded-For` / `X-Real-IP`
+   * the server will honour. Empty (default) means **do not trust any proxy**:
+   * `req.ip` becomes the raw socket address, closing IP-spoofing bypasses of
+   * the per-IP rate-limit, blocklist, and hashcash IP binding (issue #87).
+   *
+   * Set via `FAUCET_TRUSTED_PROXY_CIDRS` as a comma-separated list, e.g.
+   * `10.0.0.0/8,172.16.0.0/12` for an internal LB. Loopback is included
+   * automatically in dev mode for local tests that inject XFF.
+   */
+  trustedProxyCidrs: z
+    .string()
+    .optional()
+    .transform((v) =>
+      v
+        ? v
+            .split(',')
+            .map((s) => s.trim())
+            .filter(Boolean)
+        : [],
+    ),
+
   metricsEnabled: z.coerce.boolean().default(true),
   reconcileEnabled: z.coerce.boolean().default(true),
   reconcileIntervalMs: z.coerce.number().int().min(10_000).default(5 * 60_000),
@@ -196,6 +218,7 @@ const ENV_KEYS: Record<string, string> = {
   corsOrigins: 'FAUCET_CORS_ORIGINS',
   tlsRequired: 'FAUCET_TLS_REQUIRED',
   helmetCsp: 'FAUCET_HELMET_CSP',
+  trustedProxyCidrs: 'FAUCET_TRUSTED_PROXY_CIDRS',
   metricsEnabled: 'FAUCET_METRICS_ENABLED',
   reconcileEnabled: 'FAUCET_RECONCILE_ENABLED',
   reconcileIntervalMs: 'FAUCET_RECONCILE_INTERVAL_MS',
