@@ -14,7 +14,7 @@
  * Rate limit: 5 requests/min/IP on /admin/auth/login (applied at registration
  * time via @fastify/rate-limit's per-route config).
  */
-import { randomBytes } from 'node:crypto';
+import { randomBytes, timingSafeEqual } from 'node:crypto';
 import type { FastifyInstance } from 'fastify';
 import { eq } from 'drizzle-orm';
 import type { AppContext } from '../../context.js';
@@ -43,6 +43,20 @@ import {
 import { writeAudit } from '../../auth/audit.js';
 
 const ADMIN_USER_ID = 'admin';
+
+/**
+ * Constant-time UTF-8 string compare. Used on the first-login seed branch
+ * where the submitted password is matched against the env-configured
+ * `FAUCET_ADMIN_PASSWORD`. `===` / `!==` on V8 short-circuit on length and
+ * on the first differing character, which leaks a prefix-timing oracle
+ * over the network (audit finding #003, issue #89).
+ */
+function safeEqualUtf8(a: string, b: string): boolean {
+  const aBuf = Buffer.from(a, 'utf8');
+  const bBuf = Buffer.from(b, 'utf8');
+  if (aBuf.length !== bBuf.length) return false;
+  return timingSafeEqual(aBuf, bBuf);
+}
 
 // Shared schema — single source of truth with OpenAPI spec.
 import { LoginRequest as LoginBody } from '../../openapi/schemas.js';
@@ -74,7 +88,7 @@ export async function adminAuthRoutes(app: FastifyInstance, ctx: AppContext): Pr
         if (!ctx.config.adminPassword) {
           return reply.code(403).send({ error: 'admin not configured' });
         }
-        if (password !== ctx.config.adminPassword) {
+        if (!safeEqualUtf8(password, ctx.config.adminPassword)) {
           return reply.code(401).send({ error: 'invalid credentials' });
         }
         const { hash, salt } = await hashPassword(password);
