@@ -33,7 +33,7 @@ function mapReason(code?: string, message?: string): string {
   if (src.includes('invalid address')) return 'reason.invalidAddress';
   if (src.includes('geo') || src.includes('country')) return 'reason.geoBlocked';
   if (src.includes('vpn') || src.includes('proxy')) return 'reason.vpnBlocked';
-  if (src.includes('captcha') || src.includes('turnstile') || src.includes('hcaptcha')) return 'reason.captchaFailed';
+  if (src.includes('captcha') || src.includes('turnstile') || src.includes('hcaptcha') || src.includes('fcaptcha')) return 'reason.captchaFailed';
   return 'reason.unknown';
 }
 

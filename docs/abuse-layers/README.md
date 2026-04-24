@@ -102,7 +102,7 @@ The order is not currently configurable. Each layer's **weight** affects its con
 
 ### Combining captcha with hashcash
 
-You can enable both a captcha provider (Turnstile or hCaptcha) **and** hashcash simultaneously. The ClaimUI will render both widgets — the captcha widget and the hashcash progress bar. The claim button only activates when both challenges are satisfied.
+You can enable a captcha provider (Turnstile, hCaptcha, or FCaptcha) **and** hashcash simultaneously. The ClaimUI will render both widgets — the captcha widget and the hashcash progress bar. The claim button only activates when both challenges are satisfied.
 
 This is the **recommended production setup**: captcha verifies the user is human, hashcash adds CPU cost to prevent rapid automated claiming even if the captcha is bypassed.
 

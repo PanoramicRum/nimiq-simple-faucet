@@ -8,4 +8,4 @@ Self-hosted **client-side hashcash** challenge. Purely an anti-bot layer — unr
 
 Difficulty: leading zero bits required in SHA-256(challenge + ":" + nonce). 20 ≈ 1M hashes, a few seconds on consumer hardware.
 
-Use this for a fully self-hosted abuse layer with no third-party captcha. Pairs well with `@faucet/abuse-turnstile` or `@faucet/abuse-hcaptcha`.
+Use this for a fully self-hosted abuse layer with no third-party captcha. Pairs well with any captcha provider — `@faucet/abuse-turnstile`, `@faucet/abuse-hcaptcha`, or the self-hosted `@faucet/abuse-fcaptcha`.

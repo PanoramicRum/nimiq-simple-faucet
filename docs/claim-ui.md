@@ -59,7 +59,7 @@ Spawns a Web Worker that brute-forces SHA-256 hashes to solve the server-issued 
 
 ### Challenge flow
 
-Captcha providers (Turnstile/hCaptcha) are mutually exclusive, but either can be combined with hashcash — both widgets render simultaneously when both are enabled. The claim button (the cat mascot) stays disabled until:
+Captcha providers (Turnstile / hCaptcha / FCaptcha) are mutually exclusive — pick one — but any of them can be combined with hashcash, in which case both widgets render simultaneously. The claim button (the cat mascot) stays disabled until:
 
 1. A valid Nimiq address is entered
 2. The active challenge is satisfied (captcha token obtained or hashcash solved)

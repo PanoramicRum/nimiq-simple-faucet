@@ -16,7 +16,7 @@ features:
   - title: Self-hosted
     details: One container, one binary. Ships as `ghcr.io/panoramicrum/nimiq-simple-faucet:latest` with SQLite defaults; scales to Postgres and Redis when you need it.
   - title: Pluggable abuse stack
-    details: Turnstile, hCaptcha, hashcash, GeoIP/ASN, on-chain Nimiq heuristics, and optional LLM scoring combine into a single decision pipeline.
+    details: Turnstile, hCaptcha, FCaptcha, hashcash, GeoIP/ASN, on-chain Nimiq heuristics, and optional LLM scoring combine into a single decision pipeline.
   - title: AI-agent integration (MCP)
     details: An `/mcp` endpoint exposes public, integrator, and admin tools so Claude Code, Cursor, and custom agents can introspect, claim, and moderate.
   - title: Admin dashboard

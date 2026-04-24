@@ -56,7 +56,7 @@ address from the supplied key.
 - [ ] Ingress controller installed (nginx, traefik, cloud-native, etc.)
 - [ ] DNS A/AAAA record pointing at your cluster's ingress
 - [ ] A funded Nimiq address on the correct network (main or test)
-- [ ] Captcha provider account (Turnstile or hCaptcha) if you're exposing the public claim UI
+- [ ] Captcha provider (Turnstile or hCaptcha account, or a self-hosted FCaptcha instance) if you're exposing the public claim UI
 - [ ] Postgres (managed RDS / Cloud SQL / self-hosted) if you expect >1 replica or >1000 claims/day
 - [ ] Redis (managed ElastiCache / Memorystore) for the same case
 - [ ] Backup strategy: SQLite volume snapshots OR Postgres logical dumps

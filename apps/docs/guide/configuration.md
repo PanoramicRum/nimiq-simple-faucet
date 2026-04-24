@@ -44,6 +44,7 @@ Set exactly one provider (or none and rely on hashcash).
 | --- | --- |
 | `FAUCET_TURNSTILE_SITE_KEY` / `FAUCET_TURNSTILE_SECRET` | Cloudflare Turnstile. |
 | `FAUCET_HCAPTCHA_SITE_KEY` / `FAUCET_HCAPTCHA_SECRET` | hCaptcha. |
+| `FAUCET_FCAPTCHA_URL` / `FAUCET_FCAPTCHA_SITE_KEY` / `FAUCET_FCAPTCHA_SECRET` | Self-hosted [FCaptcha](https://github.com/WebDecoy/FCaptcha); all three are required. See `deploy/compose/fcaptcha.yml`. |
 
 ## Hashcash (client puzzle)
 

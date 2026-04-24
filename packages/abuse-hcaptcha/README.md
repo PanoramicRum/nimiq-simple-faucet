@@ -23,4 +23,5 @@ Implements `AbuseCheck` from [@faucet/core](../core/) — registered in
 ## See also
 
 - Sibling: [@faucet/abuse-turnstile](../abuse-turnstile/) (Cloudflare Turnstile)
+- Sibling: [@faucet/abuse-fcaptcha](../abuse-fcaptcha/) (self-hosted FCaptcha)
 - [@faucet/core](../core/) — `AbuseCheck` interface

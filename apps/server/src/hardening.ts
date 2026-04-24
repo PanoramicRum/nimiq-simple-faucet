@@ -23,7 +23,10 @@ interface CspDirectives {
   'form-action': string[];
 }
 
-/** CSP directives per profile. `relaxed-for-ui` is default to let Turnstile + hCaptcha iframes load. */
+/** CSP directives per profile. `relaxed-for-ui` is default to let Turnstile + hCaptcha iframes load.
+ *  FCaptcha's widget is served from the operator's own FCaptcha host (typically same-origin or
+ *  reverse-proxied), so no third-party allowances are hardcoded for it — operators who run FCaptcha
+ *  on a separate origin can add it to CSP via a reverse-proxy `script-src` allowlist. */
 function cspDirectives(profile: CspProfile): CspDirectives | false {
   if (profile === 'off') return false;
   const base: CspDirectives = {

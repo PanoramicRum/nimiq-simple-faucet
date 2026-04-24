@@ -29,7 +29,7 @@ the [root README](../README.md).
 
 ## Abuse Prevention
 
-- [abuse-layers/](./abuse-layers/) — detailed documentation for all 9 abuse layers, providers, configuration, and how to add your own
+- [abuse-layers/](./abuse-layers/) — detailed documentation for all 10 abuse layers, providers, configuration, and how to add your own
 - [fraud-prevention.md](./fraud-prevention.md) — one-pager on the defense-in-depth strategy + trust connectors (for stakeholders)
 
 ## Security

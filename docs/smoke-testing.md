@@ -146,7 +146,7 @@ A successful smoke test confirms:
 
 It does **not** cover:
 - Admin dashboard flows (see Playwright e2e)
-- Captcha providers (Turnstile/hCaptcha) — those need real site keys
+- Captcha providers — Turnstile/hCaptcha need real site keys, FCaptcha needs a running instance ([deploy/compose/fcaptcha.yml](../deploy/compose/fcaptcha.yml))
 - GeoIP accuracy — tested in unit tests against fixtures
 
 Never commit `.env`, `.wallet.local.json`, or any real keys.

@@ -50,7 +50,7 @@ this repo (shipped unless marked **planned**).
 
 | STRIDE | Threat | Mitigation |
 | --- | --- | --- |
-| Spoofing | Bots pretending to be humans | Cloudflare Turnstile / hCaptcha; hashcash fallback; per-integrator HMAC when `x-faucet-api-key` is present |
+| Spoofing | Bots pretending to be humans | Cloudflare Turnstile / hCaptcha / self-hosted FCaptcha; hashcash fallback; per-integrator HMAC when `x-faucet-api-key` is present |
 | Tampering | Malformed / overlong bodies | Zod schema (`ClaimBody`), `bodyLimit: 64 KiB` at Fastify layer, `parseAddress` strict |
 | Repudiation | Operator cannot prove a claim decision | Every claim row persists `signalsJson`, `decision`, `abuseScore`; audit log (planned M3.4) adds admin overrides |
 | Info disclosure | Leaking why a claim was denied to abusers | Public response returns only the first reason; full signals are admin-only via `/admin/claims/:id/explain` |

@@ -15,7 +15,7 @@ Every claim runs through a pipeline. Any layer can flag, score, or deny.
 | Per-IP rate limit | Same IP hammering (per minute) | ~0 | Always on |
 | Per-IP daily cap | Over-claiming from a single IP in 24h | ~0 | Always on |
 | Blocklist | Known-bad IP, address, UID, ASN, or country | ~0 | Admin-curated |
-| Captcha (Turnstile / hCaptcha) | Trivial bots | 1 verify call | Env var + site key |
+| Captcha (Turnstile / hCaptcha / FCaptcha) | Trivial bots | 1 verify call | Env var + site key |
 | Hashcash (client puzzle) | Raises attacker CPU cost per claim | ~1 s client CPU | `FAUCET_HASHCASH_SECRET` |
 | GeoIP / ASN / VPN / Tor / datacenter | Regional policy + datacenter IPs | <5 ms (MaxMind), ~150 ms (IPinfo) | `FAUCET_GEOIP_BACKEND` |
 | Fingerprint correlation | Multi-account / multi-browser farming | DB lookup | `FAUCET_FINGERPRINT_ENABLED` |
