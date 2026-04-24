@@ -34,6 +34,16 @@ export async function buildApp(
   config: ServerConfig,
   opts: BuildAppOptions = {},
 ): Promise<{ app: FastifyInstance; ctx: AppContext }> {
+  // Fix #87: never trust `X-Forwarded-For` / `X-Real-IP` from arbitrary peers.
+  // Trust only the CIDRs an operator has explicitly allow-listed
+  // (`FAUCET_TRUSTED_PROXY_CIDRS`). Empty → no upstream proxy is trusted and
+  // `req.ip` is the raw socket address. Loopback is added in dev so local
+  // e2e tests can exercise XFF paths against `127.0.0.1`.
+  const proxyAllowList = [
+    ...config.trustedProxyCidrs,
+    ...(config.dev ? ['127.0.0.1/32', '::1/128'] : []),
+  ];
+  const trustProxy: boolean | string[] = proxyAllowList.length > 0 ? proxyAllowList : false;
   const app = Fastify({
     logger: opts.quietLogs
       ? false
@@ -41,7 +51,7 @@ export async function buildApp(
           level: config.dev ? 'debug' : 'info',
           redact: { paths: buildRedactPaths(), censor: '[REDACTED]', remove: false },
         },
-    trustProxy: true,
+    trustProxy,
     bodyLimit: 64 * 1024,
   });
 
