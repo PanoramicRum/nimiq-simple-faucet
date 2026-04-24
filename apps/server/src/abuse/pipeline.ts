@@ -107,7 +107,7 @@ export function buildPipeline(
     console.warn(
       '[security] Hashcash is the only challenge layer. It prevents casual abuse but is ' +
       'solvable by scripts (~0.2s with parallel workers). For public-facing faucets, add ' +
-      'Turnstile or hCaptcha alongside hashcash. See docs/abuse-layers/hashcash.md.',
+      'Turnstile, hCaptcha, or FCaptcha alongside hashcash. See docs/abuse-layers/hashcash.md.',
     );
   }
 

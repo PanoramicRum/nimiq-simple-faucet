@@ -5,6 +5,7 @@ import { api, ApiError } from '../lib/api';
 interface LayerFlags {
   turnstile: boolean;
   hcaptcha: boolean;
+  fcaptcha: boolean;
   hashcash: boolean;
   geoip: boolean;
   fingerprint: boolean;
@@ -45,6 +46,7 @@ const form = reactive({
   layers: {
     turnstile: false,
     hcaptcha: false,
+    fcaptcha: false,
     hashcash: false,
     geoip: false,
     fingerprint: false,
