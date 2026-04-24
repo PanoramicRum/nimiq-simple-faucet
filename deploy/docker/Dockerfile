@@ -24,6 +24,7 @@ COPY apps/dashboard/package.json apps/dashboard/
 COPY packages/core/package.json packages/core/
 COPY packages/driver-nimiq-rpc/package.json packages/driver-nimiq-rpc/
 COPY packages/driver-nimiq-wasm/package.json packages/driver-nimiq-wasm/
+COPY packages/abuse-fcaptcha/package.json packages/abuse-fcaptcha/
 COPY packages/abuse-hashcash/package.json packages/abuse-hashcash/
 COPY packages/abuse-hcaptcha/package.json packages/abuse-hcaptcha/
 COPY packages/abuse-geoip/package.json packages/abuse-geoip/
