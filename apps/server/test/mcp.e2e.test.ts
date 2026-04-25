@@ -9,7 +9,7 @@ import {
   ALL_TOOLS,
   PUBLIC_TOOLS,
   buildMcpServer,
-  requireAdminToken,
+  requireAdminPrincipal,
 } from '../src/mcp/server.js';
 import { BaseTestDriver, TEST_FAUCET_ADDRESS } from './helpers/testDriver.js';
 
@@ -97,8 +97,7 @@ describe('MCP (/mcp)', () => {
    */
   it('buildMcpServer registers all 9 tools on a real McpServer instance', () => {
     const server = buildMcpServer(ctx, {
-      getAdminToken: () => undefined,
-      configuredAdminToken: ADMIN_TOKEN,
+      getAdminPrincipal: () => null,
     });
     // Read-only peek at the private tool registry to verify registration.
     const registered = (server as unknown as { _registeredTools: Record<string, unknown> })
@@ -108,30 +107,27 @@ describe('MCP (/mcp)', () => {
     }
   });
 
-  it('admin guard rejects calls when the token is missing or wrong', () => {
+  it('admin guard rejects calls when no principal is presented', () => {
     expect(() =>
-      requireAdminToken(ADMIN_TOOLS, 'faucet.balance', undefined, ADMIN_TOKEN),
-    ).toThrow(/missing/i);
-    expect(() =>
-      requireAdminToken(ADMIN_TOOLS, 'faucet.balance', 'nope', ADMIN_TOKEN),
-    ).toThrow(/invalid/i);
+      requireAdminPrincipal(ADMIN_TOOLS, 'faucet.balance', null),
+    ).toThrow(/admin mcp auth required/i);
   });
 
-  it('admin guard refuses all admin tools when FAUCET_ADMIN_MCP_TOKEN is unset', () => {
-    expect(() =>
-      requireAdminToken(ADMIN_TOOLS, 'faucet.balance', ADMIN_TOKEN, undefined),
-    ).toThrow(/not configured/i);
-  });
-
-  it('admin guard ignores public tools', () => {
+  it('admin guard ignores public tools regardless of principal presence', () => {
     for (const name of PUBLIC_TOOLS) {
-      expect(() => requireAdminToken(ADMIN_TOOLS, name, undefined, undefined)).not.toThrow();
+      expect(() => requireAdminPrincipal(ADMIN_TOOLS, name, null)).not.toThrow();
     }
   });
 
-  it('admin guard accepts the correct token (timing-safe)', () => {
+  it('admin guard accepts a session principal', () => {
     expect(() =>
-      requireAdminToken(ADMIN_TOOLS, 'faucet.balance', ADMIN_TOKEN, ADMIN_TOKEN),
+      requireAdminPrincipal(ADMIN_TOOLS, 'faucet.balance', { kind: 'session', userId: 'admin' }),
+    ).not.toThrow();
+  });
+
+  it('admin guard accepts the static-token principal', () => {
+    expect(() =>
+      requireAdminPrincipal(ADMIN_TOOLS, 'faucet.balance', { kind: 'static-token' }),
     ).not.toThrow();
   });
 

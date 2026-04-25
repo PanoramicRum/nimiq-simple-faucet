@@ -80,6 +80,15 @@ export const ServerConfigSchema = z.object({
 
   adminPassword: z.string().min(8).optional(),
   adminTotpSecret: z.string().optional(),
+  /** Static bearer-token fallback for admin MCP tools. DEPRECATED in favour
+   *  of the admin-session path (#88). Kept so existing operator deployments
+   *  don't break when they bump through this version. */
+  adminMcpToken: z.string().optional(),
+  /** When false, the static `adminMcpToken` is ignored and the only way to
+   *  invoke admin MCP tools is a valid admin session cookie + TOTP step-up.
+   *  Default `true` for one minor so current deployments keep working; flip
+   *  to `false` once you've migrated to the session path. */
+  adminMcpAllowStaticToken: z.coerce.boolean().default(true),
   adminSessionTtlMs: z.coerce.number().int().min(60_000).default(8 * 60 * 60_000),
   adminTotpStepUpTtlMs: z.coerce.number().int().min(30_000).default(2 * 60_000),
   adminLoginRatePerMinute: z.coerce.number().int().min(1).default(5),
@@ -204,6 +213,8 @@ const ENV_KEYS: Record<string, string> = {
   aiReviewThreshold: 'FAUCET_AI_REVIEW_THRESHOLD',
   adminPassword: 'FAUCET_ADMIN_PASSWORD',
   adminTotpSecret: 'FAUCET_ADMIN_TOTP_SECRET',
+  adminMcpToken: 'FAUCET_ADMIN_MCP_TOKEN',
+  adminMcpAllowStaticToken: 'FAUCET_ADMIN_MCP_ALLOW_STATIC_TOKEN',
   adminSessionTtlMs: 'FAUCET_ADMIN_SESSION_TTL_MS',
   adminTotpStepUpTtlMs: 'FAUCET_ADMIN_TOTP_STEP_UP_TTL_MS',
   adminLoginRatePerMinute: 'FAUCET_ADMIN_LOGIN_RATE_PER_MINUTE',

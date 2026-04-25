@@ -1,21 +1,24 @@
 /**
  * MCP server surface for the Nimiq Simple Faucet.
  *
- * Milestone M7.3. Public tools are unauthenticated; admin-scoped tools go
- * through {@link requireAdminToken}. The real admin-session integration lands
- * in M3 (see plan `/home/richy/.claude/plans/starry-roaming-bunny.md`).
- *
- * The admin guard currently accepts a single shared secret via
- * `FAUCET_ADMIN_MCP_TOKEN`. A future release will replace this with full
- * admin-session machinery (short-lived tokens, revocation, audit log).
+ * Public tools are unauthenticated; admin-scoped tools require an
+ * {@link AdminPrincipal} resolved upstream by `apps/server/src/mcp/index.ts`
+ * — either an admin-session + TOTP step-up (preferred) or the deprecated
+ * static `FAUCET_ADMIN_MCP_TOKEN`. Every admin tool call is written to the
+ * audit log naming the principal (#88).
  */
-import { timingSafeEqual } from 'node:crypto';
 import { desc, eq, and } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import { z } from 'zod';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { blocklist, claims } from '../db/schema.js';
 import type { AppContext } from '../context.js';
+import { writeAudit } from '../auth/audit.js';
+
+/** Identifies who invoked an admin-scoped MCP tool. */
+export type AdminPrincipal =
+  | { kind: 'session'; userId: string }
+  | { kind: 'static-token' };
 
 /** Names of tools that require the admin token. */
 export const ADMIN_TOOLS: ReadonlySet<string> = new Set([
@@ -50,34 +53,26 @@ export const ALL_TOOLS: readonly string[] = [
 const BLOCK_KINDS = ['ip', 'address', 'uid', 'asn', 'country'] as const;
 
 /**
- * Enforces the admin-token policy. Throws a plain `Error` so the SDK surfaces
- * it as a tool-call error to the client. Uses timing-safe comparison.
- *
- * NOTE: Uses a shared secret for now; will migrate to session-based auth.
+ * Enforces the admin-principal policy for a tool call. Throws a plain `Error`
+ * so the SDK surfaces it as a tool-call error to the client. The principal is
+ * resolved upstream by the transport; this is a pure guard.
  */
-export function requireAdminToken(
+export function requireAdminPrincipal(
   tools: ReadonlySet<string>,
   toolName: string,
-  providedToken: string | undefined,
-  configuredToken: string | undefined,
+  principal: AdminPrincipal | null,
 ): void {
   if (!tools.has(toolName)) return;
-  if (!configuredToken) {
-    throw new Error('Admin MCP not configured: set FAUCET_ADMIN_MCP_TOKEN');
-  }
-  if (!providedToken) throw new Error('Admin MCP token missing');
-  const a = Buffer.from(providedToken);
-  const b = Buffer.from(configuredToken);
-  if (a.length !== b.length || !timingSafeEqual(a, b)) {
-    throw new Error('Admin MCP token invalid');
-  }
+  if (!principal) throw new Error('Admin MCP auth required');
 }
 
 export interface BuildMcpServerOptions {
-  /** Resolves the per-request admin token from the incoming HTTP headers. */
-  getAdminToken?: () => string | undefined;
-  /** The configured admin token (typically `process.env.FAUCET_ADMIN_MCP_TOKEN`). */
-  configuredAdminToken?: string | undefined;
+  /** Resolves the authenticated admin principal (if any) for this request. */
+  getAdminPrincipal?: () => AdminPrincipal | null;
+}
+
+function principalLabel(p: AdminPrincipal): string {
+  return p.kind === 'session' ? `session:${p.userId}` : 'static-token';
 }
 
 /**
@@ -92,13 +87,17 @@ export function buildMcpServer(ctx: AppContext, opts: BuildMcpServerOptions = {}
     { capabilities: { tools: {}, resources: {} } },
   );
 
-  const guard = (toolName: string): void => {
-    requireAdminToken(
-      ADMIN_TOOLS,
-      toolName,
-      opts.getAdminToken?.(),
-      opts.configuredAdminToken,
-    );
+  const guard = async (toolName: string): Promise<void> => {
+    const principal = opts.getAdminPrincipal?.() ?? null;
+    requireAdminPrincipal(ADMIN_TOOLS, toolName, principal);
+    if (principal) {
+      await writeAudit(ctx.db, {
+        actor: principalLabel(principal),
+        action: `mcp.${toolName}`,
+        target: toolName,
+        signals: {},
+      });
+    }
   };
 
   const ok = (payload: unknown) => ({
@@ -202,7 +201,7 @@ export function buildMcpServer(ctx: AppContext, opts: BuildMcpServerOptions = {}
       inputSchema: {},
     },
     async () => {
-      guard('faucet.balance');
+      await guard('faucet.balance');
       const balance = await ctx.driver.getBalance();
       return ok({ balanceLuna: balance.toString() });
     },
@@ -218,7 +217,7 @@ export function buildMcpServer(ctx: AppContext, opts: BuildMcpServerOptions = {}
       },
     },
     async ({ to, amountLuna }) => {
-      guard('faucet.send');
+      await guard('faucet.send');
       const parsed = ctx.driver.parseAddress(to);
       const txId = await ctx.driver.send(parsed, BigInt(amountLuna));
       return ok({ txId, to: parsed, amountLuna });
@@ -237,7 +236,7 @@ export function buildMcpServer(ctx: AppContext, opts: BuildMcpServerOptions = {}
       },
     },
     async ({ kind, value, reason, expiresAt }) => {
-      guard('faucet.block_address');
+      await guard('faucet.block_address');
       const id = nanoid();
       await ctx.db.insert(blocklist).values({
         id,
@@ -260,7 +259,7 @@ export function buildMcpServer(ctx: AppContext, opts: BuildMcpServerOptions = {}
       },
     },
     async ({ kind, value }) => {
-      guard('faucet.unblock_address');
+      await guard('faucet.unblock_address');
       await ctx.db
         .delete(blocklist)
         .where(and(eq(blocklist.kind, kind), eq(blocklist.value, value)));
@@ -275,7 +274,7 @@ export function buildMcpServer(ctx: AppContext, opts: BuildMcpServerOptions = {}
       inputSchema: { limit: z.number().int().min(1).max(1000).optional() },
     },
     async ({ limit }) => {
-      guard('faucet.list_blocks');
+      await guard('faucet.list_blocks');
       const rows = await ctx.db
         .select()
         .from(blocklist)
@@ -292,7 +291,7 @@ export function buildMcpServer(ctx: AppContext, opts: BuildMcpServerOptions = {}
       inputSchema: { claimId: z.string().min(1) },
     },
     async ({ claimId }) => {
-      guard('faucet.explain_decision');
+      await guard('faucet.explain_decision');
       const [row] = await ctx.db.select().from(claims).where(eq(claims.id, claimId)).limit(1);
       if (!row) return ok({ error: 'not found', claimId });
       return ok({
