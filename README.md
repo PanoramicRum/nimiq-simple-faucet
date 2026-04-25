@@ -91,6 +91,16 @@ Boots a self-contained WASM faucet. The WASM client reaches TestAlbatross consen
 
 Every SDK accepts the same `hostContext` (hashed UID, cookie hash, session hash, account age, KYC level, tags, HMAC signature) so your project's own abuse signals flow into the faucet's scoring pipeline.
 
+### Nimiq Pay Mini App
+
+A canonical [Nimiq Pay Mini App](https://mini-apps-launch-developer-center-dev-worker.je-cf9.workers.dev/mini-apps) example that runs inside the Nimiq Pay wallet WebView, reads the user's NIM address via [`@nimiq/mini-app-sdk`](https://www.npmjs.com/package/@nimiq/mini-app-sdk), and claims from this faucet. Two implementations sharing one TypeScript core:
+
+- [`examples/mini-app-claim-vue/`](./examples/mini-app-claim-vue/) — Vue 3 + Vite
+- [`examples/mini-app-claim-react/`](./examples/mini-app-claim-react/) — React 18 + Vite
+- [`examples/mini-app-claim-shared/`](./examples/mini-app-claim-shared/) — framework-agnostic glue (Mini App SDK bridge, fcaptcha widget loader, i18n)
+
+Each example ships its own `docker-compose.yml` that brings up the faucet + fcaptcha + Vite dev server in one command for real-phone testing on your LAN.
+
 ## Abuse prevention (10 pluggable layers, rate-limiting on by default)
 
 1. **Blocklist** — IP, address, UID, ASN, or country deny-list with optional expiry.

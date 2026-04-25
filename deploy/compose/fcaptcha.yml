@@ -33,7 +33,9 @@ services:
       # Exposed so the browser can fetch /fcaptcha.js from the same host
       # the claim UI is served from. Put the faucet + fcaptcha behind the
       # same reverse proxy in production and drop this port binding.
-      - "3000:3000"
+      # Issue #120-style env-driven host port so contributors running
+      # multiple example stacks side-by-side don't collide on 3000.
+      - "${FCAPTCHA_HOST_PORT:-3000}:3000"
 
   faucet:
     environment:

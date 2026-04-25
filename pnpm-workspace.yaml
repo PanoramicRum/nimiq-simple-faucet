@@ -4,4 +4,7 @@ packages:
   - "examples/nextjs-claim-page"
   - "examples/vue-claim-page"
   - "examples/capacitor-mobile-app"
+  - "examples/mini-app-claim-shared"
+  - "examples/mini-app-claim-vue"
+  - "examples/mini-app-claim-react"
   - "tests/*"
