@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { desc, eq, sql } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
+import { normalizeBlocklistValue } from '@faucet/core';
 import type { AppContext } from '../../context.js';
 import { blocklist } from '../../db/schema.js';
 import { writeAudit } from '../../auth/audit.js';
@@ -43,10 +44,13 @@ export async function adminBlocklistRoutes(app: FastifyInstance, ctx: AppContext
         }
         expiresAt = d;
       }
+      // Canonicalise on insert so the lookup at request time matches
+      // regardless of how the admin typed the value (#94).
+      const normalizedValue = normalizeBlocklistValue(parsed.data.kind, parsed.data.value);
       await ctx.db.insert(blocklist).values({
         id,
         kind: parsed.data.kind,
-        value: parsed.data.value,
+        value: normalizedValue,
         reason: parsed.data.reason ?? null,
         createdAt: new Date(),
         expiresAt,
@@ -55,7 +59,7 @@ export async function adminBlocklistRoutes(app: FastifyInstance, ctx: AppContext
         actor: req.adminUser?.id ?? 'admin',
         action: 'blocklist.add',
         target: id,
-        signals: { kind: parsed.data.kind, value: parsed.data.value },
+        signals: { kind: parsed.data.kind, value: normalizedValue },
       });
       return reply.code(201).send({ id });
     },
