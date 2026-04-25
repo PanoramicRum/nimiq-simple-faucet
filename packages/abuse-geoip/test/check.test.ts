@@ -58,6 +58,32 @@ describe('geoipCheck', () => {
     expect(r.decision).toBe('deny');
   });
 
+  it('hard-denies an unresolved country when an allow-list is active (#103)', async () => {
+    // Resolver returns null country (new IP block, anonymizing proxy,
+    // stale DB). Pre-fix this returned a soft 0.9 score that could be
+    // averaged below threshold by clean signals from other layers; an
+    // allow-list means "only these countries" so unknown is by
+    // definition not in it.
+    const check = geoipCheck({
+      resolver: stubResolver({ country: null, asn: 65000 }),
+      policy: { allowCountries: ['US'] },
+    });
+    const r = await check.check(req());
+    expect(r.decision).toBe('deny');
+    expect(r.score).toBe(1);
+    expect(r.reason).toMatch(/country unknown while allow-list active/);
+  });
+
+  it('does not penalise an unresolved country when no allow-list is configured', async () => {
+    const check = geoipCheck({
+      resolver: stubResolver({ country: null }),
+      policy: {},
+    });
+    const r = await check.check(req());
+    expect(r.decision).toBeUndefined();
+    expect(r.score).toBe(0);
+  });
+
   it('denies explicit ASNs', async () => {
     const check = geoipCheck({
       resolver: stubResolver({ country: 'DE', asn: 16509, asnOrg: 'Amazon.com, Inc.' }),
@@ -100,13 +126,7 @@ describe('geoipCheck', () => {
     expect(r.reason).toMatch(/lookup failed/);
   });
 
-  it('treats unknown country as partial risk when allow-list is active', async () => {
-    const check = geoipCheck({
-      resolver: stubResolver({ country: null }),
-      policy: { allowCountries: ['DE'] },
-    });
-    const r = await check.check(req());
-    expect(r.score).toBeGreaterThan(0.5);
-    expect(r.decision).toBeUndefined();
-  });
+  // Pre-fix this asserted the soft-0.9-no-decision behaviour. After #103
+  // the contract is hard deny — covered by the new "hard-denies an
+  // unresolved country when an allow-list is active" test above.
 });
