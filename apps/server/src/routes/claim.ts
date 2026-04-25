@@ -2,7 +2,12 @@ import { createHash, createHmac, timingSafeEqual } from 'node:crypto';
 import type { FastifyInstance } from 'fastify';
 import { and, desc, eq, gte, isNull, isNotNull, or, sql } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
-import { DriverError, canonicalizeHostContext, type ClaimRequest } from '@faucet/core';
+import {
+  DriverError,
+  canonicalizeHostContext,
+  stripUnsignedHostContext,
+  type ClaimRequest,
+} from '@faucet/core';
 import { mintChallenge } from '@faucet/abuse-hashcash';
 import { claims, integratorKeys } from '../db/schema.js';
 import type { AppContext } from '../context.js';
@@ -195,6 +200,20 @@ export async function claimRoutes(app: FastifyInstance, ctx: AppContext): Promis
     // counter immediately. Rejected/challenged claims decrement below.
     await incrementIpCounter(ctx.db, req.ip, now);
 
+    // #96 trust-boundary: when hostContext is present but unverified
+    // (no/bad integrator HMAC), strip every claim-bearing field before
+    // the abuse pipeline sees it. A forged `kycLevel: 'id'` /
+    // `verifiedIdentities: [...]` / etc. must not nudge scoring in the
+    // attacker's favour. The empty-object form preserves the
+    // "context attempted, failed verification" signal that fingerprint
+    // already penalises softly.
+    const safeHostContext =
+      parsed.data.hostContext !== undefined
+        ? hostContextVerified
+          ? parsed.data.hostContext
+          : stripUnsignedHostContext(parsed.data.hostContext)
+        : undefined;
+
     const claimReq: ClaimRequest = {
       address,
       ip: req.ip,
@@ -202,7 +221,7 @@ export async function claimRoutes(app: FastifyInstance, ctx: AppContext): Promis
       captchaToken: parsed.data.captchaToken,
       hashcashSolution: parsed.data.hashcashSolution,
       fingerprint: parsed.data.fingerprint,
-      hostContext: parsed.data.hostContext,
+      hostContext: safeHostContext,
       hostContextVerified,
       integratorId,
       requestedAt: now,
