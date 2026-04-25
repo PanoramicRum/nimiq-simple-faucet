@@ -64,4 +64,28 @@ describe('AbusePipeline', () => {
     const rLight = await pLight.evaluate(makeRequest());
     expect(rHeavy.score).toBeGreaterThan(rLight.score);
   });
+
+  it('treats a thrown check as a hard deny (#91 error boundary)', async () => {
+    // A check that throws (e.g. captcha provider timeout) must not 500 the
+    // pipeline. The boundary records it as deny so the calling route runs
+    // its normal cleanup (decrement counter, write rejection row) instead
+    // of leaking the exception out.
+    const exploder: AbuseCheck = {
+      id: 'flaky-provider',
+      async check() {
+        throw new Error('upstream timeout');
+      },
+    };
+    const p = new AbusePipeline([alwaysClean, exploder, alwaysClean]);
+    const r = await p.evaluate(makeRequest());
+    expect(r.decision).toBe('deny');
+    expect(r.perCheck.find((c) => c.id === 'flaky-provider')).toMatchObject({
+      score: 1,
+      decision: 'deny',
+      signals: { error: 'upstream timeout' },
+    });
+    expect(r.reasons.some((s) => s.startsWith('flaky-provider'))).toBe(true);
+    // Short-circuits — the trailing clean check should not have run.
+    expect(r.perCheck.map((c) => c.id)).toEqual(['clean', 'flaky-provider']);
+  });
 });

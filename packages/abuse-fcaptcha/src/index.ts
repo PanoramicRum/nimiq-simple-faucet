@@ -6,7 +6,11 @@ export interface FCaptchaCheckConfig {
   secret: string;
   /** Base URL of the FCaptcha service (e.g. http://fcaptcha:3000). */
   serverUrl: string;
+  /** Per-call timeout in ms (default 3000). */
+  timeoutMs?: number;
 }
+
+const DEFAULT_TIMEOUT_MS = 3000;
 
 interface FCaptchaVerifyResponse {
   valid: boolean;
@@ -31,12 +35,27 @@ export function fcaptchaCheck(config: FCaptchaCheckConfig): AbuseCheck {
           signals: { provided: false },
         };
       }
-      const res = await request(verifyUrl, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ token: req.captchaToken, secret: config.secret }),
-      });
-      const body = (await res.body.json()) as FCaptchaVerifyResponse;
+      const timeoutMs = config.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+      let body: FCaptchaVerifyResponse;
+      try {
+        const res = await request(verifyUrl, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ token: req.captchaToken, secret: config.secret }),
+          headersTimeout: timeoutMs,
+          bodyTimeout: timeoutMs,
+        });
+        body = (await res.body.json()) as FCaptchaVerifyResponse;
+      } catch (err) {
+        // Fail closed on provider timeout/network/parse errors (#91).
+        const message = err instanceof Error ? err.message : String(err);
+        return {
+          score: 1,
+          decision: 'deny',
+          reason: 'captcha provider error',
+          signals: { provided: true, error: message },
+        };
+      }
       if (!body.valid) {
         return {
           score: 1,

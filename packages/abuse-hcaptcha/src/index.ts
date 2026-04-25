@@ -4,7 +4,13 @@ import type { AbuseCheck, CheckResult } from '@faucet/core';
 export interface HCaptchaCheckConfig {
   secret: string;
   verifyUrl?: string;
+  /** Per-call timeout in ms (default 3000). Bounds the worker hold during a
+   *  provider outage so a single slow upstream can't pin Fastify workers. */
+  timeoutMs?: number;
 }
+
+/** Default timeout for the upstream verify call. */
+const DEFAULT_TIMEOUT_MS = 3000;
 
 interface HCaptchaResponse {
   success: boolean;
@@ -34,12 +40,32 @@ export function hcaptchaCheck(config: HCaptchaCheckConfig): AbuseCheck {
         response: req.captchaToken,
         remoteip: req.ip,
       });
-      const res = await request(verifyUrl, {
-        method: 'POST',
-        headers: { 'content-type': 'application/x-www-form-urlencoded' },
-        body: form.toString(),
-      });
-      const body = (await res.body.json()) as HCaptchaResponse;
+      const timeoutMs = config.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+      let body: HCaptchaResponse;
+      try {
+        const res = await request(verifyUrl, {
+          method: 'POST',
+          headers: { 'content-type': 'application/x-www-form-urlencoded' },
+          body: form.toString(),
+          headersTimeout: timeoutMs,
+          bodyTimeout: timeoutMs,
+        });
+        body = (await res.body.json()) as HCaptchaResponse;
+      } catch (err) {
+        // Provider timeout, network error, or unparseable JSON. Fail closed
+        // (deny) so the claim doesn't leak funds, but surface the error in
+        // signals so operators can see degradation in the audit drawer.
+        // Critically, deny runs the normal cleanup path (IP counter
+        // decrement, rejection row) instead of throwing through to a 500
+        // that would burn the caller's daily quota (#91).
+        const message = err instanceof Error ? err.message : String(err);
+        return {
+          score: 1,
+          decision: 'deny',
+          reason: 'captcha provider error',
+          signals: { provided: true, error: message },
+        };
+      }
       if (!body.success) {
         return {
           score: 1,

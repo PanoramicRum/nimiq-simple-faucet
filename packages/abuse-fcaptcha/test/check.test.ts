@@ -101,6 +101,21 @@ describe('fcaptchaCheck', () => {
     expect(r.score).toBe(0);
   });
 
+  it('fails closed on upstream network errors with reason "captcha provider error" (#91)', async () => {
+    mockAgent
+      .get(SERVER_URL)
+      .intercept({ path: '/api/token/verify', method: 'POST' })
+      .replyWithError(new Error('socket hang up'));
+
+    const check = fcaptchaCheck({ secret: 's', serverUrl: SERVER_URL });
+    const r = await check.check(req('any-token'));
+    expect(r.decision).toBe('deny');
+    expect(r.score).toBe(1);
+    expect(r.reason).toBe('captcha provider error');
+    expect(r.signals.provided).toBe(true);
+    expect(typeof r.signals.error).toBe('string');
+  });
+
   it('POSTs the expected JSON body', async () => {
     let captured: string | undefined;
     mockAgent
