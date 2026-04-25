@@ -3,6 +3,7 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { authenticator } from '@otplib/preset-default';
 import { buildApp } from '../src/app.js';
 import { ServerConfigSchema } from '../src/config.js';
 import { BaseTestDriver, TEST_FAUCET_ADDRESS, parseCookie } from './helpers/testDriver.js';
@@ -23,8 +24,14 @@ function signHmac(secret: string, parts: string[]): string {
   return createHmac('sha256', secret).update(parts.join('\n')).digest('hex');
 }
 
-let sharedAuth: { session: string; csrf: string } | undefined;
-async function login(app: Awaited<ReturnType<typeof buildApp>>['app']): Promise<{ session: string; csrf: string }> {
+let sharedAuth: { session: string; csrf: string; totpSecret: string } | undefined;
+/**
+ * Seed the admin user, then re-login with a TOTP code so the session
+ * has `totpStepUpAt` recorded. Returns the cookies + the TOTP secret so
+ * tests can mint fresh codes for the `X-Faucet-Totp` header that
+ * `requireTotpStepUp` checks on every key-bearing route (#85).
+ */
+async function login(app: Awaited<ReturnType<typeof buildApp>>['app']): Promise<typeof sharedAuth & object> {
   if (sharedAuth) return sharedAuth;
   const seed = await app.inject({
     method: 'POST',
@@ -32,11 +39,17 @@ async function login(app: Awaited<ReturnType<typeof buildApp>>['app']): Promise<
     payload: { password: 'test-password-123' },
     headers: { 'content-type': 'application/json' },
   });
+  const totpSecret = seed.json().totpSecret as string;
   sharedAuth = {
     session: parseCookie(seed.headers['set-cookie'], 'faucet_session')!,
     csrf: parseCookie(seed.headers['set-cookie'], 'faucet_csrf')!,
+    totpSecret,
   };
   return sharedAuth;
+}
+
+function totp(secret: string): string {
+  return authenticator.generate(secret);
 }
 
 describe('admin integrators', () => {
@@ -67,12 +80,16 @@ describe('admin integrators', () => {
   });
 
   it('creates an integrator and the new key works on /v1/claim', async () => {
-    const { session, csrf } = await login(app);
+    const { session, csrf, totpSecret } = await login(app);
     const create = await app.inject({
       method: 'POST',
       url: '/admin/integrators',
       payload: { id: 'partner-a' },
-      headers: { 'content-type': 'application/json', 'x-faucet-csrf': csrf },
+      headers: {
+        'content-type': 'application/json',
+        'x-faucet-csrf': csrf,
+        'x-faucet-totp': totp(totpSecret),
+      },
       cookies: { faucet_session: session, faucet_csrf: csrf },
     });
     expect(create.statusCode).toBe(201);
@@ -104,7 +121,7 @@ describe('admin integrators', () => {
   });
 
   it('rotate replaces the key, old key stops working', async () => {
-    const { session, csrf } = await login(app);
+    const { session, csrf, totpSecret } = await login(app);
     const oldKey = (globalThis as Record<string, unknown>).__lastApiKey as string;
     const oldSecret = (globalThis as Record<string, unknown>).__lastHmac as string;
 
@@ -112,7 +129,11 @@ describe('admin integrators', () => {
       method: 'POST',
       url: '/admin/integrators/partner-a/rotate',
       payload: {},
-      headers: { 'content-type': 'application/json', 'x-faucet-csrf': csrf },
+      headers: {
+        'content-type': 'application/json',
+        'x-faucet-csrf': csrf,
+        'x-faucet-totp': totp(totpSecret),
+      },
       cookies: { faucet_session: session, faucet_csrf: csrf },
     });
     expect(rot.statusCode).toBe(200);
@@ -159,6 +180,54 @@ describe('admin integrators', () => {
     (globalThis as Record<string, unknown>).__lastHmac = rotBody.hmacSecret;
   });
 
+  it('rejects create / rotate / delete without TOTP step-up (#85)', async () => {
+    const { session, csrf } = await login(app);
+    // No `x-faucet-totp` header on any of these — `requireTotpStepUp`
+    // must refuse with 403 before any DB mutation runs.
+    const create = await app.inject({
+      method: 'POST',
+      url: '/admin/integrators',
+      payload: { id: 'partner-no-totp' },
+      headers: { 'content-type': 'application/json', 'x-faucet-csrf': csrf },
+      cookies: { faucet_session: session, faucet_csrf: csrf },
+    });
+    expect(create.statusCode).toBe(403);
+
+    const rot = await app.inject({
+      method: 'POST',
+      url: '/admin/integrators/partner-a/rotate',
+      payload: {},
+      headers: { 'content-type': 'application/json', 'x-faucet-csrf': csrf },
+      cookies: { faucet_session: session, faucet_csrf: csrf },
+    });
+    expect(rot.statusCode).toBe(403);
+
+    const del = await app.inject({
+      method: 'DELETE',
+      url: '/admin/integrators/partner-a',
+      headers: { 'x-faucet-csrf': csrf },
+      cookies: { faucet_session: session, faucet_csrf: csrf },
+    });
+    expect(del.statusCode).toBe(403);
+  });
+
+  it('rejects create with an invalid TOTP code (#85)', async () => {
+    const { session, csrf } = await login(app);
+    const create = await app.inject({
+      method: 'POST',
+      url: '/admin/integrators',
+      payload: { id: 'partner-bad-totp' },
+      headers: {
+        'content-type': 'application/json',
+        'x-faucet-csrf': csrf,
+        'x-faucet-totp': '000000',
+      },
+      cookies: { faucet_session: session, faucet_csrf: csrf },
+    });
+    expect(create.statusCode).toBe(403);
+    expect(create.json().error).toMatch(/invalid totp/i);
+  });
+
   it('list does not leak secrets', async () => {
     const { session } = await login(app);
     const res = await app.inject({
@@ -176,14 +245,14 @@ describe('admin integrators', () => {
   });
 
   it('delete revokes the integrator, key no longer works', async () => {
-    const { session, csrf } = await login(app);
+    const { session, csrf, totpSecret } = await login(app);
     const apiKey = (globalThis as Record<string, unknown>).__lastApiKey as string;
     const hmacSecret = (globalThis as Record<string, unknown>).__lastHmac as string;
 
     const del = await app.inject({
       method: 'DELETE',
       url: '/admin/integrators/partner-a',
-      headers: { 'x-faucet-csrf': csrf },
+      headers: { 'x-faucet-csrf': csrf, 'x-faucet-totp': totp(totpSecret) },
       cookies: { faucet_session: session, faucet_csrf: csrf },
     });
     expect(del.statusCode).toBe(200);

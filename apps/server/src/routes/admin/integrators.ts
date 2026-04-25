@@ -4,7 +4,7 @@ import { and, desc, eq } from 'drizzle-orm';
 import type { AppContext } from '../../context.js';
 import { integratorKeys } from '../../db/schema.js';
 import { writeAudit } from '../../auth/audit.js';
-import { requireAdminCsrf } from '../../auth/middleware.js';
+import { requireAdminCsrf, requireTotpStepUp } from '../../auth/middleware.js';
 import { IntegratorCreateRequest as CreateBody } from '../../openapi/schemas.js';
 
 function sha256Hex(s: string): string {
@@ -35,7 +35,11 @@ export async function adminIntegratorsRoutes(
 
   app.post(
     '/admin/integrators',
-    { bodyLimit: 32 * 1024, preHandler: requireAdminCsrf },
+    // #85: integrator credential mutations are key-bearing. Require TOTP
+    // step-up so a stolen session cookie alone can't mint/rotate/revoke
+    // an integrator's API key + HMAC secret. Matches the policy already
+    // used by /admin/account (wallet send, rotate-key).
+    { bodyLimit: 32 * 1024, preHandler: [requireAdminCsrf, requireTotpStepUp(ctx)] },
     async (req, reply) => {
       const parsed = CreateBody.safeParse(req.body);
       if (!parsed.success) return reply.code(400).send({ error: 'invalid body' });
@@ -65,7 +69,11 @@ export async function adminIntegratorsRoutes(
 
   app.post(
     '/admin/integrators/:id/rotate',
-    { bodyLimit: 32 * 1024, preHandler: requireAdminCsrf },
+    // #85: integrator credential mutations are key-bearing. Require TOTP
+    // step-up so a stolen session cookie alone can't mint/rotate/revoke
+    // an integrator's API key + HMAC secret. Matches the policy already
+    // used by /admin/account (wallet send, rotate-key).
+    { bodyLimit: 32 * 1024, preHandler: [requireAdminCsrf, requireTotpStepUp(ctx)] },
     async (req, reply) => {
       const { id } = req.params as { id: string };
       const [row] = await ctx.db.select().from(integratorKeys).where(eq(integratorKeys.id, id)).limit(1);
@@ -94,7 +102,11 @@ export async function adminIntegratorsRoutes(
 
   app.delete(
     '/admin/integrators/:id',
-    { bodyLimit: 32 * 1024, preHandler: requireAdminCsrf },
+    // #85: integrator credential mutations are key-bearing. Require TOTP
+    // step-up so a stolen session cookie alone can't mint/rotate/revoke
+    // an integrator's API key + HMAC secret. Matches the policy already
+    // used by /admin/account (wallet send, rotate-key).
+    { bodyLimit: 32 * 1024, preHandler: [requireAdminCsrf, requireTotpStepUp(ctx)] },
     async (req, reply) => {
       const { id } = req.params as { id: string };
       const [row] = await ctx.db.select().from(integratorKeys).where(eq(integratorKeys.id, id)).limit(1);
