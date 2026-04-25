@@ -23,6 +23,50 @@ export interface HashcashCheckConfig {
   difficulty?: number;
   /** Challenge validity window in ms. */
   ttlMs?: number;
+  /** Optional replay store (#95). Defaults to an in-memory TTL set per
+   *  check instance. A Redis-backed store can be injected later when
+   *  multi-replica deployments need shared state — same interface. */
+  replayStore?: HashcashReplayStore;
+}
+
+/**
+ * Replay-prevention contract for hashcash. The scheme is one-puzzle-one-
+ * action; without this guard a valid (challenge, nonce) pair is reusable
+ * for the entire challenge TTL (default 5 min), amortising one PoW across
+ * many claims (#95). `markSeen` is check-and-set: returns `true` on first
+ * sighting, `false` on replay.
+ */
+export interface HashcashReplayStore {
+  markSeen(key: string, expiresAtMs: number, now?: number): boolean | Promise<boolean>;
+}
+
+/**
+ * In-memory default. Adequate for single-instance deployments; resets on
+ * restart (acceptable — challenge TTL is short and the worst-case
+ * post-restart window is one TTL). Multi-replica setups should inject a
+ * shared backend (e.g. Redis) when that ships; the interface is stable.
+ */
+export class MemoryHashcashReplayStore implements HashcashReplayStore {
+  private readonly seen = new Map<string, number>();
+  /** Cap so a flood of unique solutions can't grow the map unbounded.
+   *  When the cap is reached, every expired entry is dropped first. */
+  private readonly maxSize: number;
+
+  constructor(maxSize = 4096) {
+    this.maxSize = maxSize;
+  }
+
+  markSeen(key: string, expiresAtMs: number, now: number = Date.now()): boolean {
+    if (this.seen.size >= this.maxSize) {
+      for (const [k, exp] of this.seen) {
+        if (exp <= now) this.seen.delete(k);
+      }
+    }
+    const prior = this.seen.get(key);
+    if (prior !== undefined && prior > now) return false;
+    this.seen.set(key, expiresAtMs);
+    return true;
+  }
 }
 
 export interface MintChallengeInput {
@@ -80,6 +124,7 @@ function constantEq(a: string, b: string): boolean {
 }
 
 export function hashcashCheck(config: HashcashCheckConfig): AbuseCheck {
+  const replayStore = config.replayStore ?? new MemoryHashcashReplayStore();
   return {
     id: 'hashcash',
     description: 'SHA-256 hashcash client puzzle (anti-bot, not blockchain consensus)',
@@ -120,6 +165,20 @@ export function hashcashCheck(config: HashcashCheckConfig): AbuseCheck {
           decision: 'deny',
           reason: `hashcash insufficient work (${zeros} < ${parsed.difficulty})`,
           signals: { zeros, difficulty: parsed.difficulty },
+        };
+      }
+      // Replay-prevention (#95). All structural / cryptographic checks
+      // have passed; only now consume cache space marking the solution
+      // as seen. A second submission of the same valid (challenge, nonce)
+      // pair within the TTL is rejected with `hashcash replayed`.
+      const replayKey = `${sha256Hex(challenge).slice(0, 16)}:${nonceSolution}`;
+      const fresh = await replayStore.markSeen(replayKey, parsed.expiresAt, req.requestedAt);
+      if (!fresh) {
+        return {
+          score: 1,
+          decision: 'deny',
+          reason: 'hashcash replayed',
+          signals: { replayed: true, zeros, difficulty: parsed.difficulty },
         };
       }
       return {
