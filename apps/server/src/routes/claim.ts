@@ -100,23 +100,6 @@ export async function claimRoutes(app: FastifyInstance, ctx: AppContext): Promis
       return reply.code(400).send({ error: 'invalid body', issues: parsed.error.issues });
     }
 
-    // Idempotency: if the same key was used before, return the original result.
-    if (parsed.data.idempotencyKey) {
-      const [existing] = await ctx.db
-        .select()
-        .from(claims)
-        .where(eq(claims.idempotencyKey, parsed.data.idempotencyKey))
-        .limit(1);
-      if (existing) {
-        return reply.code(200).send({
-          id: existing.id,
-          status: existing.status,
-          txId: existing.txId ?? undefined,
-          idempotent: true,
-        });
-      }
-    }
-
     let integratorId: string | undefined;
     let hostContextVerified = false;
     const apiKey = req.headers['x-faucet-api-key'];
@@ -193,6 +176,37 @@ export async function claimRoutes(app: FastifyInstance, ctx: AppContext): Promis
       return reply
         .code(400)
         .send({ error: 'invalid address', message: (err as Error).message });
+    }
+
+    // Idempotency lookup (#86). Scoped by:
+    //   - (integratorId, idempotencyKey) for authenticated callers — each
+    //     integrator's namespace is isolated; a colliding key from another
+    //     integrator never reads this one's claim.
+    //   - (idempotencyKey, address) for unauthenticated callers — the
+    //     "same logical request" can only be inferred from address + key.
+    // This sits AFTER auth + address parsing so we know the scope; before
+    // any IP counter / pipeline work, so a legitimate retry costs nothing.
+    if (parsed.data.idempotencyKey) {
+      const conds =
+        integratorId !== undefined
+          ? and(
+              eq(claims.idempotencyKey, parsed.data.idempotencyKey),
+              eq(claims.integratorId, integratorId),
+            )
+          : and(
+              eq(claims.idempotencyKey, parsed.data.idempotencyKey),
+              isNull(claims.integratorId),
+              eq(claims.address, address),
+            );
+      const [existing] = await ctx.db.select().from(claims).where(conds).limit(1);
+      if (existing) {
+        return reply.code(200).send({
+          id: existing.id,
+          status: existing.status,
+          txId: existing.txId ?? undefined,
+          idempotent: true,
+        });
+      }
     }
 
     // Increment the IP counter BEFORE the abuse pipeline to close the TOCTOU
