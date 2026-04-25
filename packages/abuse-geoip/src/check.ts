@@ -39,7 +39,15 @@ function evaluatePolicy(
       return { score: 1, decision: 'deny', reason: `country ${info.country} not in allow-list` };
     }
   } else if (allow) {
-    return { score: 0.9, reason: 'country unknown while allow-list active' };
+    // #103: an allow-list means "only these countries" — an unresolved
+    // country is by definition not in it. Hard deny instead of a soft
+    // 0.9 score that can be averaged below threshold by clean signals
+    // from other layers.
+    return {
+      score: 1,
+      decision: 'deny',
+      reason: 'country unknown while allow-list active',
+    };
   }
 
   if (info.asn && policy.denyAsns?.includes(info.asn)) {
