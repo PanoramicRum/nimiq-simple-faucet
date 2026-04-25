@@ -17,7 +17,7 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends python3 make g++ \
     && rm -rf /var/lib/apt/lists/*
 COPY deploy/docker/pnpm-workspace.docker.yaml pnpm-workspace.yaml
-COPY package.json tsconfig.base.json turbo.json ./
+COPY package.json tsconfig.base.json turbo.json pnpm-lock.yaml ./
 COPY apps/server/package.json apps/server/
 COPY apps/claim-ui/package.json apps/claim-ui/
 COPY apps/dashboard/package.json apps/dashboard/
