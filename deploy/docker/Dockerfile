@@ -17,7 +17,7 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends python3 make g++ \
     && rm -rf /var/lib/apt/lists/*
 COPY deploy/docker/pnpm-workspace.docker.yaml pnpm-workspace.yaml
-COPY package.json tsconfig.base.json turbo.json ./
+COPY package.json tsconfig.base.json turbo.json pnpm-lock.yaml ./
 COPY apps/server/package.json apps/server/
 COPY apps/claim-ui/package.json apps/claim-ui/
 COPY apps/dashboard/package.json apps/dashboard/
@@ -33,7 +33,7 @@ COPY packages/abuse-onchain-nimiq/package.json packages/abuse-onchain-nimiq/
 COPY packages/abuse-ai/package.json packages/abuse-ai/
 COPY packages/sdk-ts/package.json packages/sdk-ts/
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
-    pnpm install --frozen-lockfile=false
+    pnpm install --frozen-lockfile
 
 FROM deps AS build
 COPY packages packages
