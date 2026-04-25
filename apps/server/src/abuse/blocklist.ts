@@ -1,5 +1,5 @@
 import { and, eq } from 'drizzle-orm';
-import type { AbuseCheck, CheckResult } from '@faucet/core';
+import { normalizeBlocklistValue, type AbuseCheck, type CheckResult } from '@faucet/core';
 import type { Db } from '../db/index.js';
 import { blocklist } from '../db/schema.js';
 
@@ -14,8 +14,12 @@ export function blocklistCheck(db: Db): AbuseCheck {
         ['address', req.address],
         ['uid', req.hostContext?.uid],
       ];
-      for (const [kind, value] of kinds) {
-        if (!value) continue;
+      for (const [kind, raw] of kinds) {
+        if (!raw) continue;
+        // Canonicalise so the lookup matches what the admin saved (#94).
+        // Stored rows are normalised on insert via the same helper; existing
+        // rows are migrated on boot — see migrateBlocklistNormalization().
+        const value = normalizeBlocklistValue(kind, raw);
         const [hit] = await db
           .select()
           .from(blocklist)

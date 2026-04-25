@@ -10,6 +10,7 @@ import type { ServerConfig } from './config.js';
 import { openDb } from './db/index.js';
 import { buildDriver } from './drivers.js';
 import { buildPipeline } from './abuse/pipeline.js';
+import { migrateBlocklistNormalization } from './abuse/blocklistMigrate.js';
 import { EventStream, streamRoute } from './stream.js';
 import { claimRoutes } from './routes/claim.js';
 import { adminRoutes } from './routes/admin/index.js';
@@ -74,6 +75,14 @@ export async function buildApp(
   await app.register(rateLimit, rateLimitOpts);
 
   const db = openDb({ dataDir: config.dataDir, databaseUrl: config.databaseUrl });
+  // One-shot canonicalise of any pre-#94 blocklist rows (idempotent).
+  const migrate = await migrateBlocklistNormalization(db);
+  if (migrate.updated > 0) {
+    app.log.info(
+      { inspected: migrate.inspected, updated: migrate.updated },
+      'blocklist values renormalised on boot',
+    );
+  }
   const driver = opts.driverOverride ?? (await buildDriver(config));
   const pipeline = buildPipeline(
     db,
