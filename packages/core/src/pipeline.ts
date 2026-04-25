@@ -34,7 +34,29 @@ export class AbusePipeline {
     let hardDecision: Decision | undefined;
 
     for (const c of this.checks) {
-      const result = await c.check(req);
+      let result;
+      try {
+        result = await c.check(req);
+      } catch (err) {
+        // Per-check error boundary (#91). A check that throws (e.g. captcha
+        // provider timeout, network error, JSON parse failure) must not
+        // 500 the whole pipeline. Treat it as a hard `deny` keyed off the
+        // check id so the calling route runs its normal deny cleanup
+        // (decrement IP counter, write rejection row) instead of leaking
+        // an exception out and burning IP quota.
+        const message = err instanceof Error ? err.message : String(err);
+        const entry: PipelineResult['perCheck'][number] = {
+          id: c.id,
+          score: 1,
+          signals: { error: message },
+          decision: 'deny',
+        };
+        perCheck.push(entry);
+        signals[c.id] = entry.signals;
+        reasons.push(`${c.id}: error`);
+        hardDecision = 'deny';
+        break;
+      }
       const entry: PipelineResult['perCheck'][number] = {
         id: c.id,
         score: result.score,
