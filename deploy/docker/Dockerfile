@@ -33,7 +33,7 @@ COPY packages/abuse-onchain-nimiq/package.json packages/abuse-onchain-nimiq/
 COPY packages/abuse-ai/package.json packages/abuse-ai/
 COPY packages/sdk-ts/package.json packages/sdk-ts/
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
-    pnpm install --frozen-lockfile=false
+    pnpm install --frozen-lockfile
 
 FROM deps AS build
 COPY packages packages

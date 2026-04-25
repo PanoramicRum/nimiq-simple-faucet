@@ -17,7 +17,20 @@ jobs:
         with:
           node-version: 22
           cache: pnpm
-      - run: pnpm install --frozen-lockfile=false
+
+      # Supply-chain guard: refuse to install if anything in the repo
+      # disables lockfile integrity. The previous `--frozen-lockfile=false`
+      # flag let a maintainer push package.json + lockfile changes that
+      # didn't agree, opening an ephemeral install-time-resolution window
+      # for tampered dependencies. See audits/AUDIT-REPORT.md finding #004.
+      - name: Forbid --frozen-lockfile=false anywhere
+        run: |
+          if grep -rn "frozen-lockfile=false" .github/ deploy/; then
+            echo "::error::--frozen-lockfile=false is forbidden — see audit finding #004 (#90)."
+            exit 1
+          fi
+
+      - run: pnpm install --frozen-lockfile
       - run: pnpm build
       - run: pnpm typecheck
       - run: pnpm lint

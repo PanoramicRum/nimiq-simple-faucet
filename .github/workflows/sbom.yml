@@ -68,7 +68,7 @@ jobs:
           cache: pnpm
 
       - name: Install deps
-        run: pnpm install --frozen-lockfile=false
+        run: pnpm install --frozen-lockfile
 
       - name: Generate workspace SBOM with cdxgen
         run: |
