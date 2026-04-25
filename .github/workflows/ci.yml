@@ -18,15 +18,22 @@ jobs:
           node-version: 22
           cache: pnpm
 
-      # Supply-chain guard: refuse to install if anything in the repo
-      # disables lockfile integrity. The previous `--frozen-lockfile=false`
-      # flag let a maintainer push package.json + lockfile changes that
-      # didn't agree, opening an ephemeral install-time-resolution window
-      # for tampered dependencies. See audits/AUDIT-REPORT.md finding #004.
-      - name: Forbid --frozen-lockfile=false anywhere
+      # Supply-chain guard (audit finding #004 / issue #90): refuse to
+      # install if any other workflow or the Dockerfile invokes pnpm with
+      # lockfile integrity disabled. The previous behaviour silently let
+      # package.json and pnpm-lock.yaml disagree at install time, which
+      # defeats the lockfile and opens an ephemeral install-time-resolution
+      # window for tampered dependencies.
+      #
+      # We deliberately exclude ci.yml from its own grep so this step name
+      # and its surrounding documentation aren't false positives.
+      - name: Forbid pnpm install with --frozen-lockfile=false
         run: |
-          if grep -rn "frozen-lockfile=false" .github/ deploy/; then
-            echo "::error::--frozen-lockfile=false is forbidden — see audit finding #004 (#90)."
+          hits=$(grep -rEln '\-\-frozen-lockfile=false' .github/ deploy/ \
+            --exclude=ci.yml || true)
+          if [ -n "$hits" ]; then
+            echo "::error::--frozen-lockfile=false found in: $hits"
+            echo "::error::Lockfile integrity must not be disabled. See audit finding #004 (#90)."
             exit 1
           fi
 
