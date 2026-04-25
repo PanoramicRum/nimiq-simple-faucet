@@ -32,8 +32,13 @@ export class DrizzleFingerprintStore implements FingerprintStore {
 
   async countUidsForVisitor(visitorId: string, windowMs: number): Promise<number> {
     const since = Date.now() - windowMs;
+    // #105: SQL's `COUNT(DISTINCT col)` ignores NULLs by definition, so a
+    // pool of purely-anonymous claims (uid IS NULL) under the same
+    // visitor wouldn't trip `maxUidsPerVisitor` at all. Coalesce nulls
+    // to one synthetic '__anon__' bucket so any anonymous traffic under
+    // a visitor counts as one extra distinct identity.
     const [row] = await this.db
-      .select({ n: sql<number>`COUNT(DISTINCT ${fingerprintLinks.uid})` })
+      .select({ n: sql<number>`COUNT(DISTINCT COALESCE(${fingerprintLinks.uid}, '__anon__'))` })
       .from(fingerprintLinks)
       .where(and(eq(fingerprintLinks.visitorId, visitorId), gte(fingerprintLinks.seenAt, since)));
     return row?.n ?? 0;
