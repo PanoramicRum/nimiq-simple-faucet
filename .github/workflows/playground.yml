@@ -27,13 +27,17 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      # Audit finding #007 / issue #93: SHA-pin every action so a tag
+      # rewrite at the upstream cannot silently swap the binary.
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version: 22
+          # See ci.yml — disable auto pnpm detection; we install via corepack.
+          package-manager-cache: false
 
       - name: Activate pnpm via corepack
         run: |
@@ -45,7 +49,7 @@ jobs:
       - name: Build playground
         run: pnpm --filter=@nimiq-faucet/playground build
 
-      - uses: actions/upload-pages-artifact@v5
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5
         with:
           path: apps/playground/.vitepress/dist
 
@@ -58,4 +62,4 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4

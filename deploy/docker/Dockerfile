@@ -4,7 +4,13 @@
 # Default profile runs SQLite at /data/faucet.db. Both UIs (public claim UI + admin dashboard)
 # are baked into the image and served by Fastify at `/` and `/admin/`.
 
-FROM node:22-bookworm-slim AS base
+# Audit finding #006 / issue #92: pin the base image by digest, not just
+# tag. Tags are mutable on Docker Hub — `node:22-bookworm-slim` rolls
+# forward when upstream republishes, so a `docker pull` at build time
+# could fetch a different image than the one CI tested. Dependabot's
+# `docker` ecosystem will bump both digest and the trailing tag comment
+# together (see .github/dependabot.yml).
+FROM node:22-bookworm-slim@sha256:d415caac2f1f77b98caaf9415c5f807e14bc8d7bdea62561ea2fef4fbd08a73c AS base
 ENV PNPM_HOME=/pnpm
 ENV PATH="${PNPM_HOME}:${PATH}"
 RUN corepack enable
