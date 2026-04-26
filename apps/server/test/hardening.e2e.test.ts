@@ -123,12 +123,15 @@ describe('hardening', () => {
     const connectSrc =
       csp.split(';').map((s) => s.trim()).find((s) => s.startsWith('connect-src')) ?? '';
     expect(connectSrc).toMatch(/'self'/);
-    // Must not contain a bare `wss:` / `https:` allow-all.
-    expect(connectSrc).not.toMatch(/\bwss:(?![/])/);
-    expect(connectSrc).not.toMatch(/\bhttps:(?!\/\/)/);
+    // Must not contain a bare `wss:` / `https:` allow-all. We split the
+    // directive into tokens and check membership directly — avoids
+    // regex anchor traps that CodeQL flags on URL-shaped patterns.
+    const tokens = connectSrc.replace(/^connect-src\s+/, '').trim().split(/\s+/);
+    expect(tokens).not.toContain('wss:');
+    expect(tokens).not.toContain('https:');
     // Captcha endpoints still allowed in the relaxed-for-ui profile.
-    expect(connectSrc).toMatch(/challenges\.cloudflare\.com/);
-    expect(connectSrc).toMatch(/hcaptcha\.com/);
+    expect(tokens).toContain('https://challenges.cloudflare.com');
+    expect(tokens).toContain('https://hcaptcha.com');
   });
 
   it('POST /v1/claim with 20 KB body returns 413', async () => {
