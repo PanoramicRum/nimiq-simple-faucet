@@ -114,7 +114,7 @@ export function buildPipeline(
   return new AbusePipeline(checks);
 }
 
-function buildGeoipResolver(config: ServerConfig): GeoIpResolver | undefined {
+export function buildGeoipResolver(config: ServerConfig): GeoIpResolver | undefined {
   if (config.geoipBackend === 'dbip') {
     return new DbipResolver();
   }
