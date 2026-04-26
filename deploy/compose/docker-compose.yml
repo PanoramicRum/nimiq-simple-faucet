@@ -10,8 +10,11 @@ services:
       dockerfile: deploy/docker/Dockerfile
     image: nimiq-faucet:dev
     restart: unless-stopped
+    # Issue #120: host port is overridable so contributors running multiple
+    # stacks side-by-side don't collide on 8080. Default still binds 8080
+    # for the documented Quick Start.
     ports:
-      - "8080:8080"
+      - "${FAUCET_HOST_PORT:-8080}:8080"
     # `.env` is optional so the `nimiq` service can be started on its own
     # (e.g. for smoke testing) without first copying `.env.example`.
     env_file:
@@ -78,9 +81,10 @@ services:
     # Uncomment to expose for local debugging (e.g. curl from the host):
     # ports:
     #   - "127.0.0.1:8648:8648"
-    # P2P port must be reachable for the node to sync:
+    # P2P port must be reachable for the node to sync. Issue #120: host
+    # port is overridable to avoid collisions across stacks.
     ports:
-      - "8443:8443"
+      - "${NIMIQ_P2P_HOST_PORT:-8443}:8443"
 
 volumes:
   faucet-data:
