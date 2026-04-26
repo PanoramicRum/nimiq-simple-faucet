@@ -69,6 +69,10 @@ jobs:
         with:
           node-version: 22
           registry-url: https://registry.npmjs.org
+          # setup-node v5 auto-detects pnpm from package.json#packageManager
+          # and invokes it during setup. We install pnpm via corepack in
+          # the next step, so disable the auto-cache here.
+          package-manager-cache: false
 
       - name: Activate pnpm via corepack
         run: |
@@ -178,6 +182,8 @@ jobs:
       - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version: 22
+          # See above — disable auto pnpm detection; we install via corepack.
+          package-manager-cache: false
 
       - name: Activate pnpm via corepack
         run: |
@@ -236,6 +242,8 @@ jobs:
       - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version: 22
+          # See above — disable auto pnpm detection; we install via corepack.
+          package-manager-cache: false
 
       - name: Activate pnpm via corepack
         run: |
