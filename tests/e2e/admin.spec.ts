@@ -33,15 +33,34 @@ async function doLogin(page: Page, withTotp: boolean): Promise<void> {
     const code = totpCode(ADMIN_TOTP_SECRET);
     await page.locator('input[autocomplete="one-time-code"]').fill(code);
   }
-  await page.locator('button[type="submit"]').click();
-  // Ensure the login round-trip completes (cookies set, router moved) before
-  // the caller navigates away — otherwise subsequent goto()s race and the
-  // SPA sees no session yet.
+
+  // Wait for the login round-trip explicitly. `argon2id verifyPassword`
+  // dominates the cost on the second-login path and can take 1–3 s on
+  // a contended CI runner; combined with router.replace + Vue mount,
+  // the prior 10 s budget on `waitForURL` was tight enough to flake on
+  // Firefox specifically (twice — see admin.spec.ts:85 and :159 in
+  // recent runs). Awaiting the response in parallel with the click
+  // catches login failures with a clear error and bounds the wall-clock
+  // budget to a single round-trip plus 20 s for the SPA navigation.
+  const [loginResponse] = await Promise.all([
+    page.waitForResponse(
+      (res) =>
+        res.url().endsWith('/admin/auth/login') && res.request().method() === 'POST',
+      { timeout: 20_000 },
+    ),
+    page.locator('button[type="submit"]').click(),
+  ]);
+  if (loginResponse.status() !== 200) {
+    throw new Error(
+      `login POST returned ${loginResponse.status()}: ${await loginResponse.text()}`,
+    );
+  }
+
   if (withTotp) {
-    await page.waitForURL(/\/admin\/overview$/, { timeout: 10_000 });
+    await page.waitForURL(/\/admin\/overview$/, { timeout: 20_000 });
   } else {
     // First-login flow flips the login view into the enrolment panel.
-    await page.getByLabel('TOTP provisioning URI').waitFor({ timeout: 10_000 });
+    await page.getByLabel('TOTP provisioning URI').waitFor({ timeout: 20_000 });
   }
 }
 
