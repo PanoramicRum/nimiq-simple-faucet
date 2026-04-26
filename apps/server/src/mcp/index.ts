@@ -28,8 +28,8 @@ import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/
 import type { AppContext } from '../context.js';
 import { adminUsers } from '../db/schema.js';
 import {
-  ADMIN_SESSION_COOKIE,
   ADMIN_TOTP_HEADER,
+  adminSessionCookieName,
 } from '../auth/middleware.js';
 import { validateSession, verifyTotp, markSessionTotpStepUp } from '../auth/session.js';
 import { ALL_TOOLS, ADMIN_TOOLS, buildMcpServer, type AdminPrincipal } from './server.js';
@@ -58,7 +58,7 @@ export async function resolveAdminPrincipal(
 ): Promise<AdminPrincipal | null> {
   const cookies = (req as FastifyRequest & { cookies?: Record<string, string | undefined> })
     .cookies;
-  const sessionToken = cookies?.[ADMIN_SESSION_COOKIE];
+  const sessionToken = cookies?.[adminSessionCookieName(ctx.config.dev)];
   if (sessionToken) {
     const session = await validateSession(ctx.db, sessionToken);
     if (session) {

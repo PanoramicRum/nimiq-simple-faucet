@@ -60,7 +60,7 @@ export async function adminClaimsRoutes(app: FastifyInstance, ctx: AppContext): 
 
   app.post(
     '/admin/claims/:id/allow',
-    { bodyLimit: 32 * 1024, preHandler: requireAdminCsrf },
+    { bodyLimit: 32 * 1024, preHandler: requireAdminCsrf(ctx) },
     async (req, reply) => {
       const { id } = req.params as { id: string };
       const [row] = await ctx.db.select().from(claims).where(eq(claims.id, id)).limit(1);
@@ -81,7 +81,7 @@ export async function adminClaimsRoutes(app: FastifyInstance, ctx: AppContext): 
 
   app.post(
     '/admin/claims/:id/deny',
-    { bodyLimit: 32 * 1024, preHandler: requireAdminCsrf },
+    { bodyLimit: 32 * 1024, preHandler: requireAdminCsrf(ctx) },
     async (req, reply) => {
       const { id } = req.params as { id: string };
       const body = (req.body ?? {}) as { reason?: string };

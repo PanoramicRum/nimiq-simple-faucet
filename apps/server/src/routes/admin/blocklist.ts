@@ -28,7 +28,7 @@ export async function adminBlocklistRoutes(app: FastifyInstance, ctx: AppContext
 
   app.post(
     '/admin/blocklist',
-    { bodyLimit: 32 * 1024, preHandler: requireAdminCsrf },
+    { bodyLimit: 32 * 1024, preHandler: requireAdminCsrf(ctx) },
     async (req, reply) => {
       const parsed = CreateBody.safeParse(req.body);
       if (!parsed.success) return reply.code(400).send({ error: 'invalid body' });
@@ -67,7 +67,7 @@ export async function adminBlocklistRoutes(app: FastifyInstance, ctx: AppContext
 
   app.delete(
     '/admin/blocklist/:id',
-    { bodyLimit: 32 * 1024, preHandler: requireAdminCsrf },
+    { bodyLimit: 32 * 1024, preHandler: requireAdminCsrf(ctx) },
     async (req, reply) => {
       const { id } = req.params as { id: string };
       const [row] = await ctx.db.select().from(blocklist).where(eq(blocklist.id, id)).limit(1);
