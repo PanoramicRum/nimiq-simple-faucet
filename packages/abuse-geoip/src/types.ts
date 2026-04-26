@@ -16,6 +16,25 @@ export interface GeoIpResult {
 export interface GeoIpResolver {
   readonly id: string;
   lookup(ip: string): Promise<GeoIpResult>;
+  /**
+   * Optional health snapshot of the underlying GeoIP data. Used by the
+   * server's `/readyz` to surface staleness — a faucet running with a
+   * year-old MaxMind DB silently mis-classifies VPN/hosting ranges.
+   * Returns `null` when the resolver doesn't have a meaningful concept
+   * of "data age" (e.g. an online API like ipinfo).
+   */
+  healthSnapshot?(): GeoIpHealthSnapshot | null;
+}
+
+export interface GeoIpHealthSnapshot {
+  /** Resolver id (matches GeoIpResolver.id). */
+  resolver: string;
+  /** Wall-clock timestamp the local DB file was last modified, ms since epoch. `null` for online resolvers. */
+  dbBuildTimeMs?: number | null;
+  /** Age of the data in milliseconds, computed against `Date.now()`. */
+  ageMs?: number | null;
+  /** True when the resolver considers the data old enough to be inaccurate. */
+  stale: boolean;
 }
 
 export interface GeoIpPolicy {

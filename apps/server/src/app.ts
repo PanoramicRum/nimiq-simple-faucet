@@ -9,7 +9,7 @@ import { sql } from 'drizzle-orm';
 import type { ServerConfig } from './config.js';
 import { openDb } from './db/index.js';
 import { buildDriver } from './drivers.js';
-import { buildPipeline } from './abuse/pipeline.js';
+import { buildPipeline, buildGeoipResolver } from './abuse/pipeline.js';
 import { migrateBlocklistNormalization } from './abuse/blocklistMigrate.js';
 import { EventStream, streamRoute } from './stream.js';
 import { claimRoutes } from './routes/claim.js';
@@ -84,11 +84,17 @@ export async function buildApp(
     );
   }
   const driver = opts.driverOverride ?? (await buildDriver(config));
+  // Build the GeoIP resolver once at boot so /readyz can surface its
+  // staleness — see audit Improvement (Tranche 5). Pass the same
+  // instance into the pipeline rather than letting it build a separate
+  // one, otherwise we'd double the in-memory MMDB cost.
+  const geoipResolver: GeoIpResolver | undefined =
+    opts.geoipResolverOverride ?? buildGeoipResolver(config);
   const pipeline = buildPipeline(
     db,
     config,
     driver,
-    opts.geoipResolverOverride ? { geoipResolver: opts.geoipResolverOverride } : {},
+    geoipResolver ? { geoipResolver } : {},
   );
   const stream = new EventStream();
 
@@ -160,6 +166,26 @@ export async function buildApp(
       }
     } else {
       checks.balance = 'unknown';
+    }
+
+    // Audit Improvement (Tranche 5): surface GeoIP DB staleness so a
+    // forgotten MaxMind / DB-IP refresh shows up as a degraded readyz
+    // signal instead of silently mis-classifying VPN/hosting traffic.
+    // Stale data does NOT flip readyz to 503 — that would cause Kubernetes
+    // to stop routing traffic to a faucet that's still functional, just
+    // with degraded geo accuracy. Operators wire the `checks.geoip` field
+    // into their alerting if they want a louder signal.
+    if (geoipResolver?.healthSnapshot) {
+      const snap = geoipResolver.healthSnapshot();
+      if (snap) {
+        const ageDays =
+          snap.ageMs != null ? Math.floor(snap.ageMs / (24 * 60 * 60 * 1_000)) : null;
+        checks.geoip = snap.stale
+          ? `stale (${snap.resolver}, ${ageDays}d old)`
+          : ageDays != null
+            ? `ok (${snap.resolver}, ${ageDays}d old)`
+            : `ok (${snap.resolver})`;
+      }
     }
 
     if (!allOk) {

@@ -325,6 +325,45 @@ a clear error message).
 - [ ] Backup job cronned and tested (restore-from-backup actually works)
 - [ ] Alerting wired — see [health-observability.md](./health-observability.md)
 - [ ] Secret rotation schedule documented (TOTP, admin password, HMAC secrets, wallet key)
+- [ ] Memory-hygiene mitigations applied (see §6.1) for mainnet deployments holding the signing key in-process
+
+### 6.1 Signer-key memory hygiene
+
+The WASM signer driver decrypts the operator's private key into the
+faucet process's heap and keeps it resident for the lifetime of the
+container. This is operationally simple — no external HSM, no per-tx
+unlock — but it widens the blast radius of a process-level compromise:
+a core dump, a `ptrace`-capable adversary, or a reachable
+`/proc/<pid>/mem` reads the key directly.
+
+The audit's recommended mitigations, in order of cost:
+
+1. **Disable core dumps.** In Compose, `ulimits: { core: { soft: 0,
+   hard: 0 } }` on the `faucet` service. In Kubernetes, set
+   `securityContext.allowPrivilegeEscalation: false` (already on by
+   default in our Helm chart) AND ensure your kernel's
+   `kernel.core_pattern` doesn't pipe core dumps to a writable location.
+2. **Restrict `ptrace`.** Run with the
+   `prevent_privilege_escalation` Pod Security Standard (default in
+   recent Kubernetes) AND `securityContext.seccompProfile.type:
+   RuntimeDefault` (already on by default in our chart) which blocks
+   `ptrace`/`process_vm_readv` from inside the container.
+3. **Read-only root filesystem.** Already on by default
+   (`containerSecurityContext.readOnlyRootFilesystem: true`). Prevents
+   an attacker who gains code execution from staging a debugger binary.
+4. **Switch to the RPC driver for production.** When `FAUCET_SIGNER_DRIVER=rpc`,
+   the private key never enters the faucet process. The Nimiq node
+   holds it (you can additionally run that node in a dedicated namespace
+   with stricter Pod Security). This is the recommended path for
+   non-trivial mainnet balances.
+5. **Rotate the key on a known schedule.** A leaked-but-unused key has
+   a fixed window of validity. Pair this with the audit-log alerting
+   on `account.send` so an unexpected withdrawal is noticed within
+   minutes, not days.
+
+The chart's defaults (read-only rootfs, `runAsNonRoot`, RuntimeDefault
+seccomp, no `allowPrivilegeEscalation`) cover items 1–3 for most
+clusters. Item 4 is a deploy-time choice; item 5 is operational.
 
 ---
 

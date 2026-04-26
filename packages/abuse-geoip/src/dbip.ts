@@ -1,6 +1,7 @@
+import { statSync } from 'node:fs';
 import { open as openMmdb } from 'maxmind';
 import { createRequire } from 'node:module';
-import type { GeoIpResolver, GeoIpResult } from './types.js';
+import type { GeoIpHealthSnapshot, GeoIpResolver, GeoIpResult } from './types.js';
 
 /** DB-IP Lite country MMDB record shape. */
 interface DbipCountryRecord {
@@ -27,11 +28,19 @@ type AnyReader = Awaited<ReturnType<typeof openMmdb<any>>>;
  * Works out of the box — no license key, no download step, no configuration.
  * Data is CC BY 4.0 (https://db-ip.com/db/lite.php).
  */
+// DB-IP Lite ships monthly. The bundled package version pins a specific
+// snapshot, so the right "max age" check is "is the package itself
+// recent enough", which an operator updates via dependabot. We surface
+// the file mtime anyway so /readyz shows something concrete; flag stale
+// at 90 days since DB-IP updates monthly and we want a generous buffer.
+const DBIP_MAX_AGE_MS = 90 * 24 * 60 * 60 * 1_000;
+
 export class DbipResolver implements GeoIpResolver {
   readonly id = 'dbip';
   #countryReader: AnyReader | null = null;
   #asnReader: AnyReader | null = null;
   #ready: Promise<void>;
+  #countryDbPath: string | null = null;
 
   constructor() {
     this.#ready = this.#load();
@@ -45,6 +54,7 @@ export class DbipResolver implements GeoIpResolver {
     const asnDbPath = require.resolve(
       '@ip-location-db/dbip-asn-mmdb/dbip-asn.mmdb',
     );
+    this.#countryDbPath = countryDbPath;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     this.#countryReader = await openMmdb<any>(countryDbPath, {
       cache: { max: 6000 },
@@ -53,6 +63,26 @@ export class DbipResolver implements GeoIpResolver {
     this.#asnReader = await openMmdb<any>(asnDbPath, {
       cache: { max: 6000 },
     });
+  }
+
+  // See MaxMind resolver; same intent.
+  healthSnapshot(): GeoIpHealthSnapshot {
+    if (!this.#countryDbPath) {
+      return { resolver: this.id, stale: true };
+    }
+    let dbBuildTimeMs: number | null = null;
+    try {
+      dbBuildTimeMs = statSync(this.#countryDbPath).mtimeMs;
+    } catch {
+      return { resolver: this.id, stale: true };
+    }
+    const ageMs = Date.now() - dbBuildTimeMs;
+    return {
+      resolver: this.id,
+      dbBuildTimeMs,
+      ageMs,
+      stale: ageMs > DBIP_MAX_AGE_MS,
+    };
   }
 
   async lookup(ip: string): Promise<GeoIpResult> {
