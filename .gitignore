@@ -17,6 +17,8 @@ pnpm-lock.yaml.backup
 .dart_tool
 build
 target
+# Library packages should not commit pubspec.lock (per Dart pub docs).
+packages/sdk-flutter/pubspec.lock
 
 # Test artifacts
 test-results/

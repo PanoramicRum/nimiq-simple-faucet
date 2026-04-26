@@ -187,6 +187,69 @@ func TestRequestChallengeAndSolve(t *testing.T) {
 	}
 }
 
+// Cross-SDK fixture: the canonical bytes + signature here are generated
+// from packages/core/dist/index.js#canonicalizeHostContext (the
+// server's source-of-truth implementation) and replayed by every SDK to
+// prove byte-for-byte parity (closes audit Improvement #104).
+//
+// If you change CANONICAL_FIELDS or canonicalizeHostContext in the
+// core package, regenerate the fixture by running the snippet at the
+// top of packages/sdk-go/hmac.go's docstring and update every SDK's
+// copy of these constants — then rerun the cross-SDK tests.
+const fixtureCanonical = `[["uid","user-42"],["cookieHash","a1b2c3"],["accountAgeDays",365],["kycLevel","phone"],["tags",["a-tag","m-tag","z-tag"]]]`
+const fixtureSignature = "acme-corp:2ro3gqXVYo9YQf4biq3VQZP9nS2M9LItJESSuXfqxow="
+
+func TestSignHostContextMatchesServerFixture(t *testing.T) {
+	uid := "user-42"
+	cookieHash := "a1b2c3"
+	var ageDays float64 = 365
+	kyc := "phone"
+	ctx := HostContext{
+		UID:            &uid,
+		CookieHash:     &cookieHash,
+		AccountAgeDays: &ageDays,
+		KYCLevel:       &kyc,
+		// Tags supplied UNSORTED on purpose — the canonicalizer must sort.
+		Tags: []string{"z-tag", "a-tag", "m-tag"},
+	}
+	canonical, err := canonicalizeHostContext(&ctx)
+	if err != nil {
+		t.Fatalf("canonicalize failed: %v", err)
+	}
+	if canonical != fixtureCanonical {
+		t.Fatalf("canonical mismatch:\n got=%s\nwant=%s", canonical, fixtureCanonical)
+	}
+	signed, err := SignHostContext(ctx, "acme-corp", "super-secret-hmac-key-for-testing")
+	if err != nil {
+		t.Fatalf("sign failed: %v", err)
+	}
+	if signed.Signature == nil || *signed.Signature != fixtureSignature {
+		got := "<nil>"
+		if signed.Signature != nil {
+			got = *signed.Signature
+		}
+		t.Fatalf("signature mismatch:\n got=%s\nwant=%s", got, fixtureSignature)
+	}
+}
+
+func TestSignHostContextDoesNotMutateInput(t *testing.T) {
+	uid := "user-42"
+	ctx := HostContext{UID: &uid, Tags: []string{"b", "a"}}
+	originalTags := append([]string(nil), ctx.Tags...)
+	_, err := SignHostContext(ctx, "id", "secret")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for i, v := range originalTags {
+		if ctx.Tags[i] != v {
+			t.Fatalf("input mutated: tags[%d] = %q, want %q", i, ctx.Tags[i], v)
+		}
+	}
+	if ctx.Signature != nil {
+		t.Fatalf("input mutated: ctx.Signature became %v", *ctx.Signature)
+	}
+}
+
 func TestWaitForConfirmationTimesOut(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		_ = json.NewEncoder(w).Encode(ClaimResponse{ID: "x", Status: "broadcast"})
