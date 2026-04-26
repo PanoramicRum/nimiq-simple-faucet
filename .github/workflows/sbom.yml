@@ -25,20 +25,32 @@ jobs:
       contents: write
       packages: read
     steps:
-      - uses: actions/checkout@v4.2.2
+      # Audit finding #007 / issue #93: SHA-pin every action so a tag
+      # rewrite at the upstream cannot silently swap the binary.
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
 
+      # Audit finding #014 / issue #100: validate workflow_dispatch tag
+      # input — same SemVer regex used by release.yml. We don't have a
+      # checkout-with-history here so we skip the rev-parse check; SBOM
+      # generation against a non-existent image:tag fails loudly anyway.
       - name: Resolve tag
         id: resolve
         shell: bash
         run: |
+          set -euo pipefail
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "tag=${{ inputs.tag }}" >> "$GITHUB_OUTPUT"
+            tag="${{ inputs.tag }}"
+            if ! [[ "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[A-Za-z0-9.-]+)?$ ]]; then
+              echo "::error::Tag '$tag' does not match the SemVer pattern vX.Y.Z[-prerelease]"
+              exit 1
+            fi
+            echo "tag=$tag" >> "$GITHUB_OUTPUT"
           else
             echo "tag=${{ github.event.release.tag_name }}" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Generate SBOM for container image
-        uses: anchore/sbom-action@v0.24.0
+        uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 # v0.24.0
         with:
           image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.resolve.outputs.tag }}
           format: cyclonedx-json
@@ -54,11 +66,11 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v4.2.2
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-node@v4.1.0
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version: 22
 
@@ -83,14 +95,20 @@ jobs:
         id: resolve
         shell: bash
         run: |
+          set -euo pipefail
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "tag=${{ inputs.tag }}" >> "$GITHUB_OUTPUT"
+            tag="${{ inputs.tag }}"
+            if ! [[ "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[A-Za-z0-9.-]+)?$ ]]; then
+              echo "::error::Tag '$tag' does not match the SemVer pattern vX.Y.Z[-prerelease]"
+              exit 1
+            fi
+            echo "tag=$tag" >> "$GITHUB_OUTPUT"
           else
             echo "tag=${{ github.event.release.tag_name }}" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Upload SBOM to release
-        uses: softprops/action-gh-release@v3.0.0
+        uses: softprops/action-gh-release@b4309332981a82ec1c5618f44dd2e27cc8bfbfda # v3
         with:
           tag_name: ${{ steps.resolve.outputs.tag }}
           files: sbom-workspace.cyclonedx.json
