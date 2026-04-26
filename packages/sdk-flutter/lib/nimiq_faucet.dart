@@ -5,5 +5,5 @@ library nimiq_faucet;
 
 export 'src/client.dart';
 export 'src/hashcash.dart' show solveHashcash;
-export 'src/hmac.dart' show signHmac, canonicalString;
+export 'src/hmac.dart' show signHmac, canonicalString, signHostContext;
 export 'src/types.dart';

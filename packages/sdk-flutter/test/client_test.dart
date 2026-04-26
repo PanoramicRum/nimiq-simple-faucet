@@ -56,6 +56,27 @@ void main() {
       final got = signHmac('secret', 'data');
       expect(got, '1b2c16b75bd2a870c114153ccda5bcfca63314bc722fa160d690de133ccbb9db');
     });
+
+    // Cross-SDK fixture: canonical bytes + signature here come from
+    // packages/core/dist/index.js#canonicalizeHostContext (the server's
+    // source-of-truth) and are replayed by every SDK to prove byte-for-
+    // byte parity (closes audit Improvement #104). Same fixture as the
+    // Go test in packages/sdk-go/faucet_test.go.
+    test('signHostContext matches the server fixture', () {
+      const ctx = HostContext(
+        uid: 'user-42',
+        cookieHash: 'a1b2c3',
+        accountAgeDays: 365,
+        kycLevel: 'phone',
+        // Tags supplied UNSORTED on purpose — the canonicalizer must sort.
+        tags: ['z-tag', 'a-tag', 'm-tag'],
+      );
+      final signed = signHostContext(ctx, 'acme-corp', 'super-secret-hmac-key-for-testing');
+      expect(
+        signed.signature,
+        'acme-corp:2ro3gqXVYo9YQf4biq3VQZP9nS2M9LItJESSuXfqxow=',
+      );
+    });
   });
 
   group('FaucetException', () {

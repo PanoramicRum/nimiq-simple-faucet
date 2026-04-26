@@ -366,8 +366,11 @@ export async function claimRoutes(app: FastifyInstance, ctx: AppContext): Promis
     ctx.stream.publish({ type: 'claim.broadcast', id, address, txId });
 
     // Confirm asynchronously; don't block the response.
+    // Issue #84: pass the configured timeout so the driver default
+    // (60 s) doesn't prematurely flip a still-valid tx to `timeout`
+    // when the network is slow.
     ctx.driver
-      .waitForConfirmation(txId)
+      .waitForConfirmation(txId, ctx.config.confirmationTimeoutMs)
       .then(async () => {
         await ctx.db.update(claims).set({ status: 'confirmed' }).where(eq(claims.id, id));
         ctx.stream.publish({ type: 'claim.confirmed', id, address, txId });

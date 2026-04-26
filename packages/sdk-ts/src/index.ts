@@ -314,13 +314,33 @@ export { ClaimManager, type ClaimState, type FaucetClaimClient } from './claimMa
 export { StatusPoller, type StatusState, type FaucetStatusClient } from './statusPoller.js';
 export { StreamManager, type FaucetStreamClient } from './streamManager.js';
 
+/**
+ * Audit finding #018 / issue #98: the integrator HMAC nonce is anti-replay
+ * protection — the server rejects nonces it has seen before, so an
+ * attacker who can predict the next nonce can pre-register it and
+ * deny-of-service the legitimate request, or replay an in-flight one.
+ * `Math.random` is not cryptographically random; the previous fallback
+ * preserved request shape on legacy embedded runtimes but quietly
+ * weakened the security property. Refuse to mint a nonce when WebCrypto
+ * is unavailable so the integrator gets a clear error at the call site
+ * rather than a silent downgrade.
+ *
+ * Every supported runtime — Node 22+, modern browsers, Cloudflare
+ * Workers, Deno, Bun — exposes `globalThis.crypto.getRandomValues`. If
+ * a deployment hits this throw, the runtime is older than the SDK's
+ * stated support floor (see packages/sdk-ts/package.json#engines).
+ */
 function randomNonce(): string {
-  const buf = new Uint8Array(16);
   const c = globalThis.crypto;
-  if (c && typeof c.getRandomValues === 'function') {
-    c.getRandomValues(buf);
-  } else {
-    for (let i = 0; i < buf.length; i++) buf[i] = Math.floor(Math.random() * 256);
+  if (!c || typeof c.getRandomValues !== 'function') {
+    throw new Error(
+      'sdk-ts: WebCrypto getRandomValues is unavailable. The integrator ' +
+        'HMAC nonce must be cryptographically random; refusing to fall ' +
+        'back to Math.random. Use Node 22+, a recent browser, or a ' +
+        'WebCrypto-capable Worker runtime.',
+    );
   }
+  const buf = new Uint8Array(16);
+  c.getRandomValues(buf);
   return toHex(buf);
 }
