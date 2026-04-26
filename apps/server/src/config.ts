@@ -158,6 +158,20 @@ export const ServerConfigSchema = z.object({
   metricsEnabled: z.coerce.boolean().default(true),
   reconcileEnabled: z.coerce.boolean().default(true),
   reconcileIntervalMs: z.coerce.number().int().min(10_000).default(5 * 60_000),
+
+  /**
+   * How long the driver waits for a broadcast tx to confirm before
+   * marking the claim `timeout`. Issue #84: the previous default of
+   * 60 s was shorter than Albatross's 120-block validity window
+   * (~120 s at 1-second block time), so under network slowdowns the
+   * faucet would prematurely flip a still-valid in-flight tx to
+   * `timeout` even though it eventually got included.
+   *
+   * 180 s gives a full validity window plus a small finality buffer;
+   * operators on a faster/slower network bake their own value via
+   * `FAUCET_CONFIRMATION_TIMEOUT_MS`. Lower bound 30 s for tests.
+   */
+  confirmationTimeoutMs: z.coerce.number().int().min(30_000).default(180_000),
 });
 
 export type ServerConfig = z.infer<typeof ServerConfigSchema>;
@@ -233,6 +247,7 @@ const ENV_KEYS: Record<string, string> = {
   metricsEnabled: 'FAUCET_METRICS_ENABLED',
   reconcileEnabled: 'FAUCET_RECONCILE_ENABLED',
   reconcileIntervalMs: 'FAUCET_RECONCILE_INTERVAL_MS',
+  confirmationTimeoutMs: 'FAUCET_CONFIRMATION_TIMEOUT_MS',
 };
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): ServerConfig {

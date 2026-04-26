@@ -234,7 +234,11 @@ export class NimiqRpcDriver implements CurrencyDriver {
     return hash as TxId;
   }
 
-  async waitForConfirmation(tx: TxId, timeoutMs = 60_000): Promise<void> {
+  // Issue #84: default 180 s ≈ Albatross's 120-block validity window
+  // (~120 s @ 1 s blocks) + a small finality buffer. The previous 60 s
+  // default flipped still-valid in-flight txs to `timeout` whenever the
+  // network slowed. Callers can still pass a shorter value for tests.
+  async waitForConfirmation(tx: TxId, timeoutMs = 180_000): Promise<void> {
     if (this.#readyPromise) await this.#readyPromise;
     const deadline = Date.now() + timeoutMs;
     while (Date.now() < deadline) {
