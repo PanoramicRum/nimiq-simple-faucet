@@ -73,6 +73,8 @@ docker run -d --name nimiq-faucet -p 8080:8080 -v faucet-data:/data \
 
 Boots a self-contained WASM faucet. The WASM client reaches TestAlbatross consensus within ~15 seconds (fixed in v1.1.4); `/healthz` and `/admin` are reachable immediately (v1.1.0). For a full end-to-end demo with a local RPC node, use the compose path above.
 
+> ⚠️ **Known issue (#119) — WASM signer panics intermittently.** `@nimiq/core` 2.4.0 panics with `'time not implemented on this platform'` ~30% of the time during the testnet handshake. The faucet HTTP server stays up in the surviving 70%, but the signer is unusable until the panic is investigated upstream. **For anything beyond a smoke test, use the RPC driver:** `FAUCET_SIGNER_DRIVER=rpc` with the `local-node` profile in the compose path. Track the upstream investigation at [issue #119](https://github.com/PanoramicRum/nimiq-simple-faucet/issues/119); a draft report ready to file against `nimiq/core-rs-albatross` lives in [`docs/quality/wasm-time-panic-upstream-report.md`](docs/quality/wasm-time-panic-upstream-report.md).
+
 ## Integrate into your app
 
 | Framework     | Package                           | One-liner                                                  |

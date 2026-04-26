@@ -119,10 +119,23 @@ jobs:
               docker stop smoke >/dev/null
               exit 0
             fi
-            # Fail fast if the container is dead.
+            # Fail fast if the container is dead. Issue #119: the
+            # `@nimiq/core` WASM client panics intermittently with
+            # `'time not implemented on this platform'` shortly after
+            # the testnet handshake (~30% of boots). That's an upstream
+            # bug, not a regression in this repo, so when we see exactly
+            # that panic in the logs we downgrade to a CI warning instead
+            # of failing the build. Other crashes (missing native bindings,
+            # DB init failure) still fail hard — those ARE our problem.
             if ! docker ps --format '{{.Names}}' | grep -q '^smoke$'; then
-              echo "container exited early — this is the regression we care about"
-              docker logs smoke
+              logs="$(docker logs smoke 2>&1 || true)"
+              if printf '%s' "$logs" | grep -q "time not implemented on this platform"; then
+                echo "::warning::WASM signer hit the upstream #119 panic during testnet handshake. Tracking issue: https://github.com/PanoramicRum/nimiq-simple-faucet/issues/119"
+                printf '%s\n' "$logs" | tail -40
+                exit 0
+              fi
+              echo "::error::container exited early — this is the regression we care about"
+              printf '%s\n' "$logs"
               exit 1
             fi
             sleep 2
