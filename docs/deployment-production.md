@@ -31,12 +31,22 @@ transactions; you pick *where the private key lives*.
 
 | Mode | `FAUCET_SIGNER_DRIVER` | Key location | When to use |
 |------|------------------------|--------------|-------------|
-| WASM | `wasm` | In the faucet process, from `FAUCET_PRIVATE_KEY` env var (and encrypted to disk at `/data/faucet.key` via `FAUCET_KEY_PASSPHRASE`) | Default. Simplest. Faucet connects directly to testnet/mainnet seed peers. |
-| RPC | `rpc` | In a separate `core-rs-albatross` node with the wallet pre-unlocked | You already run a Nimiq node and want to centralise key custody. |
+| RPC  | `rpc`  | In a separate `core-rs-albatross` node with the wallet pre-unlocked | **Recommended for production.** Centralises key custody; the faucet process never holds the key. |
+| WASM | `wasm` | In the faucet process, from `FAUCET_PRIVATE_KEY` env var (and encrypted to disk at `/data/faucet.key` via `FAUCET_KEY_PASSPHRASE`) | Simplest, smoke tests / local trials only — see the WASM panic note below. |
 
 **For either mode**, the address is `FAUCET_WALLET_ADDRESS`. The faucet
 will refuse to start if this is unset or if it can't produce the same
 address from the supplied key.
+
+> ⚠️ **WASM panic (#119).** `@nimiq/core` 2.4.0's WASM client panics
+> with `'time not implemented on this platform'` ~30% of the time
+> during the testnet handshake. The faucet HTTP server stays up in the
+> surviving 70%, but the signer is unusable until the panic is
+> investigated upstream. We recommend `FAUCET_SIGNER_DRIVER=rpc` for
+> production deployments and the WASM driver only for local smoke
+> tests. See [issue #119](https://github.com/PanoramicRum/nimiq-simple-faucet/issues/119)
+> and [`docs/quality/wasm-time-panic-upstream-report.md`](./quality/wasm-time-panic-upstream-report.md)
+> — a draft upstream report ready to file against `nimiq/core-rs-albatross`.
 
 > **RPC security note:** When using `FAUCET_SIGNER_DRIVER=rpc`, the faucet
 > sends the private key and wallet passphrase to the Nimiq node via
