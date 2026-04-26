@@ -134,6 +134,36 @@ jobs:
           echo "WARN: image boots but did not reach healthz in 120s (likely flaky seed-peer sync)."
           exit 0
 
+  examples-build:
+    # Issue #115 / #116: prove that `docker build` against each example
+    # Dockerfile actually completes from the repo root. The two original
+    # examples used a deps-only-cache pattern that silently broke against
+    # the workspace lockfile, and the root .dockerignore excluded
+    # `examples/` so plain builds couldn't find their own context.
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+      - uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4
+      - name: Build vue-claim-page example image
+        uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # v7
+        with:
+          context: .
+          file: examples/vue-claim-page/Dockerfile
+          push: false
+          load: false
+          platforms: linux/amd64
+          tags: example-vue-claim:ci
+      - name: Build nextjs-claim-page example image
+        uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # v7
+        with:
+          context: .
+          file: examples/nextjs-claim-page/Dockerfile
+          push: false
+          load: false
+          platforms: linux/amd64
+          tags: example-nextjs-claim:ci
+
   compose-smoke:
     runs-on: ubuntu-latest
     needs: docker
