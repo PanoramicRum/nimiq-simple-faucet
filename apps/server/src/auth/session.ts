@@ -141,6 +141,14 @@ export function totpUri(secret: string, account: string, issuer = 'NimiqFaucet')
   return authenticator.keyuri(account, issuer, secret);
 }
 
+// Accept the previous, current, and next 30-second TOTP step. Without this,
+// `authenticator.check()` defaults to `window: 0` — zero clock-drift
+// tolerance — which both flakes CI under load (the test generates a code in
+// step N, the server verifies in step N+1 → 401) and rejects legitimate
+// users whose phone clock is a few seconds off. ±1 step is the standard
+// otplib recommendation for real-world authenticator apps.
+authenticator.options = { window: 1 };
+
 /** Timing-safe TOTP code verification via otplib (accepts prev/next window). */
 export function verifyTotp(secret: string, code: string): boolean {
   const normalized = code.replace(/\s+/g, '');
