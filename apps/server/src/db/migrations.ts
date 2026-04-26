@@ -37,7 +37,18 @@ export function migrationStatements(dialect: Dialect): string[] {
     'CREATE INDEX IF NOT EXISTS idx_claims_created_at ON claims(created_at DESC)',
     'CREATE INDEX IF NOT EXISTS idx_claims_address ON claims(address)',
     'CREATE INDEX IF NOT EXISTS idx_claims_ip ON claims(ip)',
-    'CREATE UNIQUE INDEX IF NOT EXISTS idx_claims_idempotency ON claims(idempotency_key) WHERE idempotency_key IS NOT NULL',
+    // #86: idempotency was previously keyed by `idempotency_key` alone,
+    // letting callers across unrelated integrators collide on the same
+    // string and read each other's claim status. Drop the global index
+    // and replace with a composite that's only enforced when an
+    // integrator is identified — `(integrator_id, idempotency_key)` with
+    // a partial-index predicate excluding nulls. The unauthenticated
+    // path scopes idempotency app-side by `(idempotency_key, address)`
+    // (see apps/server/src/routes/claim.ts).
+    'DROP INDEX IF EXISTS idx_claims_idempotency',
+    `CREATE UNIQUE INDEX IF NOT EXISTS idx_claims_idempotency_integrator
+      ON claims(integrator_id, idempotency_key)
+      WHERE idempotency_key IS NOT NULL AND integrator_id IS NOT NULL`,
 
     // --- blocklist ---
     `CREATE TABLE IF NOT EXISTS blocklist (
