@@ -22,3 +22,13 @@ export function readCookie(name: string): string | null {
   }
   return null;
 }
+
+/**
+ * In production the server emits cookies with the `__Host-` prefix
+ * (audit finding #017 / issue #97); in dev (no Secure) it can't, so the
+ * unprefixed name is used. Try both — the prefixed name wins because a
+ * production server cannot have the unprefixed cookie set anyway.
+ */
+export function readAdminCookie(baseName: string): string | null {
+  return readCookie(`__Host-${baseName}`) ?? readCookie(baseName);
+}

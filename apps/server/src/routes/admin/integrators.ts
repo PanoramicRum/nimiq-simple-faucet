@@ -39,7 +39,7 @@ export async function adminIntegratorsRoutes(
     // step-up so a stolen session cookie alone can't mint/rotate/revoke
     // an integrator's API key + HMAC secret. Matches the policy already
     // used by /admin/account (wallet send, rotate-key).
-    { bodyLimit: 32 * 1024, preHandler: [requireAdminCsrf, requireTotpStepUp(ctx)] },
+    { bodyLimit: 32 * 1024, preHandler: [requireAdminCsrf(ctx), requireTotpStepUp(ctx)] },
     async (req, reply) => {
       const parsed = CreateBody.safeParse(req.body);
       if (!parsed.success) return reply.code(400).send({ error: 'invalid body' });
@@ -73,7 +73,7 @@ export async function adminIntegratorsRoutes(
     // step-up so a stolen session cookie alone can't mint/rotate/revoke
     // an integrator's API key + HMAC secret. Matches the policy already
     // used by /admin/account (wallet send, rotate-key).
-    { bodyLimit: 32 * 1024, preHandler: [requireAdminCsrf, requireTotpStepUp(ctx)] },
+    { bodyLimit: 32 * 1024, preHandler: [requireAdminCsrf(ctx), requireTotpStepUp(ctx)] },
     async (req, reply) => {
       const { id } = req.params as { id: string };
       const [row] = await ctx.db.select().from(integratorKeys).where(eq(integratorKeys.id, id)).limit(1);
@@ -106,7 +106,7 @@ export async function adminIntegratorsRoutes(
     // step-up so a stolen session cookie alone can't mint/rotate/revoke
     // an integrator's API key + HMAC secret. Matches the policy already
     // used by /admin/account (wallet send, rotate-key).
-    { bodyLimit: 32 * 1024, preHandler: [requireAdminCsrf, requireTotpStepUp(ctx)] },
+    { bodyLimit: 32 * 1024, preHandler: [requireAdminCsrf(ctx), requireTotpStepUp(ctx)] },
     async (req, reply) => {
       const { id } = req.params as { id: string };
       const [row] = await ctx.db.select().from(integratorKeys).where(eq(integratorKeys.id, id)).limit(1);

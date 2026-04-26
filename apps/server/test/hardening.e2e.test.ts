@@ -109,6 +109,28 @@ describe('hardening', () => {
     ).rejects.toThrow(/Wildcard CORS/i);
   });
 
+  it('CSP connect-src is narrowed to known providers (no broad wss:/https:)', async () => {
+    // Audit finding #024 / issue #106: previously allowed `wss:` and
+    // `https:` schemes in connect-src — any compromised script could
+    // exfiltrate to any TLS endpoint. Narrowed to 'self' + captcha
+    // verification hosts only.
+    const config = baseConfig(tmp, { dev: true, tlsRequired: false });
+    const built = await buildApp(config, { driverOverride: new StubDriver(), quietLogs: true });
+    apps.push(built.app);
+    await built.app.ready();
+    const res = await built.app.inject({ method: 'GET', url: '/healthz' });
+    const csp = String(res.headers['content-security-policy'] ?? '');
+    const connectSrc =
+      csp.split(';').map((s) => s.trim()).find((s) => s.startsWith('connect-src')) ?? '';
+    expect(connectSrc).toMatch(/'self'/);
+    // Must not contain a bare `wss:` / `https:` allow-all.
+    expect(connectSrc).not.toMatch(/\bwss:(?![/])/);
+    expect(connectSrc).not.toMatch(/\bhttps:(?!\/\/)/);
+    // Captcha endpoints still allowed in the relaxed-for-ui profile.
+    expect(connectSrc).toMatch(/challenges\.cloudflare\.com/);
+    expect(connectSrc).toMatch(/hcaptcha\.com/);
+  });
+
   it('POST /v1/claim with 20 KB body returns 413', async () => {
     const config = baseConfig(tmp, { dev: true, tlsRequired: false });
     const built = await buildApp(config, { driverOverride: new StubDriver(), quietLogs: true });

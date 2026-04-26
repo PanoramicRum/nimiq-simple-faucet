@@ -26,7 +26,15 @@ interface CspDirectives {
 /** CSP directives per profile. `relaxed-for-ui` is default to let Turnstile + hCaptcha iframes load.
  *  FCaptcha's widget is served from the operator's own FCaptcha host (typically same-origin or
  *  reverse-proxied), so no third-party allowances are hardcoded for it — operators who run FCaptcha
- *  on a separate origin can add it to CSP via a reverse-proxy `script-src` allowlist. */
+ *  on a separate origin can add it to CSP via a reverse-proxy `script-src` allowlist.
+ *
+ *  Audit finding #024 / issue #106: previously `connect-src` allowed the
+ *  open-ended schemes `wss:` and `https:`, which let any compromised
+ *  script in the served bundle exfiltrate to any TLS endpoint. Narrowed
+ *  to `'self'` + the specific captcha verification endpoints we ship.
+ *  Operators on a different captcha provider should override the
+ *  `helmetCsp` profile to `off` and emit their own CSP via a reverse
+ *  proxy, OR fork this list. */
 function cspDirectives(profile: CspProfile): CspDirectives | false {
   if (profile === 'off') return false;
   const base: CspDirectives = {
@@ -34,7 +42,7 @@ function cspDirectives(profile: CspProfile): CspDirectives | false {
     'script-src': ["'self'"],
     'style-src': ["'self'", "'unsafe-inline'"],
     'img-src': ["'self'", 'data:'],
-    'connect-src': ["'self'", 'wss:', 'https:'],
+    'connect-src': ["'self'"],
     'frame-ancestors': ["'none'"],
     'base-uri': ["'self'"],
     'form-action': ["'self'"],
@@ -55,9 +63,9 @@ function cspDirectives(profile: CspProfile): CspDirectives | false {
     ],
     'connect-src': [
       "'self'",
-      'wss:',
-      'https:',
+      // Cloudflare Turnstile verification + telemetry.
       'https://challenges.cloudflare.com',
+      // hCaptcha verification (apex + subdomains used by the widget).
       'https://hcaptcha.com',
       'https://*.hcaptcha.com',
     ],

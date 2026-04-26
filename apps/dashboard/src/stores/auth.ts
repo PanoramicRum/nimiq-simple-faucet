@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
 import { api, ApiError } from '../lib/api';
-import { readCookie } from '../lib/cookie';
+import { readAdminCookie } from '../lib/cookie';
 
 export interface LoginResult {
   ok: true;
@@ -30,7 +30,7 @@ interface OverviewProbe {
  * which 401s when the session is missing/expired.
  */
 export const useAuthStore = defineStore('auth', () => {
-  const csrfPresent = ref<boolean>(readCookie('faucet_csrf') !== null);
+  const csrfPresent = ref<boolean>(readAdminCookie('faucet_csrf') !== null);
   const probed = ref<boolean>(false);
   const sessionValid = ref<boolean>(false);
   const user = ref<{ userId: string } | null>(null);
@@ -41,11 +41,11 @@ export const useAuthStore = defineStore('auth', () => {
   });
 
   function csrfToken(): string | null {
-    return readCookie('faucet_csrf');
+    return readAdminCookie('faucet_csrf');
   }
 
   function refreshCsrfFlag(): void {
-    csrfPresent.value = readCookie('faucet_csrf') !== null;
+    csrfPresent.value = readAdminCookie('faucet_csrf') !== null;
   }
 
   async function login(password: string, totp?: string): Promise<LoginResult> {

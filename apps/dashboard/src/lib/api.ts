@@ -9,7 +9,7 @@
  * Deliberately minimal — no global error toast, each caller decides how to
  * render the `ApiError`.
  */
-import { readCookie } from './cookie';
+import { readAdminCookie } from './cookie';
 
 export interface ApiOptions {
   totp?: string;
@@ -58,7 +58,7 @@ async function request<T>(
     headers['content-type'] = 'application/json';
   }
   if (isMutation) {
-    const csrf = readCookie('faucet_csrf');
+    const csrf = readAdminCookie('faucet_csrf');
     if (csrf) headers['x-faucet-csrf'] = csrf;
   }
   if (opts.totp) {

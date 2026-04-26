@@ -36,7 +36,7 @@ export async function adminConfigRoutes(app: FastifyInstance, ctx: AppContext): 
 
   app.patch(
     '/admin/config',
-    { bodyLimit: 32 * 1024, preHandler: requireAdminCsrf },
+    { bodyLimit: 32 * 1024, preHandler: requireAdminCsrf(ctx) },
     async (req, reply) => {
       const parsed = PatchBody.safeParse(req.body);
       if (!parsed.success) {

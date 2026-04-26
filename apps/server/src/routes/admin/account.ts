@@ -44,7 +44,7 @@ export async function adminAccountRoutes(app: FastifyInstance, ctx: AppContext):
 
   app.post(
     '/admin/account/send',
-    { bodyLimit: 32 * 1024, preHandler: [requireAdminCsrf, requireTotpStepUp(ctx)] },
+    { bodyLimit: 32 * 1024, preHandler: [requireAdminCsrf(ctx), requireTotpStepUp(ctx)] },
     async (req, reply) => {
       const parsed = SendBody.safeParse(req.body);
       if (!parsed.success) return reply.code(400).send({ error: 'invalid body' });
@@ -70,7 +70,7 @@ export async function adminAccountRoutes(app: FastifyInstance, ctx: AppContext):
 
   app.post(
     '/admin/account/rotate-key',
-    { bodyLimit: 32 * 1024, preHandler: [requireAdminCsrf, requireTotpStepUp(ctx)] },
+    { bodyLimit: 32 * 1024, preHandler: [requireAdminCsrf(ctx), requireTotpStepUp(ctx)] },
     async (req, reply) => {
       // If the deployment uses an encrypted keyring, rotate the at-rest blob
       // by re-encrypting a freshly minted plaintext. For RPC signer setups

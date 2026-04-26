@@ -474,9 +474,9 @@ function registerOnce(): void {
   registry.registerComponent('securitySchemes', 'adminSession', {
     type: 'apiKey',
     in: 'cookie',
-    name: 'faucet_session',
+    name: '__Host-faucet_session',
     description:
-      'Session cookie issued by POST /admin/auth/login. Mutating calls also require the `X-Faucet-Csrf` double-submit header matching the `faucet_csrf` cookie.',
+      'Session cookie issued by POST /admin/auth/login. The `__Host-` prefix binds the cookie to the exact host (Secure, Path=/, no Domain). Mutating calls also require the `X-Faucet-Csrf` double-submit header matching the `__Host-faucet_csrf` cookie. In dev mode (no HTTPS) the unprefixed names `faucet_session` / `faucet_csrf` are used because the prefix requires Secure.',
   });
   registry.registerComponent('securitySchemes', 'adminMcpToken', {
     type: 'apiKey',

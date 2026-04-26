@@ -27,8 +27,8 @@ import {
   ipCounters,
 } from '../../db/schema.js';
 import {
-  ADMIN_CSRF_COOKIE,
-  ADMIN_SESSION_COOKIE,
+  adminCsrfCookieName,
+  adminSessionCookieName,
 } from '../../auth/middleware.js';
 import {
   hashPassword,
@@ -155,7 +155,7 @@ export async function adminAuthRoutes(app: FastifyInstance, ctx: AppContext): Pr
 
   app.post('/admin/auth/logout', async (req, reply) => {
     const cookies = (req as { cookies?: Record<string, string | undefined> }).cookies;
-    const token = cookies?.[ADMIN_SESSION_COOKIE];
+    const token = cookies?.[adminSessionCookieName(ctx.config.dev)];
     if (token) {
       await revokeSession(ctx.db, token);
     }
@@ -206,16 +206,20 @@ function setAuthCookies(
   dev: boolean,
 ): void {
   const secure = !dev;
-  // Admin session cookie — HttpOnly, Path=/admin so it isn't sent on /v1/*.
-  reply.setCookie(ADMIN_SESSION_COOKIE, token, {
-    path: '/admin',
+  // Admin session cookie — HttpOnly + SameSite=strict + (in prod) `__Host-`
+  // prefix. The prefix forces Path=/, so the cookie *is* sent to /v1/*,
+  // but /v1/* never reads `req.adminUser` so this has no auth effect.
+  // The original Path=/admin scoping is dropped because `__Host-` cannot
+  // coexist with a non-root Path (see audit finding #017 / issue #97).
+  reply.setCookie(adminSessionCookieName(dev), token, {
+    path: '/',
     httpOnly: true,
     sameSite: 'strict',
     secure,
   });
   // Double-submit CSRF token — readable by the dashboard JS.
   const csrf = randomBytes(24).toString('base64url');
-  reply.setCookie(ADMIN_CSRF_COOKIE, csrf, {
+  reply.setCookie(adminCsrfCookieName(dev), csrf, {
     path: '/',
     httpOnly: false,
     sameSite: 'strict',
@@ -225,6 +229,16 @@ function setAuthCookies(
 
 function clearAuthCookies(reply: import('fastify').FastifyReply, dev: boolean): void {
   const secure = !dev;
-  reply.clearCookie(ADMIN_SESSION_COOKIE, { path: '/admin', httpOnly: true, sameSite: 'strict', secure });
-  reply.clearCookie(ADMIN_CSRF_COOKIE, { path: '/', httpOnly: false, sameSite: 'strict', secure });
+  reply.clearCookie(adminSessionCookieName(dev), {
+    path: '/',
+    httpOnly: true,
+    sameSite: 'strict',
+    secure,
+  });
+  reply.clearCookie(adminCsrfCookieName(dev), {
+    path: '/',
+    httpOnly: false,
+    sameSite: 'strict',
+    secure,
+  });
 }
