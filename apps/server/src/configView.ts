@@ -12,7 +12,7 @@ export function deriveAbuseLayers(config: ServerConfig) {
   return {
     turnstile: !!config.turnstileSiteKey,
     hcaptcha: !!config.hcaptchaSiteKey,
-    fcaptcha: !!(config.fcaptchaSiteKey && config.fcaptchaUrl),
+    fcaptcha: !!(config.fcaptchaSiteKey && config.fcaptchaPublicUrl),
     hashcash: !!config.hashcashSecret,
     geoip: config.geoipBackend !== 'none',
     fingerprint: config.fingerprintEnabled,
@@ -31,11 +31,14 @@ export function derivePublicConfig(config: ServerConfig) {
       ? { provider: 'turnstile' as const, siteKey: config.turnstileSiteKey }
       : config.hcaptchaSiteKey
         ? { provider: 'hcaptcha' as const, siteKey: config.hcaptchaSiteKey }
-        : config.fcaptchaSiteKey && config.fcaptchaUrl
+        : config.fcaptchaSiteKey && config.fcaptchaPublicUrl
           ? {
               provider: 'fcaptcha' as const,
               siteKey: config.fcaptchaSiteKey,
-              serverUrl: config.fcaptchaUrl,
+              // Issue #118: this is the URL the browser hits — must be
+              // browser-reachable, distinct from the internal verify
+              // endpoint the server uses.
+              serverUrl: config.fcaptchaPublicUrl,
             }
           : null,
     hashcash: config.hashcashSecret

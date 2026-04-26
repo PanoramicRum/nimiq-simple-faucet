@@ -4,17 +4,27 @@
 #
 # Expects the following in `.env` (alongside the existing faucet vars):
 #
-#   FAUCET_FCAPTCHA_URL=http://fcaptcha:3000
+#   FAUCET_FCAPTCHA_PUBLIC_URL=https://captcha.example.com   # browser-reachable
+#   FAUCET_FCAPTCHA_INTERNAL_URL=http://fcaptcha:3000         # optional; defaults to PUBLIC
 #   FAUCET_FCAPTCHA_SITE_KEY=<site-key>
 #   FAUCET_FCAPTCHA_SECRET=<secret>
 #   FCAPTCHA_SECRET=<secret>        # same value; FCaptcha's own env name
+#
+# Issue #117: the previous overlay referenced `ghcr.io/webdecoy/fcaptcha:latest`,
+# which isn't publicly pullable. We now build from upstream source pinned
+# to v1.7.0 — see `deploy/compose/fcaptcha/Dockerfile`.
+#
+# Issue #118: `FAUCET_FCAPTCHA_URL` is deprecated. Operators who haven't
+# split it yet still work — the server falls back to the old single var.
 #
 # Upstream: https://github.com/WebDecoy/FCaptcha (MIT). This overlay only
 # wires the image alongside the faucet — no detection logic lives here.
 
 services:
   fcaptcha:
-    image: ghcr.io/webdecoy/fcaptcha:latest
+    build:
+      context: ./fcaptcha
+      dockerfile: Dockerfile
     restart: unless-stopped
     environment:
       PORT: "3000"
@@ -27,8 +37,15 @@ services:
 
   faucet:
     environment:
-      FAUCET_FCAPTCHA_URL: ${FAUCET_FCAPTCHA_URL:-http://fcaptcha:3000}
+      # New vars (issue #118). INTERNAL_URL falls back to PUBLIC_URL when
+      # unset, so production deployments where both URLs are the same
+      # public one only need to set PUBLIC_URL.
+      FAUCET_FCAPTCHA_PUBLIC_URL: ${FAUCET_FCAPTCHA_PUBLIC_URL:-${FAUCET_FCAPTCHA_URL:-http://fcaptcha:3000}}
+      FAUCET_FCAPTCHA_INTERNAL_URL: ${FAUCET_FCAPTCHA_INTERNAL_URL:-http://fcaptcha:3000}
       FAUCET_FCAPTCHA_SITE_KEY: ${FAUCET_FCAPTCHA_SITE_KEY}
       FAUCET_FCAPTCHA_SECRET: ${FAUCET_FCAPTCHA_SECRET}
+      # Deprecated (#118), kept for one minor so existing operators keep
+      # working. Drop in v1.next once everyone has migrated.
+      FAUCET_FCAPTCHA_URL: ${FAUCET_FCAPTCHA_URL:-}
     depends_on:
       - fcaptcha
