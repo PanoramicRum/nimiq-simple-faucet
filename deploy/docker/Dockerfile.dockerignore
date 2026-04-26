@@ -1,0 +1,49 @@
+## Build-context excludes scoped to the server image only.
+##
+## BuildKit honours `<dockerfile>.dockerignore` when present, so this
+## file shrinks the context for `docker build -f deploy/docker/Dockerfile`
+## without affecting `docker build -f examples/<any>/Dockerfile .` —
+## those contexts intentionally need the full workspace (issue #115).
+##
+## Inherits the universal excludes from `.dockerignore` in the repo root;
+## add ONLY the things the server image specifically doesn't need.
+
+# Universal excludes (mirrored from root .dockerignore).
+**/node_modules
+**/dist
+**/.turbo
+**/.output
+**/coverage
+**/.next
+**/.dart_tool
+**/build
+**/target
+.git
+*.log
+.DS_Store
+.env
+.env.*
+data/
+**/*.db
+**/*.db-journal
+test-results/
+playwright-report/
+blob-report/
+.e2e-state.json
+
+# Server-image-specific: the public API server doesn't need example apps,
+# the dashboard / claim-ui dev sources (the Dockerfile builds them in a
+# dedicated stage), or the non-TS SDK ports.
+.github
+deploy/helm
+deploy/compose
+examples
+apps/dashboard/node_modules
+apps/docs
+apps/playground
+packages/sdk-flutter
+packages/sdk-go
+packages/sdk-react-native
+packages/sdk-capacitor
+packages/sdk-react
+packages/sdk-vue
