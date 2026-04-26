@@ -43,8 +43,11 @@ export function buildPipeline(
   if (config.hcaptchaSecret) {
     checks.push(hcaptchaCheck({ secret: config.hcaptchaSecret }));
   }
-  if (config.fcaptchaSecret && config.fcaptchaUrl) {
-    checks.push(fcaptchaCheck({ secret: config.fcaptchaSecret, serverUrl: config.fcaptchaUrl }));
+  if (config.fcaptchaSecret && config.fcaptchaInternalUrl) {
+    // Issue #118: server-to-server verification uses the INTERNAL URL
+    // (e.g. http://fcaptcha:3000 inside Docker). The browser-facing
+    // URL lives in /v1/config.captcha.serverUrl (configView.ts).
+    checks.push(fcaptchaCheck({ secret: config.fcaptchaSecret, serverUrl: config.fcaptchaInternalUrl }));
   }
   if (config.hashcashSecret) {
     checks.push(

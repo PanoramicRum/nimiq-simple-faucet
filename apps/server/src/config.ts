@@ -27,7 +27,15 @@ export const ServerConfigSchema = z.object({
   turnstileSecret: z.string().optional(),
   hcaptchaSiteKey: z.string().optional(),
   hcaptchaSecret: z.string().optional(),
+  // Issue #118: FCaptcha URL split into a server-side internal URL and
+  // a browser-side public URL. The single `fcaptchaUrl` (env
+  // FAUCET_FCAPTCHA_URL) is kept as a deprecated fallback — when set,
+  // both `fcaptchaInternalUrl` and `fcaptchaPublicUrl` default to it,
+  // and `loadConfig` logs a deprecation warning. Drop the alias in
+  // v1.next.
   fcaptchaUrl: z.string().url().optional(),
+  fcaptchaInternalUrl: z.string().url().optional(),
+  fcaptchaPublicUrl: z.string().url().optional(),
   fcaptchaSiteKey: z.string().optional(),
   fcaptchaSecret: z.string().optional(),
 
@@ -200,6 +208,8 @@ const ENV_KEYS: Record<string, string> = {
   hcaptchaSiteKey: 'FAUCET_HCAPTCHA_SITE_KEY',
   hcaptchaSecret: 'FAUCET_HCAPTCHA_SECRET',
   fcaptchaUrl: 'FAUCET_FCAPTCHA_URL',
+  fcaptchaInternalUrl: 'FAUCET_FCAPTCHA_INTERNAL_URL',
+  fcaptchaPublicUrl: 'FAUCET_FCAPTCHA_PUBLIC_URL',
   fcaptchaSiteKey: 'FAUCET_FCAPTCHA_SITE_KEY',
   fcaptchaSecret: 'FAUCET_FCAPTCHA_SECRET',
   hashcashSecret: 'FAUCET_HASHCASH_SECRET',
@@ -256,5 +266,38 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): ServerConfig {
     const v = env[envName];
     if (v !== undefined && v !== '') raw[field] = v;
   }
-  return ServerConfigSchema.parse(raw);
+  const config = ServerConfigSchema.parse(raw);
+  return resolveFcaptchaUrls(config);
+}
+
+/**
+ * Issue #118: split FAUCET_FCAPTCHA_URL into INTERNAL/PUBLIC. Server-to-
+ * server verification uses INTERNAL (e.g. http://fcaptcha:3000); the
+ * URL returned to the browser via /v1/config uses PUBLIC.
+ *
+ * Backwards-compat fallbacks (in priority order):
+ *   1. If INTERNAL is unset, default to PUBLIC.
+ *   2. If both are unset, fall back to the deprecated single `fcaptchaUrl`
+ *      and log a warning. Operators get one minor to migrate.
+ *
+ * Exported so tests can exercise the fallback matrix without booting
+ * the full app.
+ */
+export function resolveFcaptchaUrls(config: ServerConfig): ServerConfig {
+  const legacy = config.fcaptchaUrl;
+  let publicUrl = config.fcaptchaPublicUrl;
+  let internalUrl = config.fcaptchaInternalUrl;
+  if (!publicUrl && legacy) publicUrl = legacy;
+  if (!internalUrl && publicUrl) internalUrl = publicUrl;
+  if (legacy && !config.fcaptchaPublicUrl && !config.fcaptchaInternalUrl) {
+    // Loud one-shot warning at boot. Don't repeat per-request.
+    // eslint-disable-next-line no-console
+    console.warn(
+      '[deprecation] FAUCET_FCAPTCHA_URL is deprecated (issue #118). ' +
+        'Set FAUCET_FCAPTCHA_PUBLIC_URL (browser-reachable) and optionally ' +
+        'FAUCET_FCAPTCHA_INTERNAL_URL (server-to-server). The single var ' +
+        'will be removed in the next minor release.',
+    );
+  }
+  return { ...config, fcaptchaPublicUrl: publicUrl, fcaptchaInternalUrl: internalUrl };
 }

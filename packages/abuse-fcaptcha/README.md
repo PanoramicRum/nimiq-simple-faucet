@@ -16,9 +16,22 @@ Implements `AbuseCheck` from [@faucet/core](../core/) — registered in
 
 | Env | Purpose |
 |-----|---------|
-| `FAUCET_FCAPTCHA_URL` | Base URL of the FCaptcha service (enables layer) |
+| `FAUCET_FCAPTCHA_PUBLIC_URL` | URL the **browser** fetches the widget from. Must be reachable from end-user devices. Returned in `/v1/config.captcha.serverUrl`. |
+| `FAUCET_FCAPTCHA_INTERNAL_URL` | URL the **faucet server** hits to verify tokens. Defaults to `FAUCET_FCAPTCHA_PUBLIC_URL`; override when running fcaptcha on a sidecar (e.g. `http://fcaptcha:3000` on a Docker bridge). |
 | `FAUCET_FCAPTCHA_SITE_KEY` | Public key passed to the widget in the claim UI |
 | `FAUCET_FCAPTCHA_SECRET` | Server-side secret for token verification |
+| `FAUCET_FCAPTCHA_URL` | **Deprecated** (issue #118) — single var that conflated server/browser URLs. Still honoured for one minor as a fallback for both `*_PUBLIC_URL` and `*_INTERNAL_URL`; migrate to the split above. |
+
+### Why two URLs?
+
+In dev, fcaptcha typically runs on a separate Docker service. The faucet
+container reaches it on the bridge network at `http://fcaptcha:3000`,
+but a phone on the same Wi-Fi can't resolve `fcaptcha`. It needs the
+LAN-reachable URL (e.g. `http://192.168.1.50:3000`).
+
+In production, both are usually the same public HTTPS URL fronted by
+a reverse proxy. Setting only `*_PUBLIC_URL` is fine — `*_INTERNAL_URL`
+defaults to it.
 
 ## Behaviour
 
