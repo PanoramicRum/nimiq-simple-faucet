@@ -123,12 +123,30 @@ export const ServerConfigSchema = z.object({
         : [],
     ),
 
+  // Issue #122: support `*.example.com` in the comma-separated list.
+  // Each entry becomes either a literal string (exact match) or a
+  // RegExp (wildcard subdomain match). Fastify CORS accepts a
+  // (string | RegExp)[]. The wildcard matches one or more
+  // non-dot subdomain labels — `https://staging-1.example.com` ✓,
+  // `https://example.com` ✗ (use a separate explicit entry for the
+  // apex), `https://evil.com` ✗.
   corsOrigins: z
     .string()
     .default('*')
-    .transform((v) =>
-      v === '*' ? true : v.split(',').map((s) => s.trim()).filter(Boolean),
-    ),
+    .transform((v) => {
+      if (v === '*') return true;
+      return v
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean)
+        .map((entry) => {
+          if (entry.startsWith('*.')) {
+            const escaped = entry.slice(2).replace(/[.+?^${}()|[\]\\]/g, '\\$&');
+            return new RegExp(`^https?://[^./]+\\.${escaped}(?::\\d+)?$`);
+          }
+          return entry;
+        });
+    }),
 
   tlsRequired: z.coerce.boolean().default(true),
   helmetCsp: z.enum(['strict', 'relaxed-for-ui', 'off']).default('relaxed-for-ui'),

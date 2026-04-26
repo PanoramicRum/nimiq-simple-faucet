@@ -33,3 +33,4 @@ Implements `AbuseCheck` from [@faucet/core](../core/) — registered in
 
 - Sibling: [@faucet/abuse-hcaptcha](../abuse-hcaptcha/) (hosted hCaptcha)
 - [@faucet/core](../core/) — `AbuseCheck` interface
+- [`docs/mini-apps-integration.md`](../../docs/mini-apps-integration.md) — Mini App integration guide (CORS + FCaptcha URL placement + WebView Origin)

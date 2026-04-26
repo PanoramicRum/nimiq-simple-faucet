@@ -81,10 +81,20 @@ export async function claimRoutes(app: FastifyInstance, ctx: AppContext): Promis
             message: 'Claims must be submitted from a browser. Use the ClaimUI or an authorized integrator SDK.',
           });
         }
-        // Also enforce Origin against the CORS allowlist.
+        // Also enforce Origin against the CORS allowlist. Issue #122:
+        // entries can be strings OR RegExps (`*.example.com` becomes a
+        // RegExp at config-parse time), so we match against both forms
+        // instead of `Array.includes` which would skip the regexes.
         const origin = req.headers['origin'];
         const allowedOrigins = ctx.config.corsOrigins;
-        if (origin && Array.isArray(allowedOrigins) && !allowedOrigins.includes(origin)) {
+        if (
+          origin &&
+          typeof origin === 'string' &&
+          Array.isArray(allowedOrigins) &&
+          !allowedOrigins.some((o) =>
+            typeof o === 'string' ? o === origin : o.test(origin),
+          )
+        ) {
           return reply.code(403).send({
             error: 'origin_not_allowed',
             message: 'Request origin is not in the allowed list.',
