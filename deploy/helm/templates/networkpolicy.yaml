@@ -1,4 +1,18 @@
 {{- if .Values.networkPolicy.enabled }}
+{{- /*
+  Audit finding #021 / issue #101: when the operator opts into a
+  NetworkPolicy, default to a deny-all stance and let them whitelist what
+  the faucet actually needs. Previously the chart rendered empty
+  Ingress/Egress lists when no rules were supplied — Kubernetes treats
+  an empty rule list under `policyTypes: [Egress]` as **deny all egress**,
+  which broke the chart silently. The new default explicitly allows:
+    - DNS (53/UDP+TCP) so the faucet can resolve RPC + captcha hostnames
+    - Egress 443/TCP for HTTPS to captcha + RPC providers
+    - Egress 8648/TCP for the self-hosted Nimiq JSON-RPC default
+    - Ingress on the configured `service.targetPort` from any source
+  Operators with a stricter posture override `networkPolicy.ingress`
+  and `networkPolicy.egress` directly.
+*/ -}}
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -12,12 +26,36 @@ spec:
   policyTypes:
     - Ingress
     - Egress
-  {{- with .Values.networkPolicy.ingress }}
   ingress:
-    {{- toYaml . | nindent 4 }}
-  {{- end }}
-  {{- with .Values.networkPolicy.egress }}
+    {{- if .Values.networkPolicy.ingress }}
+    {{- toYaml .Values.networkPolicy.ingress | nindent 4 }}
+    {{- else }}
+    - from: []
+      ports:
+        - protocol: TCP
+          port: {{ .Values.service.targetPort | default 8080 }}
+    {{- end }}
   egress:
-    {{- toYaml . | nindent 4 }}
-  {{- end }}
+    {{- if .Values.networkPolicy.egress }}
+    {{- toYaml .Values.networkPolicy.egress | nindent 4 }}
+    {{- else }}
+    # DNS (cluster-scoped resolver — kube-dns / coredns).
+    - to: []
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    # HTTPS egress for captcha verification + remote Nimiq RPC.
+    - to: []
+      ports:
+        - protocol: TCP
+          port: 443
+    # Self-hosted Nimiq JSON-RPC (default port 8648) — narrow this in
+    # production if the RPC node is in a known CIDR.
+    - to: []
+      ports:
+        - protocol: TCP
+          port: 8648
+    {{- end }}
 {{- end }}

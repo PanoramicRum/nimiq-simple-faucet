@@ -1,0 +1,29 @@
+{{- /*
+  Audit finding #019 / issue #101: ship a PodDisruptionBudget template so
+  voluntary node drains (cluster autoscaler, version upgrades) don't take
+  down the faucet for the duration of a pod restart. Opt-in by default —
+  small clusters running `replicaCount: 1` shouldn't accidentally block
+  drains; bumping `replicaCount: 2+` and flipping `podDisruptionBudget.enabled`
+  is the recommended production path.
+
+  Operators set EITHER `minAvailable` OR `maxUnavailable`, not both
+  (Kubernetes rejects setting both). Default `minAvailable: 1` is safe
+  for replicaCount: 2+ and is a no-op for replicaCount: 1.
+*/ -}}
+{{- if .Values.podDisruptionBudget.enabled }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "nimiq-simple-faucet.fullname" . }}
+  labels:
+    {{- include "nimiq-simple-faucet.labels" . | nindent 4 }}
+spec:
+  {{- if .Values.podDisruptionBudget.maxUnavailable }}
+  maxUnavailable: {{ .Values.podDisruptionBudget.maxUnavailable }}
+  {{- else }}
+  minAvailable: {{ .Values.podDisruptionBudget.minAvailable | default 1 }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "nimiq-simple-faucet.selectorLabels" . | nindent 6 }}
+{{- end }}

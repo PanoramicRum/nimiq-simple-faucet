@@ -206,10 +206,23 @@ nodeSelector: {}
 tolerations: []
 affinity: {}
 
-# Set enabled=true and the chart renders a NetworkPolicy. Commented block
-# below is a starting point for Nimiq RPC + captcha CDNs egress.
+# Audit finding #021 / issue #101: when enabled, the chart renders a
+# NetworkPolicy with safe defaults — ingress on `service.targetPort`,
+# egress on DNS + 443 + 8648 — so opting in doesn't silently DoS the
+# pod the way an empty `egress: []` rule list would.
+#
+# Override `ingress` / `egress` to lock egress down to specific CIDRs
+# in production (Nimiq RPC node, captcha provider IP ranges, etc.).
 networkPolicy:
   enabled: false
+  # ingress:
+  #   - from:
+  #       - namespaceSelector:
+  #           matchLabels:
+  #             kubernetes.io/metadata.name: ingress-nginx
+  #     ports:
+  #       - protocol: TCP
+  #         port: 8080
   # egress:
   #   - to:
   #       - ipBlock:
@@ -220,14 +233,18 @@ networkPolicy:
   #             - 192.168.0.0/16
   #     ports:
   #       - protocol: TCP
-  #         port: 443    # Nimiq RPC (https) + challenges.cloudflare.com + hcaptcha.com
+  #         port: 443
   #       - protocol: TCP
-  #         port: 8648   # Nimiq JSON-RPC (self-hosted node)
-  # ingress:
-  #   - from: []
-  #     ports:
-  #       - protocol: TCP
-  #         port: 8080
+  #         port: 8648
+
+# Audit finding #019 / issue #101: opt-in PodDisruptionBudget so cluster
+# drains / autoscaler-evictions don't take the faucet down. Set enabled
+# to true once `replicaCount` is 2 or higher; at 1 replica the PDB is a
+# no-op (any disruption is necessarily 100%).
+podDisruptionBudget:
+  enabled: false
+  minAvailable: 1
+  # maxUnavailable: 1   # set this OR minAvailable, not both
 
 # Bitnami subchart passthrough. See their docs for full values.
 #
