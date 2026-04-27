@@ -2,12 +2,12 @@
 
 [![CI](https://img.shields.io/github/actions/workflow/status/PanoramicRum/nimiq-simple-faucet/ci.yml?branch=main&label=CI)](https://github.com/PanoramicRum/nimiq-simple-faucet/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Release](https://img.shields.io/github/v/release/PanoramicRum/nimiq-simple-faucet?include_prereleases&label=release)](https://github.com/PanoramicRum/nimiq-simple-faucet/releases)
-[![CodeQL](https://img.shields.io/github/actions/workflow/status/PanoramicRum/nimiq-simple-faucet/codeql.yml?branch=main&label=CodeQL)](https://github.com/PanoramicRum/nimiq-simple-faucet/actions/workflows/codeql.yml)
+[![Release](https://img.shields.io/github/v/release/PanoramicRum/nimiq-simple-faucet?label=release)](https://github.com/PanoramicRum/nimiq-simple-faucet/releases)
+[![CodeQL](https://img.shields.io/github/actions/workflow/status/PanoramicRum/nimiq-simple-faucet/codeql.yml?label=CodeQL)](https://github.com/PanoramicRum/nimiq-simple-faucet/actions/workflows/codeql.yml)
 [![npm](https://img.shields.io/npm/v/@nimiq-faucet/sdk?label=%40nimiq-faucet%2Fsdk)](https://www.npmjs.com/package/@nimiq-faucet/sdk)
 [![Docker](https://img.shields.io/badge/ghcr.io-nimiq--simple--faucet-blue?logo=docker)](https://github.com/PanoramicRum/nimiq-simple-faucet/pkgs/container/nimiq-simple-faucet)
 
-📘 [Docs](./docs) · 🤝 [Contributing](./CONTRIBUTING.md) · 🛡️ [Security](./SECURITY.md) · 🗺️ [Roadmap](./ROADMAP.md) · 🤖 [AI agents](./AGENTS.md)
+🌐 [Live demo](https://faucet.wevpage.com/) · 📘 [Docs](./docs) · 🤝 [Contributing](./CONTRIBUTING.md) · 🛡️ [Security](./SECURITY.md) · 🗺️ [Roadmap](./ROADMAP.md) · 🤖 [AI agents](./AGENTS.md)
 
 A reusable, self-hosted faucet / payout service for **Nimiq**, with first-class support for web (React, Vue, plain TS), mobile (Capacitor, React Native, Flutter), and backend (Python, Go) clients, 8 SDKs, 10 pluggable abuse-prevention layers, and native integration for AI coding agents (MCP server, `llms.txt`, `AGENTS.md`).
 
