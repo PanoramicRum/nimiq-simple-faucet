@@ -40,6 +40,20 @@ config:
     # FAUCET_RPC_URL: "https://nimiq-testnet-rpc.example.com"
     # FAUCET_GEOIP_BACKEND: "maxmind"
 
+# Claim-UI theme selection (ROADMAP §3.0.14). The Docker image bundles
+# every theme under /app/themes/<slug>/dist; this value picks one at
+# runtime via FAUCET_CLAIM_UI_THEME.
+#
+# Bundled slugs:
+#   - "porcelain-vault"  (default; clean off-white, Material 3, Vue + Tailwind)
+#   - "nimiq-pow"        (visual tribute to nimiq/web-miner — dark-navy world-dot map)
+#
+# Adding a new theme: see docs/contributing-a-frontend.md.
+# Unknown values fall back to the default with a warning log; we never
+# crash the UI for a typo here.
+claimUi:
+  theme: "porcelain-vault"        # FAUCET_CLAIM_UI_THEME
+
 # Secrets are intentionally NOT hand-maintained at the chart level.
 #
 # Default: use External Secrets Operator. Each key below references a remote

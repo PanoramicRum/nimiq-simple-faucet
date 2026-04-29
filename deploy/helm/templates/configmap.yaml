@@ -14,6 +14,9 @@ data:
   FAUCET_RATE_LIMIT_PER_IP_PER_DAY: {{ .Values.config.rateLimitPerIpPerDay | quote }}
   FAUCET_TLS_REQUIRED: {{ .Values.config.tlsRequired | quote }}
   FAUCET_HELMET_CSP: {{ .Values.config.helmetCsp | quote }}
+  {{- with .Values.claimUi.theme }}
+  FAUCET_CLAIM_UI_THEME: {{ . | quote }}
+  {{- end }}
   {{- if .Values.config.corsOrigins }}
   FAUCET_CORS_ORIGINS: {{ .Values.config.corsOrigins | quote }}
   {{- else }}
