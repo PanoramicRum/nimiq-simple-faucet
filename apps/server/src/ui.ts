@@ -3,6 +3,7 @@ import { resolve } from 'node:path';
 import type { FastifyInstance } from 'fastify';
 import fastifyStatic from '@fastify/static';
 import type { ServerConfig } from './config.js';
+import { THEMES, DEFAULT_THEME, isKnownTheme, type ThemeSlug } from './themes.js';
 
 function firstExisting(candidates: string[]): string | null {
   for (const c of candidates) {
@@ -11,13 +12,50 @@ function firstExisting(candidates: string[]): string | null {
   return null;
 }
 
-function claimUiDir(config: ServerConfig): string | null {
-  if (config.claimUiDir) return existsSync(config.claimUiDir) ? resolve(config.claimUiDir) : null;
-  return firstExisting([
-    resolve(process.cwd(), 'apps/claim-ui/dist'),
-    resolve(process.cwd(), '../claim-ui/dist'),
-    '/app/apps/claim-ui/dist',
+/**
+ * Resolve which directory the Claim UI is served from. Order:
+ *   1. `config.claimUiDir` — explicit operator override (custom themes
+ *      not bundled in the Docker image, dev work, etc.). Wins absolutely.
+ *   2. The bundled-theme registry: `config.claimUiTheme` → `THEMES[slug]`.
+ *      Tries the production-Docker path first, then the monorepo dev path.
+ *   3. The default theme (`porcelain-vault`) — preserves the original
+ *      behaviour for anyone who upgrades without setting any new env vars.
+ *
+ * An unknown `claimUiTheme` value (typo in deployment env) is downgraded
+ * to the default with a warning log; we never crash the UI for a bad slug.
+ */
+function resolveClaimUiDir(
+  config: ServerConfig,
+  log: { warn: (obj: object, msg?: string) => void },
+): { dir: string | null; theme: ThemeSlug | null } {
+  if (config.claimUiDir) {
+    if (existsSync(config.claimUiDir)) {
+      return { dir: resolve(config.claimUiDir), theme: null };
+    }
+    log.warn(
+      { claimUiDir: config.claimUiDir },
+      'FAUCET_CLAIM_UI_DIR set but path does not exist; falling back to bundled theme',
+    );
+  }
+
+  let theme: ThemeSlug;
+  if (isKnownTheme(config.claimUiTheme)) {
+    theme = config.claimUiTheme;
+  } else {
+    log.warn(
+      { requested: config.claimUiTheme, fallback: DEFAULT_THEME, knownThemes: Object.keys(THEMES) },
+      'FAUCET_CLAIM_UI_THEME slug not found in registry; falling back to default theme',
+    );
+    theme = DEFAULT_THEME;
+  }
+
+  const manifest = THEMES[theme];
+  const dir = firstExisting([
+    manifest.distInImage,
+    resolve(process.cwd(), manifest.distFromRepoRoot),
+    resolve(process.cwd(), '../', manifest.distFromRepoRoot.replace(/^apps\//, '')),
   ]);
+  return { dir, theme };
 }
 
 function dashboardDir(config: ServerConfig): string | null {
@@ -48,7 +86,7 @@ export async function registerUi(app: FastifyInstance, config: ServerConfig): Pr
     app.log.info({ dash }, 'dashboard ui mounted at /admin');
   }
 
-  const claim = claimUiDir(config);
+  const { dir: claim, theme } = resolveClaimUiDir(config, app.log);
   if (claim) {
     await app.register(fastifyStatic, {
       root: claim,
@@ -71,6 +109,6 @@ export async function registerUi(app: FastifyInstance, config: ServerConfig): Pr
       }
       return reply.sendFile('index.html', claim);
     });
-    app.log.info({ claim }, 'claim ui mounted at /');
+    app.log.info({ claim, theme }, 'claim ui mounted at /');
   }
 }

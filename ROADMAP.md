@@ -784,6 +784,98 @@ FCaptcha is missing a feature we need, contribute it upstream.
 **Estimated effort:** 1 day (thin driver + widget wrapper + compose
 profile + docs).
 
+### 3.0.14 — Multi-theme system + NimiqPoW alt theme
+
+**Status:** in-progress as of late April 2026. Foundation merged via
+PRs #146 / #147 / #148 / #149 (rename, server registry, NimiqPoW theme,
+Docker multi-theme bundling).
+
+**Goal:** make the Claim UI pluggable so operators can pick between
+multiple bundled themes with one env-var flip, and so community
+contributors have a documented path to ship a new theme.
+
+**Scope:**
+- `apps/server/src/themes.ts` — central theme registry. Slug → display
+  name + dist path (in repo + in Docker image).
+- `FAUCET_CLAIM_UI_THEME=<slug>` selects which bundled theme the server
+  serves at `/`. `FAUCET_CLAIM_UI_DIR` continues to win as an explicit
+  operator override (custom themes outside the registry).
+- `apps/nimiq-pow-ui/` — second theme: world-dot map + peer-pulse
+  animation, recreating the visual language of the old
+  [`nimiq/web-miner`](https://github.com/nimiq/web-miner). Decorative
+  only — claims are still HTTP, no in-browser PoW.
+- `docs/contributing-a-frontend.md` — full contract for community
+  contributors (faucet API surface, dist/ requirements, theme
+  registration steps, submission process).
+- Docker image bundles every `apps/*-ui/dist/` so flipping themes
+  needs no rebuild.
+
+**Out of scope (explicitly):**
+- Real proof-of-work mining in the browser (the old web-miner ran
+  actual PoW; the alt theme is a visual tribute, not a functional
+  mining client).
+
+### 3.0.15 — Hub-API wallet integration for the NimiqPoW theme
+
+**Goal:** replace v1's paste-address input with [`@nimiq/hub-api`](https://www.npmjs.com/package/@nimiq/hub-api)
+so users connect their Nimiq wallet via the Hub flow rather than copy-
+pasting an address. The user's account access is signed by the Hub; no
+key handling in the page.
+
+**Why scoped to NimiqPoW first:** the existing Porcelain Vault theme
+already has its own claim UX and changing it disrupts users on the
+default. Land Hub integration in NimiqPoW first, validate with real-
+phone testing, then graduate the pattern to other themes.
+
+**Scope:**
+- Replace `apps/nimiq-pow-ui/src/components/ConnectWallet.vue`'s paste
+  input with a Hub-API connect button.
+- `@nimiq/hub-api` as a workspace dep on the NimiqPoW theme only.
+- Document the Hub flow in `apps/nimiq-pow-ui/README.md`.
+
+**Estimated effort:** 1 day (Hub-API has a well-documented integration
+path; the slow piece is real-phone testing across iOS/Android).
+
+### 3.0.16 — User-facing theme picker dropdown (nice-to-have)
+
+**Goal:** let visitors switch between bundled themes from a UI
+control instead of having the operator decide at deploy time.
+
+**Why a nice-to-have:** the env-var switch (§3.0.14) covers the
+operator workflow. A user-facing picker is an opinionated UX
+addition — useful for the playground / public demo, but probably
+disabled in serious production deployments where the operator wants
+brand consistency.
+
+**Scope:**
+- Surface the available themes via `/v1/config.ui.themes: [{ slug,
+  displayName, description }]`.
+- Top-bar "Theme:" dropdown, theme-aware so each theme renders its own
+  variant. Selection persists in `localStorage`.
+- Operator opt-in: `FAUCET_THEME_PICKER_ENABLED=false` by default.
+
+**Estimated effort:** 1 day.
+
+## Future ideas (community contributions wanted)
+
+These aren't on the roadmap — they're ideas the multi-theme system
+makes possible. Contributions welcome; open an issue if you'd like
+to discuss before starting.
+
+### React / Svelte / SolidJS / vanilla TS themes
+
+The frontend contract documented in [`docs/contributing-a-frontend.md`](docs/contributing-a-frontend.md)
+is framework-agnostic by design — anything that produces a static
+`dist/index.html` works. Reference implementations in non-Vue
+frameworks would showcase the contract and give integrators
+familiar starting points. PRs welcome under `apps/<framework>-ui/`.
+
+### Themes inspired by other Nimiq-ecosystem visuals
+
+The NimiqPoW theme proves the multi-theme model with a tribute to the
+old web-miner. Other Nimiq-ecosystem visual heritage (early Wallet,
+Nimiq Pay, the various community sites) could each become a theme.
+
 ---
 
 # Beyond 1.x — Ongoing quality programs

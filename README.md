@@ -91,6 +91,10 @@ Boots a self-contained WASM faucet. The WASM client reaches TestAlbatross consen
 
 Every SDK accepts the same `hostContext` (hashed UID, cookie hash, session hash, account age, KYC level, tags, HMAC signature) so your project's own abuse signals flow into the faucet's scoring pipeline.
 
+### Want to ship your own claim-UI theme?
+
+The Claim UI is pluggable — `FAUCET_CLAIM_UI_THEME=<slug>` switches between bundled themes at deploy time, and adding a new theme is a documented contract. See [`docs/contributing-a-frontend.md`](./docs/contributing-a-frontend.md).
+
 ### Nimiq Pay Mini App
 
 A canonical [Nimiq Pay Mini App](https://mini-apps-launch-developer-center-dev-worker.je-cf9.workers.dev/mini-apps) example that runs inside the Nimiq Pay wallet WebView, reads the user's NIM address via [`@nimiq/mini-app-sdk`](https://www.npmjs.com/package/@nimiq/mini-app-sdk), and claims from this faucet. Two implementations sharing one TypeScript core:
