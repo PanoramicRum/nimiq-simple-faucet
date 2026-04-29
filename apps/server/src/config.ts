@@ -20,6 +20,17 @@ export const ServerConfigSchema = z.object({
   keyPassphrase: z.string().min(8).optional(),
 
   claimAmountLuna: z.coerce.bigint().default(100_000n),
+  /**
+   * Minimum wallet balance (in luna) the faucet must hold for `/readyz`
+   * to report healthy. Below this, `/readyz` returns 503 so Kubernetes
+   * stops routing traffic to a faucet that's about to run dry. Optional
+   * — when unset, balance is reported informationally and never fails
+   * the probe (preserves the original §1.0 behaviour).
+   *
+   * Recommended floor: ~10 × `claimAmountLuna` so the probe trips
+   * before the wallet actually empties.
+   */
+  minBalanceLuna: z.coerce.bigint().optional(),
   rateLimitPerMinute: z.coerce.number().int().min(1).default(30),
   rateLimitPerIpPerDay: z.coerce.number().int().min(1).default(5),
 
@@ -219,6 +230,7 @@ const ENV_KEYS: Record<string, string> = {
   privateKey: 'FAUCET_PRIVATE_KEY',
   keyPassphrase: 'FAUCET_KEY_PASSPHRASE',
   claimAmountLuna: 'FAUCET_CLAIM_AMOUNT_LUNA',
+  minBalanceLuna: 'FAUCET_MIN_BALANCE_LUNA',
   rateLimitPerMinute: 'FAUCET_RATE_LIMIT_PER_MINUTE',
   rateLimitPerIpPerDay: 'FAUCET_RATE_LIMIT_PER_IP_PER_DAY',
   turnstileSiteKey: 'FAUCET_TURNSTILE_SITE_KEY',

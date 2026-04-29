@@ -1,7 +1,7 @@
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { buildApp } from '../src/app.js';
 import { ServerConfigSchema } from '../src/config.js';
 import { BaseTestDriver, TEST_FAUCET_ADDRESS } from './helpers/testDriver.js';
@@ -39,8 +39,9 @@ class NeverReadyDriver extends BaseTestDriver {
   }
 }
 
-function baseConfig(dir: string) {
-  return ServerConfigSchema.parse({ geoipBackend: "none",
+function baseRawConfig(dir: string): Record<string, unknown> {
+  return {
+    geoipBackend: 'none',
     network: 'test',
     dataDir: dir,
     signerDriver: 'rpc',
@@ -52,7 +53,11 @@ function baseConfig(dir: string) {
     corsOrigins: 'https://example.test',
     dev: true,
     tlsRequired: false,
-  });
+  };
+}
+
+function baseConfig(dir: string) {
+  return ServerConfigSchema.parse(baseRawConfig(dir));
 }
 
 describe('driver readiness gating', () => {
@@ -92,6 +97,8 @@ describe('driver readiness gating', () => {
     expect(syncBody.ready).toBe(false);
     expect(syncBody.checks.driver).toBe('not_ready');
     expect(syncBody.checks.db).toBe('ok');
+    // Redis-not-configured path should NOT fail the probe.
+    expect(syncBody.checks.redis).toBe('not_configured');
 
     driver.releaseReady();
     const ready = await built.app.inject({ method: 'GET', url: '/readyz' });
@@ -100,6 +107,65 @@ describe('driver readiness gating', () => {
     expect(readyBody.ready).toBe(true);
     expect(readyBody.checks.driver).toBe('ok');
     expect(readyBody.checks.db).toBe('ok');
+    expect(readyBody.checks.redis).toBe('not_configured');
+  });
+
+  it('/readyz reports redis=ok when redisOverride is healthy', async () => {
+    const ping = vi.fn().mockResolvedValue('PONG');
+    const driver = new NeverReadyDriver();
+    driver.releaseReady();
+    const built = await buildApp(baseConfig(tmp), {
+      driverOverride: driver,
+      quietLogs: true,
+      redisOverride: { ping },
+    });
+    apps.push(built.app);
+    await built.app.ready();
+
+    const res = await built.app.inject({ method: 'GET', url: '/readyz' });
+    expect(res.statusCode).toBe(200);
+    expect(res.json().checks.redis).toBe('ok');
+    expect(ping).toHaveBeenCalled();
+  });
+
+  it('/readyz returns 503 when redisOverride.ping rejects', async () => {
+    const ping = vi.fn().mockRejectedValue(new Error('ECONNREFUSED'));
+    const driver = new NeverReadyDriver();
+    driver.releaseReady();
+    const built = await buildApp(baseConfig(tmp), {
+      driverOverride: driver,
+      quietLogs: true,
+      redisOverride: { ping },
+    });
+    apps.push(built.app);
+    await built.app.ready();
+
+    const res = await built.app.inject({ method: 'GET', url: '/readyz' });
+    expect(res.statusCode).toBe(503);
+    expect(res.headers['retry-after']).toBe('10');
+    const body = res.json();
+    expect(body.ready).toBe(false);
+    expect(body.checks.redis).toMatch(/^error: /);
+  });
+
+  it('/readyz returns 503 when balance falls below FAUCET_MIN_BALANCE_LUNA', async () => {
+    // NeverReadyDriver.getBalance returns 0n; threshold of 1n alone trips it.
+    const cfg = ServerConfigSchema.parse({
+      ...baseRawConfig(tmp),
+      minBalanceLuna: '1',
+    });
+    const driver = new NeverReadyDriver();
+    driver.releaseReady();
+    const built = await buildApp(cfg, { driverOverride: driver, quietLogs: true });
+    apps.push(built.app);
+    await built.app.ready();
+
+    const res = await built.app.inject({ method: 'GET', url: '/readyz' });
+    expect(res.statusCode).toBe(503);
+    expect(res.headers['retry-after']).toBe('10');
+    const body = res.json();
+    expect(body.ready).toBe(false);
+    expect(body.checks.balance).toContain('below FAUCET_MIN_BALANCE_LUNA=1');
   });
 
   it('POST /v1/claim returns 503 Retry-After while driver is syncing', async () => {
