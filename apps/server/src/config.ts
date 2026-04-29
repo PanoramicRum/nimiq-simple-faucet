@@ -117,6 +117,14 @@ export const ServerConfigSchema = z.object({
   requireBrowser: z.coerce.boolean().default(false),
   uiEnabled: z.coerce.boolean().default(true),
   claimUiDir: z.string().optional(),
+  /**
+   * Slug of a bundled Claim UI theme to serve when `claimUiDir` is unset.
+   * Default: `porcelain-vault`. Unknown values fall back to the default
+   * with a warning log so a typo in deployment env doesn't break the UI.
+   * See `apps/server/src/themes.ts` for the registry. Adding a new theme
+   * is documented in `docs/contributing-a-frontend.md`.
+   */
+  claimUiTheme: z.string().default('porcelain-vault'),
   dashboardDir: z.string().optional(),
 
   // When true, `/docs/api` is served outside dev mode too. `/openapi.json`
@@ -277,6 +285,7 @@ const ENV_KEYS: Record<string, string> = {
   requireBrowser: 'FAUCET_REQUIRE_BROWSER',
   uiEnabled: 'FAUCET_UI_ENABLED',
   claimUiDir: 'FAUCET_CLAIM_UI_DIR',
+  claimUiTheme: 'FAUCET_CLAIM_UI_THEME',
   dashboardDir: 'FAUCET_DASHBOARD_DIR',
   openapiPublic: 'FAUCET_OPENAPI_PUBLIC',
   integratorKeys: 'FAUCET_INTEGRATOR_KEYS',
