@@ -29,6 +29,13 @@ export interface BuildAppOptions {
   geoipResolverOverride?: GeoIpResolver;
   /** Silence the default Fastify logger. */
   quietLogs?: boolean;
+  /**
+   * Inject a fake Redis client used by the `/readyz` ping check (and only
+   * that — rate-limit is left on its in-memory backend regardless). Tests
+   * pass this to exercise the readyz Redis path without booting a real
+   * Redis or mocking the ioredis module's full RedisStore surface.
+   */
+  redisOverride?: { ping: () => Promise<unknown> };
 }
 
 export async function buildApp(
@@ -60,18 +67,41 @@ export async function buildApp(
   await app.register(cors, { origin: config.corsOrigins });
   await app.register(cookie);
   await app.register(websocket);
+  // Hoisted so the /readyz handler can also ping it. Single shared
+  // instance avoids a separate connection per request. Tests can inject
+  // a fake via `opts.redisOverride` — that path skips the rate-limit
+  // wiring (rate-limit stays in-memory) so the test only exercises the
+  // readyz ping surface.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let redisClient: any = null;
+  if (opts.redisOverride) {
+    redisClient = opts.redisOverride;
+  } else if (config.redisUrl) {
+    const ioredis = await import('ioredis');
+    // ioredis default export is the Redis class constructor.
+    const RedisClass = (ioredis.default ?? ioredis) as unknown as new (url: string) => unknown;
+    redisClient = new RedisClass(config.redisUrl);
+    // Close the client on app teardown so tests + graceful shutdown
+    // don't leak the connection.
+    app.addHook('onClose', async () => {
+      try {
+        await redisClient?.quit?.();
+      } catch {
+        /* best-effort */
+      }
+    });
+  }
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const rateLimitOpts: any = {
     max: config.rateLimitPerMinute,
     timeWindow: '1 minute',
     allowList: () => false,
   };
-  if (config.redisUrl) {
-    const ioredis = await import('ioredis');
-    // ioredis default export is the Redis class constructor.
-    const RedisClass = (ioredis.default ?? ioredis) as unknown as new (url: string) => unknown;
-    rateLimitOpts.redis = new RedisClass(config.redisUrl);
-  }
+  // Wire the real ioredis client to rate-limit only when we instantiated
+  // it ourselves (i.e. not the test-injected override). The override
+  // doesn't speak the rate-limit Lua-script protocol; keeping rate-limit
+  // in-memory in tests is fine.
+  if (redisClient && !opts.redisOverride) rateLimitOpts.redis = redisClient;
   await app.register(rateLimit, rateLimitOpts);
 
   const db = openDb({ dataDir: config.dataDir, databaseUrl: config.databaseUrl });
@@ -158,9 +188,41 @@ export async function buildApp(
       allOk = false;
     }
 
+    // §1.1.2a — Redis PING when configured. Single-instance deployments
+    // (REDIS_URL unset → in-memory rate-limit) skip the check, preserving
+    // the original behaviour. Wrap in a 1 s timeout so a wedged Redis
+    // doesn't slow the probe down.
+    if (redisClient) {
+      try {
+        const pingPromise: Promise<unknown> = redisClient.ping();
+        const timeout = new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('redis ping timeout (1s)')), 1_000),
+        );
+        await Promise.race([pingPromise, timeout]);
+        checks.redis = 'ok';
+      } catch (err) {
+        checks.redis = `error: ${(err as Error).message}`;
+        allOk = false;
+      }
+    } else {
+      checks.redis = 'not_configured';
+    }
+
+    // §1.1.2a — wallet-balance threshold. When `minBalanceLuna` is set,
+    // a balance below it flips readyz to 503 so Kubernetes stops routing
+    // traffic to a faucet that's about to run dry. When unset, the
+    // balance is reported informationally and never fails the probe
+    // (matches the original §1.0 behaviour, keeping smoke tests green).
     if (isDriverReady()) {
       try {
-        checks.balance = (await driver.getBalance()).toString();
+        const balance = await driver.getBalance();
+        const balanceStr = balance.toString();
+        if (config.minBalanceLuna !== undefined && balance < config.minBalanceLuna) {
+          checks.balance = `${balanceStr} (below FAUCET_MIN_BALANCE_LUNA=${config.minBalanceLuna.toString()})`;
+          allOk = false;
+        } else {
+          checks.balance = balanceStr;
+        }
       } catch {
         checks.balance = 'unknown';
       }
