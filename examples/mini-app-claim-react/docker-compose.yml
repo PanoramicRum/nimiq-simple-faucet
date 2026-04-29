@@ -1,0 +1,38 @@
+# Self-contained dev compose for the React mini app example.
+# Mirror of ../mini-app-claim-vue/docker-compose.yml — port 5174 host-side.
+# See that file (or the README in this directory) for full setup details.
+
+include:
+  - ../../deploy/compose/docker-compose.yml
+  - ../../deploy/compose/fcaptcha.yml
+
+services:
+  faucet:
+    environment:
+      FAUCET_DEV: "1"
+      FAUCET_NETWORK: test
+      FAUCET_SIGNER_DRIVER: wasm
+      FAUCET_TLS_REQUIRED: "false"
+      FAUCET_CORS_ORIGINS: "*"
+      FAUCET_HELMET_CSP: relaxed-for-ui
+      FAUCET_UI_ENABLED: "false"
+      FAUCET_CLAIM_AMOUNT_LUNA: "100000"
+      FAUCET_RATE_LIMIT_PER_IP_PER_DAY: "20"
+      FAUCET_PRIVATE_KEY: ${FAUCET_PRIVATE_KEY:?set FAUCET_PRIVATE_KEY (32 random hex bytes)}
+      FAUCET_KEY_PASSPHRASE: ${FAUCET_KEY_PASSPHRASE:?set FAUCET_KEY_PASSPHRASE (>=8 chars)}
+      FAUCET_ADMIN_PASSWORD: ${FAUCET_ADMIN_PASSWORD:?set FAUCET_ADMIN_PASSWORD (>=8 chars)}
+      FAUCET_FCAPTCHA_PUBLIC_URL: http://${LAN_IP:?set LAN_IP to your Wi-Fi IP}:${FCAPTCHA_HOST_PORT:-3000}
+
+  mini-app-react:
+    build:
+      context: ../..
+      dockerfile: examples/mini-app-claim-react/Dockerfile.dev
+    image: nimiq-faucet-mini-app-react:dev
+    environment:
+      VITE_FAUCET_URL: http://${LAN_IP:?set LAN_IP to your Wi-Fi IP}:${FAUCET_HOST_PORT:-8080}
+      VITE_HMR_HOST: ${LAN_IP}
+    ports:
+      - "${MINI_APP_HOST_PORT:-5174}:5173"
+    depends_on:
+      - faucet
+      - fcaptcha

@@ -61,3 +61,35 @@ services:
     depends_on:
       - faucet
     restart: "no"
+
+  # Nimiq Pay Mini App — Vue. Note: this builds a *production* bundle served
+  # by nginx (port 3006). For real-phone development against a Nimiq Pay
+  # WebView you want `vite --host` instead — use:
+  #
+  #   cd examples/mini-app-claim-vue && docker compose up --build
+  #
+  # That self-contained compose file boots the faucet + fcaptcha alongside
+  # the dev server reachable on your LAN.
+  example-mini-app-vue:
+    build:
+      context: ..
+      dockerfile: examples/mini-app-claim-vue/Dockerfile
+      args:
+        VITE_FAUCET_URL: http://localhost:8080
+    ports:
+      # Container listens on 8080 because the production stage runs nginx as
+      # an unprivileged user (which can't bind <1024).
+      - "3006:8080"
+    depends_on:
+      - faucet
+
+  example-mini-app-react:
+    build:
+      context: ..
+      dockerfile: examples/mini-app-claim-react/Dockerfile
+      args:
+        VITE_FAUCET_URL: http://localhost:8080
+    ports:
+      - "3007:8080"
+    depends_on:
+      - faucet

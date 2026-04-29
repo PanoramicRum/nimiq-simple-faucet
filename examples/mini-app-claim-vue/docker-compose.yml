@@ -1,0 +1,63 @@
+# Self-contained dev compose for the Vue mini app example.
+#
+# Usage from this directory:
+#
+#   export LAN_IP=$(hostname -I | awk '{print $1}')   # Linux
+#   # macOS:  export LAN_IP=$(ipconfig getifaddr en0)
+#   export FCAPTCHA_SECRET=demo-secret-change-me
+#   export FAUCET_FCAPTCHA_SITE_KEY=demo-site-key
+#   export FAUCET_FCAPTCHA_SECRET=demo-secret-change-me
+#   export FAUCET_PRIVATE_KEY=$(openssl rand -hex 32)
+#   export FAUCET_KEY_PASSPHRASE=at-least-eight-chars
+#   export FAUCET_ADMIN_PASSWORD=at-least-eight-chars
+#   # Optional non-default host ports if 8080/3000/5173 are taken locally:
+#   # export FAUCET_HOST_PORT=28080 FCAPTCHA_HOST_PORT=3010 MINI_APP_HOST_PORT=5173
+#   docker compose up --build
+#
+# Then on a phone on the same Wi-Fi: open Nimiq Pay → Mini Apps and enter
+# http://<LAN_IP>:${MINI_APP_HOST_PORT:-5173}.
+#
+# This compose file relaxes TLS + CORS for LAN dev. NEVER copy these env
+# values into a production deployment.
+
+include:
+  - ../../deploy/compose/docker-compose.yml
+  - ../../deploy/compose/fcaptcha.yml
+
+services:
+  faucet:
+    environment:
+      FAUCET_DEV: "1"
+      FAUCET_NETWORK: test
+      FAUCET_SIGNER_DRIVER: wasm
+      FAUCET_TLS_REQUIRED: "false"
+      FAUCET_CORS_ORIGINS: "*"
+      FAUCET_HELMET_CSP: relaxed-for-ui
+      FAUCET_UI_ENABLED: "false"
+      FAUCET_CLAIM_AMOUNT_LUNA: "100000"
+      FAUCET_RATE_LIMIT_PER_IP_PER_DAY: "20"
+      # Required by the WASM signer. Generate once with
+      #   FAUCET_PRIVATE_KEY=$(openssl rand -hex 32)
+      # and KEEP IT — the on-disk wallet is encrypted under this passphrase.
+      FAUCET_PRIVATE_KEY: ${FAUCET_PRIVATE_KEY:?set FAUCET_PRIVATE_KEY (32 random hex bytes)}
+      FAUCET_KEY_PASSPHRASE: ${FAUCET_KEY_PASSPHRASE:?set FAUCET_KEY_PASSPHRASE (>=8 chars)}
+      FAUCET_ADMIN_PASSWORD: ${FAUCET_ADMIN_PASSWORD:?set FAUCET_ADMIN_PASSWORD (>=8 chars)}
+      # Browser-reachable URL — the phone WebView fetches /fcaptcha.js and the
+      # captcha API from this. The faucet container itself reaches fcaptcha
+      # over the compose bridge as `http://fcaptcha:3000`, which is the default
+      # FAUCET_FCAPTCHA_INTERNAL_URL set by the included fcaptcha.yml overlay.
+      FAUCET_FCAPTCHA_PUBLIC_URL: http://${LAN_IP:?set LAN_IP to your Wi-Fi IP}:${FCAPTCHA_HOST_PORT:-3000}
+
+  mini-app-vue:
+    build:
+      context: ../..
+      dockerfile: examples/mini-app-claim-vue/Dockerfile.dev
+    image: nimiq-faucet-mini-app-vue:dev
+    environment:
+      VITE_FAUCET_URL: http://${LAN_IP:?set LAN_IP to your Wi-Fi IP}:${FAUCET_HOST_PORT:-8080}
+      VITE_HMR_HOST: ${LAN_IP}
+    ports:
+      - "${MINI_APP_HOST_PORT:-5173}:5173"
+    depends_on:
+      - faucet
+      - fcaptcha
