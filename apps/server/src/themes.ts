@@ -37,6 +37,13 @@ export const THEMES = {
     distFromRepoRoot: 'apps/claim-ui/dist',
     distInImage: '/app/themes/porcelain-vault/dist',
   },
+  'nimiq-pow': {
+    displayName: 'Nimiq PoW',
+    description:
+      'Visual tribute to the original nimiq/web-miner — world-dot map + peer-pulse animation, dark navy. Decorative; the claim is plain HTTP.',
+    distFromRepoRoot: 'apps/nimiq-pow-ui/dist',
+    distInImage: '/app/themes/nimiq-pow/dist',
+  },
 } as const satisfies Record<string, ThemeManifest>;
 
 export type ThemeSlug = keyof typeof THEMES;

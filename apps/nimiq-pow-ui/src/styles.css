@@ -1,0 +1,65 @@
+/* Nimiq PoW theme — visual tribute to nimiq/web-miner.
+   Brand palette:
+     --navy:    #1F2348   (primary background, deep)
+     --navy-2:  #2A2F5A   (panel surface)
+     --gold:    #F6AE2D   (accent, claim CTA)
+     --amber:   #FFB10D   (peer pulses, hover)
+     --text:    #F5F6FA   (primary text)
+     --muted:   #9EA3C7   (secondary text) */
+
+:root {
+  --navy: #1F2348;
+  --navy-2: #2A2F5A;
+  --navy-3: #14172E;
+  --gold: #F6AE2D;
+  --amber: #FFB10D;
+  --text: #F5F6FA;
+  --muted: #9EA3C7;
+  --success: #6FCF97;
+  --error: #EB5757;
+  --line: rgba(245, 246, 250, 0.08);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body, #app {
+  width: 100%;
+  min-height: 100vh;
+  background: var(--navy-3);
+  color: var(--text);
+  font-family: 'Mulish', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  overflow-x: hidden;
+}
+
+body {
+  background:
+    radial-gradient(ellipse at top, rgba(31, 35, 72, 0.9) 0%, rgba(20, 23, 46, 1) 60%),
+    var(--navy-3);
+}
+
+a {
+  color: var(--gold);
+  text-decoration: none;
+}
+a:hover { color: var(--amber); }
+
+button {
+  font-family: inherit;
+  font-size: inherit;
+  cursor: pointer;
+  border: none;
+  outline: none;
+  transition: background-color 120ms ease, transform 120ms ease, opacity 120ms ease;
+}
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+input {
+  font-family: 'JetBrains Mono', 'Menlo', 'Consolas', monospace;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text);
+}

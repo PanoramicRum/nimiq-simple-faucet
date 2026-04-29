@@ -124,6 +124,28 @@ importers:
         specifier: ^3.5.33
         version: 3.5.33(typescript@5.9.3)
 
+  apps/nimiq-pow-ui:
+    dependencies:
+      '@nimiq-faucet/sdk':
+        specifier: workspace:*
+        version: link:../../packages/sdk-ts
+      vue:
+        specifier: ^3.5.33
+        version: 3.5.33(typescript@5.9.3)
+    devDependencies:
+      '@vitejs/plugin-vue':
+        specifier: ^6.0.6
+        version: 6.0.6(vite@8.0.10(@types/node@25.6.0)(esbuild@0.27.7)(jiti@2.6.1)(terser@5.46.1)(tsx@4.21.0)(yaml@2.8.3))(vue@3.5.33(typescript@5.9.3))
+      typescript:
+        specifier: ^5.6.2
+        version: 5.9.3
+      vite:
+        specifier: ^8.0.10
+        version: 8.0.10(@types/node@25.6.0)(esbuild@0.27.7)(jiti@2.6.1)(terser@5.46.1)(tsx@4.21.0)(yaml@2.8.3)
+      vue-tsc:
+        specifier: ^2.1.6
+        version: 2.2.12(typescript@5.9.3)
+
   apps/playground:
     devDependencies:
       vitepress:

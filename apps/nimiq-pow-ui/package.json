@@ -1,0 +1,23 @@
+{
+  "name": "@nimiq-faucet/nimiq-pow-ui",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "description": "Alternative Claim UI theme — visual tribute to nimiq/web-miner. World-dot map + peer-pulse animation, dark navy. Decorative only; the claim is plain HTTP.",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc --noEmit && vite build",
+    "typecheck": "vue-tsc --noEmit",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@nimiq-faucet/sdk": "workspace:*",
+    "vue": "^3.5.33"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^6.0.6",
+    "typescript": "^5.6.2",
+    "vite": "^8.0.10",
+    "vue-tsc": "^2.1.6"
+  }
+}
