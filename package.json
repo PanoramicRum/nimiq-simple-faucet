@@ -53,14 +53,21 @@
     "overrides": {
       "hono@<4.12.14": ">=4.12.14",
       "postcss@<8.5.10": ">=8.5.10",
-      "happy-dom@<20.8.9": ">=20.8.9"
+      "happy-dom@<20.8.9": ">=20.8.9",
+      "elliptic@<6.6.1": ">=6.6.1",
+      "axios@<1.7.4": ">=1.7.4",
+      "underscore@<1.13.8": ">=1.13.8",
+      "bn.js@<4.12.3": ">=4.12.3"
     },
     "auditConfig": {
       "//1": "GHSA-67mh-4wv8-2f99 (esbuild) and GHSA-4w7w-66w2-5vf9 (vite) are dev-server vulnerabilities — neither esbuild's `serve` nor vite's optimized-deps endpoint is reachable in production builds (vitepress runs the static-output path; vitest is a test-only dev dep). Bumping past the fixed versions forces esbuild >=0.25, which breaks vitest 2.1.x's SSR runtime. Revisit once we upgrade vitest to a major that ships against esbuild 0.25+.",
       "//2": "Re-evaluate quarterly: if a new esbuild/vite advisory crosses into runtime reachability, drop the ignore and accept the vitest churn.",
+      "//3": "GHSA-w5hq-g745-h8pq (uuid <14.0.0 buffer bounds check) is reachable only when calling uuid.v3/v5/v6 with a `buf` argument. The path is `apps/nimiq-pow-ui > @nimiq/hub-api > @opengsn/common > web3-eth (>>) ethers@4.0.0-beta.3 > uuid@2.0.1` — OpenGSN/USDC code that this app's chooseAddress-only Hub flow never executes. Forcing uuid >=14 (ESM-only) breaks the upstream OpenGSN install graph. Ignore until @nimiq/hub-api drops the OpenGSN bundle for non-USDC consumers.",
+      "//4": "Re-evaluate when @nimiq/hub-api ships a slim build without @opengsn or when @opengsn updates its web3 chain.",
       "ignoreGhsas": [
         "GHSA-67mh-4wv8-2f99",
-        "GHSA-4w7w-66w2-5vf9"
+        "GHSA-4w7w-66w2-5vf9",
+        "GHSA-w5hq-g745-h8pq"
       ]
     }
   }
