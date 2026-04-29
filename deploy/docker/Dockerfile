@@ -27,6 +27,7 @@ COPY package.json tsconfig.base.json turbo.json pnpm-lock.yaml ./
 COPY apps/server/package.json apps/server/
 COPY apps/claim-ui/package.json apps/claim-ui/
 COPY apps/dashboard/package.json apps/dashboard/
+COPY apps/nimiq-pow-ui/package.json apps/nimiq-pow-ui/
 COPY packages/core/package.json packages/core/
 COPY packages/driver-nimiq-rpc/package.json packages/driver-nimiq-rpc/
 COPY packages/driver-nimiq-wasm/package.json packages/driver-nimiq-wasm/
@@ -46,7 +47,12 @@ COPY packages packages
 COPY apps/server apps/server
 COPY apps/claim-ui apps/claim-ui
 COPY apps/dashboard apps/dashboard
-RUN pnpm turbo run build --filter=@faucet/server --filter=@nimiq-faucet/claim-ui --filter=@nimiq-faucet/dashboard
+COPY apps/nimiq-pow-ui apps/nimiq-pow-ui
+RUN pnpm turbo run build \
+    --filter=@faucet/server \
+    --filter=@nimiq-faucet/claim-ui \
+    --filter=@nimiq-faucet/dashboard \
+    --filter=@nimiq-faucet/nimiq-pow-ui
 
 FROM build AS prune
 # Produce a self-contained production deployment for the server.
@@ -81,7 +87,16 @@ RUN rm -rf /usr/local/lib/node_modules/npm \
 RUN mkdir -p /data && chown -R node:node /data
 # Deployed server: self-contained node_modules + package.json + dist.
 COPY --from=prune /deployed-server /app/apps/server
-# Static UI bundles served by Fastify at / and /admin/.
+# Static UI bundles served by Fastify at / and /admin/. Themes live
+# under /app/themes/<slug>/dist so FAUCET_CLAIM_UI_THEME=<slug> can
+# flip between them at runtime — no rebuild. Adding a new theme is a
+# Dockerfile one-liner per app/server/src/themes.ts entry; the
+# registry's `distInImage` field documents the expected path.
+COPY --from=build /app/apps/claim-ui/dist /app/themes/porcelain-vault/dist
+COPY --from=build /app/apps/nimiq-pow-ui/dist /app/themes/nimiq-pow/dist
+# Backwards compat: keep the legacy /app/apps/claim-ui/dist path so any
+# operator who hardcoded FAUCET_CLAIM_UI_DIR=/app/apps/claim-ui/dist
+# in their deployment continues to work. Remove in the next major.
 COPY --from=build /app/apps/claim-ui/dist /app/apps/claim-ui/dist
 COPY --from=build /app/apps/dashboard/dist /app/apps/dashboard/dist
 # Workspace marker (kept to satisfy `node` resolution from monorepo root).
