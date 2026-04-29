@@ -52,6 +52,21 @@ button {
 button:disabled { opacity: 0.5; cursor: not-allowed; }
 button:not(:disabled):hover { opacity: 0.85; }
 
+.captcha-block {
+  margin-top: 0.5rem;
+  padding: 0.75rem;
+  background: #f0f1f9;
+  border-radius: 8px;
+}
+.captcha-label { font-size: 0.75rem; color: #6b7280; margin-bottom: 0.5rem; }
+
+.hashcash-note {
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin-top: -0.25rem;
+  font-style: italic;
+}
+
 .status {
   margin-top: 1.5rem;
   padding: 1rem;
@@ -60,6 +75,7 @@ button:not(:disabled):hover { opacity: 0.85; }
 }
 .status.confirmed { background: #d1fae5; color: #065f46; }
 .status.rejected { background: #fee2e2; color: #991b1b; }
+.status.solving-hashcash { background: #fef3c7; color: #78350f; }
 
 .tx { margin-top: 0.5rem; font-size: 0.8rem; word-break: break-all; }
 
