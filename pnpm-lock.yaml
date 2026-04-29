@@ -389,6 +389,9 @@ importers:
       '@nimiq-faucet/react':
         specifier: workspace:*
         version: link:../../packages/sdk-react
+      '@nimiq-faucet/sdk':
+        specifier: workspace:*
+        version: link:../../packages/sdk-ts
       next:
         specifier: ^16.2.4
         version: 16.2.4(@opentelemetry/api@1.9.1)(@playwright/test@1.59.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -411,6 +414,9 @@ importers:
 
   examples/vue-claim-page:
     dependencies:
+      '@nimiq-faucet/sdk':
+        specifier: workspace:*
+        version: link:../../packages/sdk-ts
       '@nimiq-faucet/vue':
         specifier: workspace:*
         version: link:../../packages/sdk-vue

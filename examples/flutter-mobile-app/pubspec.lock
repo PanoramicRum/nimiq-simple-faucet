@@ -55,7 +55,7 @@ packages:
       path: "../../packages/sdk-flutter"
       relative: true
     source: path
-    version: "0.0.1"
+    version: "2.2.0"
   path:
     dependency: transitive
     description:
