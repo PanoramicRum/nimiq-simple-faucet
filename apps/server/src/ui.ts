@@ -128,23 +128,25 @@ export async function registerUi(app: FastifyInstance, config: ServerConfig): Pr
     }
   }
 
-  // Mount every theme's dist as a static root. We disable `index` so the
-  // root path "/" is handled by our own GET '/' below — that's where we
-  // resolve `?theme=<slug>` and serve the right index.html. Hashed asset
-  // filenames (e.g. /assets/index-<hash>.js) are unique per build, so
-  // multi-mounting at prefix '/' doesn't collide.
-  let i = 0;
-  for (const [slug, dir] of themeDirs.entries()) {
-    await app.register(fastifyStatic, {
-      root: dir,
-      prefix: '/',
-      decorateReply: i === 0,
-      wildcard: false,
-      index: false,
-    });
-    i += 1;
-    app.log.info({ slug, dir }, 'claim ui theme mounted');
-  }
+  // Register @fastify/static ONCE for the active theme's dist. Multi-
+  // mounting at the same prefix collides on HEAD /index.html (each
+  // theme's dist has one). For the picker's cross-theme asset routing,
+  // the not-found handler below probes the other theme dirs manually
+  // before falling through to the SPA index.html.
+  await app.register(fastifyStatic, {
+    root: activeDir,
+    prefix: '/',
+    decorateReply: true,
+    wildcard: false,
+    index: false,
+  });
+  app.log.info({ slug: fallbackSlug, dir: activeDir }, 'active claim ui theme mounted');
+
+  // The non-active themes' dists, used only for the picker's manual
+  // file lookup. Empty when the picker is disabled.
+  const altThemeDirs = Array.from(themeDirs.entries())
+    .filter(([slug]) => slug !== fallbackSlug)
+    .map(([, dir]) => dir);
 
   // GET / — serve the right theme's index.html.
   app.get('/', async (req, reply) => {
@@ -152,7 +154,10 @@ export async function registerUi(app: FastifyInstance, config: ServerConfig): Pr
     return reply.sendFile('index.html', dir);
   });
 
-  // SPA fallback — same logic for any non-API path that didn't match a file.
+  // SPA fallback — for non-API paths that didn't hit a static file,
+  // first check whether the file exists in any non-active theme's dist
+  // (cross-theme asset routing for the picker), then fall back to the
+  // requested theme's index.html.
   app.setNotFoundHandler(async (req, reply) => {
     const url = req.url;
     if (
@@ -165,6 +170,21 @@ export async function registerUi(app: FastifyInstance, config: ServerConfig): Pr
     ) {
       return reply.code(404).send({ error: 'not found' });
     }
+    // Strip query string + leading slash; reject path-traversal attempts.
+    const pathOnly = url.split('?')[0]?.replace(/^\/+/, '') ?? '';
+    if (pathOnly && !pathOnly.includes('..') && /\.[a-zA-Z0-9]+$/.test(pathOnly)) {
+      // Looks like an asset (has an extension) — try every non-active
+      // theme's dist before falling back to the SPA shell. This is what
+      // makes the picker's hashed assets resolve when ?theme=<slug>
+      // serves a different theme's HTML.
+      for (const altDir of altThemeDirs) {
+        const candidate = resolve(altDir, pathOnly);
+        if (existsSync(candidate)) {
+          return reply.sendFile(pathOnly, altDir);
+        }
+      }
+    }
+    // SPA shell.
     const { dir } = themeForRequest(req, config, fallbackSlug, themeDirs);
     return reply.sendFile('index.html', dir);
   });
