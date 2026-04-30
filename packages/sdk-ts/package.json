@@ -24,6 +24,7 @@
   },
   "keywords": ["nimiq", "faucet", "crypto", "sdk"],
   "devDependencies": {
+    "@types/node": "^25.6.0",
     "typescript": "^6.0.3"
   }
 }
