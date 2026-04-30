@@ -19,7 +19,9 @@ const mockBridge = {
 };
 
 vi.mock('@nimiq-faucet/sdk', () => ({
-  FaucetClient: vi.fn().mockImplementation(() => mockClient),
+  FaucetClient: vi.fn().mockImplementation(function FaucetClient() {
+    return mockClient;
+  }),
 }));
 
 vi.mock('@nimiq-faucet/mini-app-claim-shared', () => ({
