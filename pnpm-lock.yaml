@@ -292,8 +292,8 @@ importers:
         specifier: ^8.3.1
         version: 8.3.1
       '@capacitor/device':
-        specifier: ^7.0.0
-        version: 7.0.5(@capacitor/core@8.3.1)
+        specifier: ^8.0.2
+        version: 8.0.2(@capacitor/core@8.3.1)
       '@nimiq-faucet/capacitor':
         specifier: workspace:*
         version: link:../../packages/sdk-capacitor
@@ -629,8 +629,8 @@ importers:
         specifier: ^8.3.1
         version: 8.3.1
       '@capacitor/device':
-        specifier: ^7.0.0
-        version: 7.0.5(@capacitor/core@8.3.1)
+        specifier: ^8.0.2
+        version: 8.0.2(@capacitor/core@8.3.1)
       typescript:
         specifier: ^5.6.2
         version: 5.9.3
@@ -898,10 +898,10 @@ packages:
   '@capacitor/core@8.3.1':
     resolution: {integrity: sha512-UF8ItlHguU1Z6GXfPTeT2gakf+ctNI8pAS1kwSBQlsJMlfD4OPoto/SmKnOxKCQvnF4WRcdWeg6C0zREUNaAQg==}
 
-  '@capacitor/device@7.0.5':
-    resolution: {integrity: sha512-tf6BYeQMBARNLKELQq2RGsvG3z03oM/ga+aqVhvE8M4IM8+h/516eeSz07Eqm4+yySGaQFT+2rIkpJrvA7gaAA==}
+  '@capacitor/device@8.0.2':
+    resolution: {integrity: sha512-fIqSXnG0s6bz5A/0xFgSXDkbU+Xl65ti80LhucNvLI4kGhJzcNn6SwWVwpXN9SJTOFWXblXknHNppheP8X1frQ==}
     peerDependencies:
-      '@capacitor/core': '>=7.0.0'
+      '@capacitor/core': '>=8.0.0'
 
   '@changesets/apply-release-plan@7.1.1':
     resolution: {integrity: sha512-9qPCm/rLx/xoOFXIHGB229+4GOL76S4MC+7tyOuTsR6+1jYlfFDQORdvwR5hDA6y4FL2BPt3qpbcQIS+dW85LA==}
@@ -6218,7 +6218,7 @@ snapshots:
     dependencies:
       tslib: 2.8.1
 
-  '@capacitor/device@7.0.5(@capacitor/core@8.3.1)':
+  '@capacitor/device@8.0.2(@capacitor/core@8.3.1)':
     dependencies:
       '@capacitor/core': 8.3.1
 
