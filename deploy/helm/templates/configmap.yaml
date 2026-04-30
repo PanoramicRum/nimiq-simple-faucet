@@ -17,6 +17,9 @@ data:
   {{- with .Values.claimUi.theme }}
   FAUCET_CLAIM_UI_THEME: {{ . | quote }}
   {{- end }}
+  {{- if .Values.claimUi.themePicker }}
+  FAUCET_THEME_PICKER_ENABLED: "true"
+  {{- end }}
   {{- if .Values.config.corsOrigins }}
   FAUCET_CORS_ORIGINS: {{ .Values.config.corsOrigins | quote }}
   {{- else }}

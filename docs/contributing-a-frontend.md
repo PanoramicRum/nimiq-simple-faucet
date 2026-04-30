@@ -34,7 +34,7 @@ Three endpoints cover the entire claim flow. The [`@nimiq-faucet/sdk`](../packag
 
 ### `GET /v1/config`
 
-Returns the operator's current configuration:
+Returns the operator's current configuration. The `ui` block is always present (theme metadata); `ui.themePicker` is present only when the operator opted into the user-facing theme picker (`FAUCET_THEME_PICKER_ENABLED=true`). See [`apps/nimiq-pow-ui/src/components/ThemePicker.vue`](../apps/nimiq-pow-ui/src/components/ThemePicker.vue) for a reference implementation; the picker writes the chosen slug to `localStorage` and reloads with `?theme=<slug>` to switch themes.
 
 ```json
 {

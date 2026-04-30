@@ -847,6 +847,11 @@ phone testing, then graduate the pattern to other themes.
 
 ### 3.0.16 — User-facing theme picker dropdown (nice-to-have)
 
+**Status:** ✅ shipped in PR #152. Server-side picker infrastructure
+is in place; NimiqPoW theme is the reference implementation. Default
+Porcelain Vault theme keeps its existing UI today — adding the picker
+there is a single-component drop-in.
+
 **Goal:** let visitors switch between bundled themes from a UI
 control instead of having the operator decide at deploy time.
 
@@ -856,14 +861,27 @@ addition — useful for the playground / public demo, but probably
 disabled in serious production deployments where the operator wants
 brand consistency.
 
-**Scope:**
-- Surface the available themes via `/v1/config.ui.themes: [{ slug,
-  displayName, description }]`.
-- Top-bar "Theme:" dropdown, theme-aware so each theme renders its own
-  variant. Selection persists in `localStorage`.
+**What shipped:**
+- `/v1/config.ui` exposes `theme` + `displayName` always; adds a
+  `themePicker.themes[]` block listing every bundled theme when the
+  operator opts in.
+- Server honours `?theme=<slug>` query when the picker is enabled —
+  serves the requested theme's `index.html` instead of the env default.
+  Hashed asset paths route across all bundled themes (mounted as
+  parallel static roots in `apps/server/src/ui.ts`).
+- `apps/nimiq-pow-ui/src/components/ThemePicker.vue` — top-bar
+  dropdown showing display names + descriptions. Selection writes the
+  slug to `localStorage` and reloads with `?theme=<slug>`. On every
+  load, JS reconciles localStorage with the URL so the user's last
+  pick survives a direct visit to `/`.
 - Operator opt-in: `FAUCET_THEME_PICKER_ENABLED=false` by default.
+  Helm `claimUi.themePicker` value mirrors this.
 
-**Estimated effort:** 1 day.
+**Remaining (deliberate):**
+- Drop a similar `ThemePicker.vue` into `apps/claim-ui/` so the
+  default Porcelain Vault theme also exposes the picker. The shape is
+  ~100 lines following the NimiqPoW reference; deferred so the
+  default theme's stable UX isn't churned in this PR.
 
 ## Future ideas (community contributions wanted)
 

@@ -125,6 +125,14 @@ export const ServerConfigSchema = z.object({
    * is documented in `docs/contributing-a-frontend.md`.
    */
   claimUiTheme: z.string().default('porcelain-vault'),
+  /**
+   * §3.0.16: when true, /v1/config exposes the bundled-theme list and
+   * the server honours `?theme=<slug>` in the URL (in addition to the
+   * env default), so a user-facing theme picker can switch themes on
+   * the fly. Default off — operators in production usually want brand
+   * consistency, not user-driven theme switching.
+   */
+  themePickerEnabled: z.coerce.boolean().default(false),
   dashboardDir: z.string().optional(),
 
   // When true, `/docs/api` is served outside dev mode too. `/openapi.json`
@@ -286,6 +294,7 @@ const ENV_KEYS: Record<string, string> = {
   uiEnabled: 'FAUCET_UI_ENABLED',
   claimUiDir: 'FAUCET_CLAIM_UI_DIR',
   claimUiTheme: 'FAUCET_CLAIM_UI_THEME',
+  themePickerEnabled: 'FAUCET_THEME_PICKER_ENABLED',
   dashboardDir: 'FAUCET_DASHBOARD_DIR',
   openapiPublic: 'FAUCET_OPENAPI_PUBLIC',
   integratorKeys: 'FAUCET_INTEGRATOR_KEYS',
