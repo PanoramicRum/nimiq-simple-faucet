@@ -20,7 +20,7 @@ jobs:
     steps:
       # Audit finding #007 / issue #93: SHA-pin every action so a tag
       # rewrite at the upstream cannot silently swap the binary.
-      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4
       - name: Build image (load into local docker)
         uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # v7
