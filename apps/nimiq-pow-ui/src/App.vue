@@ -5,6 +5,7 @@ import ConnectWallet from './components/ConnectWallet.vue';
 import ClaimButton from './components/ClaimButton.vue';
 import StatusBar from './components/StatusBar.vue';
 import FooterBar from './components/FooterBar.vue';
+import ThemePicker from './components/ThemePicker.vue';
 import { useClaim } from './composables/useClaim';
 
 const address = ref('');
@@ -52,12 +53,15 @@ function handleClaim() {
           <p class="tagline">PoW theme &mdash; tribute to the original web-miner</p>
         </div>
       </div>
-      <StatusBar
-        :phase="state.phase"
-        :tx-id="state.txId"
-        :error-message="state.errorMessage"
-        :hashcash-attempts="state.hashcashAttempts"
-      />
+      <div class="header-right">
+        <ThemePicker :config="config" />
+        <StatusBar
+          :phase="state.phase"
+          :tx-id="state.txId"
+          :error-message="state.errorMessage"
+          :hashcash-attempts="state.hashcashAttempts"
+        />
+      </div>
     </header>
 
     <!-- Centerpiece content -->
@@ -149,6 +153,13 @@ function handleClaim() {
   color: var(--muted);
   text-transform: uppercase;
   letter-spacing: 0.16em;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
 }
 
 .content {

@@ -53,6 +53,12 @@ config:
 # crash the UI for a typo here.
 claimUi:
   theme: "porcelain-vault"        # FAUCET_CLAIM_UI_THEME
+  # §3.0.16: enable a user-facing theme-picker dropdown. When true,
+  # /v1/config exposes the bundled-theme list and the server honours
+  # `?theme=<slug>` queries so users can switch themes from a UI
+  # control. Default off — production deployments usually want brand
+  # consistency. Recommended on for public-demo / playground deployments.
+  themePicker: false              # FAUCET_THEME_PICKER_ENABLED
 
 # Secrets are intentionally NOT hand-maintained at the chart level.
 #
