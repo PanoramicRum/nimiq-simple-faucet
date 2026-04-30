@@ -8,6 +8,7 @@ import FooterBar from './components/FooterBar.vue';
 import { useClaim } from './composables/useClaim';
 
 const address = ref('');
+const connectedLabel = ref<string | null>(null);
 const { config, state, claim, reset } = useClaim();
 
 const canClaim = computed(() => {
@@ -64,11 +65,17 @@ function handleClaim() {
       <div class="panel">
         <h2 class="hero">Claim your free NIM</h2>
         <p class="sub">
-          Decentralised peer-to-peer cash. Below is a live(ish) view of the network — paste your testnet
-          address and the faucet will send you {{ config?.claimAmountLuna ? `${(Number(config.claimAmountLuna) / 1e5).toFixed(2)} NIM` : 'some NIM' }} to get you started.
+          Decentralised peer-to-peer cash. Connect your Nimiq Hub account (or paste an address) and we'll send
+          you {{ config?.claimAmountLuna ? `${(Number(config.claimAmountLuna) / 1e5).toFixed(2)} NIM` : 'some NIM' }} to get you started.
+          <span v-if="connectedLabel" class="claiming-to">Claiming to <strong>{{ connectedLabel }}</strong>.</span>
         </p>
 
-        <ConnectWallet v-model="address" :disabled="isPending" />
+        <ConnectWallet
+          v-model="address"
+          :disabled="isPending"
+          :network="config?.network"
+          @connected-label="connectedLabel = $event"
+        />
 
         <div class="cta-row">
           <ClaimButton
@@ -181,6 +188,12 @@ function handleClaim() {
   line-height: 1.6;
   color: var(--muted);
 }
+.claiming-to {
+  display: inline;
+  margin-left: 0.4rem;
+  color: var(--gold);
+}
+.claiming-to strong { color: var(--text); font-weight: 700; }
 
 .cta-row {
   display: flex;

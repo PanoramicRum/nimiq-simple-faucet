@@ -40,16 +40,29 @@ pnpm --filter @nimiq-faucet/nimiq-pow-ui dev
 |---|---|
 | [`src/App.vue`](src/App.vue) | Layout: header + hero panel + map background + footer |
 | [`src/components/WorldMap.vue`](src/components/WorldMap.vue) | Canvas-based dot grid with continent silhouette + peer-pulse animation |
-| [`src/components/ConnectWallet.vue`](src/components/ConnectWallet.vue) | Paste-address input. Hub-API integration is roadmap §3.0.15. |
+| [`src/components/ConnectWallet.vue`](src/components/ConnectWallet.vue) | **Nimiq Hub-API connect button** primary; paste-address fallback for users without a Hub account or in restricted WebViews |
 | [`src/components/ClaimButton.vue`](src/components/ClaimButton.vue) | Pulsing gold CTA |
 | [`src/components/StatusBar.vue`](src/components/StatusBar.vue) | Phase / tx / error display |
 | [`src/components/FooterBar.vue`](src/components/FooterBar.vue) | Footer + GitHub + web-miner credit |
+| [`src/composables/useHub.ts`](src/composables/useHub.ts) | Wraps `@nimiq/hub-api`. Picks endpoint (mainnet vs. testnet) from `/v1/config.network`. Calls `chooseAddress` — the page never sees keys. |
 | [`src/composables/useClaim.ts`](src/composables/useClaim.ts) | Wraps `FaucetClient`, reads `/v1/config`, runs `solveAndClaim` when hashcash is enabled |
+
+## Wallet connection — Nimiq Hub
+
+The primary connect path uses the [Nimiq Hub](https://hub.nimiq.com) (testnet: [hub.nimiq-testnet.com](https://hub.nimiq-testnet.com)). One click pops the Hub in its own origin; the user authenticates there and picks an account; we receive `{ address, label }` back. **No keys ever touch this page** — the faucet's job is to *send* NIM to an address, not to sign anything on the user's behalf.
+
+The Hub endpoint is selected automatically from `/v1/config.network`:
+- `network: 'main'` → `https://hub.nimiq.com`
+- `network: 'test'` → `https://hub.nimiq-testnet.com`
+
+If the user closes the popup, the error is silently swallowed (no scary message for "I changed my mind"). Real errors (popup blocked, Hub unreachable) surface in red beneath the button.
+
+A paste-address fallback is one click away — useful when the user doesn't have a Hub account yet, or the Hub popup is blocked (some mobile WebViews / strict CSPs). The fallback emits the same `update:modelValue` shape so the parent never sees the difference.
 
 ## Roadmap
 
-- **Now (v1)**: paste-address claim, decorative network animation. Shipped in [PR #148](https://github.com/PanoramicRum/nimiq-simple-faucet/pull/148).
-- **Next (§3.0.15)**: Hub-API wallet connect — replaces the paste input with a Nimiq Hub flow. No keys ever held by the page.
+- **v1**: paste-address claim, decorative network animation. Shipped in [PR #148](https://github.com/PanoramicRum/nimiq-simple-faucet/pull/148).
+- **v1.1 (§3.0.15)**: ✅ Hub-API wallet connect — primary connect path; paste-address kept as fallback. Shipped in [PR #150](https://github.com/PanoramicRum/nimiq-simple-faucet/pull/150).
 - **Future (§3.0.16)**: user-facing theme picker so visitors can swap between bundled themes from the UI.
 - **Future (community)**: more themes — see [Future ideas](../../ROADMAP.md#future-ideas-community-contributions-wanted).
 

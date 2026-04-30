@@ -817,24 +817,33 @@ contributors have a documented path to ship a new theme.
 
 ### 3.0.15 — Hub-API wallet integration for the NimiqPoW theme
 
-**Goal:** replace v1's paste-address input with [`@nimiq/hub-api`](https://www.npmjs.com/package/@nimiq/hub-api)
-so users connect their Nimiq wallet via the Hub flow rather than copy-
-pasting an address. The user's account access is signed by the Hub; no
-key handling in the page.
+**Status:** ✅ shipped in PR #150. `@nimiq/hub-api` is now a workspace
+dep on `apps/nimiq-pow-ui/`; `useHub` selects the endpoint
+(mainnet/testnet) from `/v1/config.network`; `ConnectWallet.vue`'s
+primary path is a Hub button (`chooseAddress`) with a paste-address
+fallback for users without a Hub account or in restricted WebViews.
+
+**Remaining (deliberate):**
+- Real-phone testing matrix — Android Chrome WebView, iOS WKWebView,
+  Nimiq Pay app. The Hub popup behaviour varies by host; document the
+  observed quirks in `docs/quality/hub-popup-mobile-matrix.md` after
+  testing. Hardware-gated; expect to file as a follow-up to issue
+  #121's WebView Origin investigation when that runs.
+- Graduating the Hub flow from NimiqPoW into the default Porcelain
+  Vault theme — separate decision on UX direction; today the default
+  theme retains its existing paste-address UX.
 
 **Why scoped to NimiqPoW first:** the existing Porcelain Vault theme
 already has its own claim UX and changing it disrupts users on the
 default. Land Hub integration in NimiqPoW first, validate with real-
 phone testing, then graduate the pattern to other themes.
 
-**Scope:**
-- Replace `apps/nimiq-pow-ui/src/components/ConnectWallet.vue`'s paste
-  input with a Hub-API connect button.
-- `@nimiq/hub-api` as a workspace dep on the NimiqPoW theme only.
-- Document the Hub flow in `apps/nimiq-pow-ui/README.md`.
-
-**Estimated effort:** 1 day (Hub-API has a well-documented integration
-path; the slow piece is real-phone testing across iOS/Android).
+**Original scope (delivered):**
+- Hub-API connect button replaces the paste input as the primary path
+  (paste retained as fallback, not removed — better UX for newcomers
+  without a Hub account yet).
+- `@nimiq/hub-api` workspace dep scoped to the NimiqPoW theme only.
+- Hub flow documented in `apps/nimiq-pow-ui/README.md`.
 
 ### 3.0.16 — User-facing theme picker dropdown (nice-to-have)
 
