@@ -99,14 +99,17 @@ describe('useMiniAppFaucet (Vue) — state machine', () => {
   it('rejected at submit', async () => {
     setupReady();
     mockClient.config.mockResolvedValue({});
-    mockClient.claim.mockResolvedValue({ id: 'cid-2', status: 'rejected', reason: 'rate limited' });
+    // Public reject body shape per SECURITY.md "Public-API silence on
+    // rejection": no `reason` field. The composable surfaces a static
+    // 'Claim rejected' fallback.
+    mockClient.claim.mockResolvedValue({ id: 'cid-2', status: 'rejected' });
 
     const scope = effectScope();
     const result = scope.run(() => useMiniAppFaucet(FAUCET_URL))!;
     await flushMicrotasks();
     await result.claim();
     expect(result.state.phase).toBe('rejected');
-    expect(result.state.errorMessage).toBe('rate limited');
+    expect(result.state.errorMessage).toBe('Claim rejected');
     expect(mockClient.waitForConfirmation).not.toHaveBeenCalled();
     scope.stop();
   });
@@ -114,14 +117,14 @@ describe('useMiniAppFaucet (Vue) — state machine', () => {
   it('challenged response', async () => {
     setupReady();
     mockClient.config.mockResolvedValue({});
-    mockClient.claim.mockResolvedValue({ id: 'cid-3', status: 'challenged', reason: 'captcha required' });
+    mockClient.claim.mockResolvedValue({ id: 'cid-3', status: 'challenged' });
 
     const scope = effectScope();
     const result = scope.run(() => useMiniAppFaucet(FAUCET_URL))!;
     await flushMicrotasks();
     await result.claim();
     expect(result.state.phase).toBe('challenged');
-    expect(result.state.errorMessage).toBe('captcha required');
+    expect(result.state.errorMessage).toBe('Captcha required');
     scope.stop();
   });
 
