@@ -87,8 +87,7 @@ describe('onchain-nimiq abuse layer', () => {
       headers: { 'content-type': 'application/json' },
     });
     expect(res.statusCode).toBe(403);
-    expect(res.json().decision).toBe('deny');
-    expect(res.json().reason).toMatch(/sweeper/i);
+    expect(res.json().status).toBe('rejected');
     expect(driver.sends).toHaveLength(0);
   });
 

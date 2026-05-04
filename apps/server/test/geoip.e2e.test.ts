@@ -104,8 +104,7 @@ describe('geoip abuse layer (e2e)', () => {
       headers: { 'content-type': 'application/json', 'x-forwarded-for': '203.0.113.20' },
     });
     expect(res.statusCode).toBe(403);
-    expect(res.json().decision).toBe('deny');
-    expect(res.json().reason).toMatch(/KP/);
+    expect(res.json().status).toBe('rejected');
   });
 
   it('denies a claim from a VPN / proxy ASN (denyVpn)', async () => {
@@ -116,8 +115,7 @@ describe('geoip abuse layer (e2e)', () => {
       headers: { 'content-type': 'application/json', 'x-forwarded-for': '203.0.113.40' },
     });
     expect(res.statusCode).toBe(403);
-    expect(res.json().decision).toBe('deny');
-    expect(res.json().reason).toMatch(/VPN|proxy/i);
+    expect(res.json().status).toBe('rejected');
   });
 
   it('flags hosting providers and escalates based on score thresholds', async () => {
@@ -129,6 +127,6 @@ describe('geoip abuse layer (e2e)', () => {
       headers: { 'content-type': 'application/json', 'x-forwarded-for': '203.0.113.30' },
     });
     expect(res.statusCode).toBe(403);
-    expect(res.json().reason).toMatch(/hosting/);
+    expect(res.json().status).toBe('rejected');
   });
 });

@@ -94,8 +94,8 @@ describe('blocklist normalization (#94)', () => {
     });
     expect(res.statusCode).toBe(403);
     const body = res.json();
-    expect(body.decision).toBe('deny');
-    expect(body.reason).toMatch(/blocklisted ip/i);
+    expect(body.status).toBe('rejected');
+    expect(Object.keys(body).sort()).toEqual(['id', 'status']);
   });
 
   it('re-normalises pre-existing rows on boot (idempotent migration)', async () => {

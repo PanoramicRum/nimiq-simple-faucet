@@ -79,15 +79,17 @@ export function useClaim() {
       state.txId = result.txId ?? null;
       if (result.status === 'rejected' || result.status === 'challenged') {
         state.phase = 'rejected';
-        state.errorMessage = result.reason ?? 'Claim rejected';
+        // Public reject responses are uniform — no reason is available.
+        // See SECURITY.md "Public-API silence on rejection".
+        state.errorMessage = 'Claim rejected';
         return;
       }
       state.phase = 'broadcast';
       const final = await client.waitForConfirmation(result.id);
       state.txId = final.txId ?? state.txId;
       state.phase = final.status === 'confirmed' ? 'confirmed' : 'rejected';
-      if (final.status === 'rejected' && final.reason) {
-        state.errorMessage = final.reason;
+      if (final.status === 'rejected') {
+        state.errorMessage = 'Claim rejected';
       }
     } catch (err) {
       state.phase = 'error';

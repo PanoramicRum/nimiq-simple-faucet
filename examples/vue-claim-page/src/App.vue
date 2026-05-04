@@ -150,20 +150,22 @@ async function handleSubmit() {
     phase.value = 'submitting';
     txId.value = result.txId ?? null;
     if (result.status === 'rejected') {
+      // Public reject body has no reason — uniform shape for all denials.
+      // See SECURITY.md "Public-API silence on rejection".
       phase.value = 'rejected';
-      errorMessage.value = result.reason ?? 'Claim rejected';
+      errorMessage.value = 'Claim rejected';
       return;
     }
     if (result.status === 'challenged') {
       phase.value = 'rejected';
-      errorMessage.value = result.reason ?? 'Captcha challenge required';
+      errorMessage.value = 'Captcha challenge required';
       return;
     }
     phase.value = 'broadcast';
     const final = await client.waitForConfirmation(result.id);
     txId.value = final.txId ?? txId.value;
     phase.value = final.status === 'confirmed' ? 'confirmed' : 'rejected';
-    if (final.status === 'rejected' && final.reason) errorMessage.value = final.reason;
+    if (final.status === 'rejected') errorMessage.value = 'Claim rejected';
   } catch (err) {
     phase.value = 'error';
     errorMessage.value = err instanceof Error ? err.message : String(err);

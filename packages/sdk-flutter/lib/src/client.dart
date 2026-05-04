@@ -160,16 +160,13 @@ class FaucetClient {
     if (res.statusCode >= 400) {
       var message = 'HTTP ${res.statusCode}';
       String? code;
-      String? decision;
       if (parsed is Map<String, dynamic>) {
         final err = parsed['error'];
         if (err is String) message = err;
         final c = parsed['code'];
         if (c is String) code = c;
-        final d = parsed['decision'];
-        if (d is String) decision = d;
       }
-      throw FaucetException(message, status: res.statusCode, code: code, decision: decision);
+      throw FaucetException(message, status: res.statusCode, code: code);
     }
     return parsed;
   }

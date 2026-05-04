@@ -16,7 +16,6 @@ export interface ClaimState {
   status: 'idle' | 'pending' | ClaimStatus;
   id: string | null;
   txId: string | null;
-  decision: ClaimResponse['decision'] | null;
   error: Error | null;
 }
 
@@ -24,7 +23,6 @@ const INITIAL_STATE: ClaimState = {
   status: 'idle',
   id: null,
   txId: null,
-  decision: null,
   error: null,
 };
 
@@ -56,14 +54,12 @@ export class ClaimManager {
         id: response.id,
         status: response.status,
         txId: response.txId ?? null,
-        decision: response.decision ?? null,
       });
       if (pollForConfirmation && (response.status === 'broadcast' || response.status === 'queued')) {
         const confirmed = await this.#client.waitForConfirmation(response.id);
         this.#set({
           status: confirmed.status,
           txId: confirmed.txId ?? response.txId ?? null,
-          decision: confirmed.decision ?? null,
         });
       }
     } catch (err) {

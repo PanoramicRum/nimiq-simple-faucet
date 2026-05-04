@@ -23,15 +23,12 @@ export interface ClaimOptions {
   signal?: AbortSignal | undefined;
 }
 
-export type ClaimDecision = 'allow' | 'challenge' | 'review' | 'deny';
 export type ClaimStatus = 'queued' | 'broadcast' | 'confirmed' | 'rejected' | 'challenged';
 
 export interface ClaimResponse {
   id: string;
   status: ClaimStatus;
   txId?: string | undefined;
-  decision?: ClaimDecision | undefined;
-  reason?: string | undefined;
 }
 
 export interface HashcashChallenge {
@@ -67,14 +64,12 @@ export interface FaucetClientOptions {
 export class FaucetError extends Error {
   readonly status: number;
   readonly code: string | undefined;
-  readonly decision: ClaimDecision | undefined;
 
-  constructor(message: string, status: number, code?: string, decision?: ClaimDecision) {
+  constructor(message: string, status: number, code?: string) {
     super(message);
     this.name = 'FaucetError';
     this.status = status;
     this.code = code;
-    this.decision = decision;
   }
 }
 
@@ -243,8 +238,8 @@ export class FaucetClient {
         const err = (parsed as { error: unknown }).error;
         if (typeof err === 'string') message = err;
       }
-      const obj = parsed as { code?: string; decision?: ClaimDecision } | undefined;
-      throw new FaucetError(message, res.status, obj?.code, obj?.decision);
+      const obj = parsed as { code?: string } | undefined;
+      throw new FaucetError(message, res.status, obj?.code);
     }
     return parsed as T;
   }

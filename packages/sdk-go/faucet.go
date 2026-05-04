@@ -230,9 +230,8 @@ func (c *Client) do(req *http.Request, out interface{}) error {
 	if resp.StatusCode >= 400 {
 		fe := &FaucetError{Status: resp.StatusCode, Message: fmt.Sprintf("HTTP %d", resp.StatusCode)}
 		var errBody struct {
-			Error    string `json:"error"`
-			Code     string `json:"code"`
-			Decision string `json:"decision"`
+			Error string `json:"error"`
+			Code  string `json:"code"`
 		}
 		if len(body) > 0 {
 			if jerr := json.Unmarshal(body, &errBody); jerr == nil {
@@ -240,7 +239,6 @@ func (c *Client) do(req *http.Request, out interface{}) error {
 					fe.Message = errBody.Error
 				}
 				fe.Code = errBody.Code
-				fe.Decision = errBody.Decision
 			}
 		}
 		return fe

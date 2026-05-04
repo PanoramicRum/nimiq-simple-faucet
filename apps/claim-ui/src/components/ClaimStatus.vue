@@ -83,7 +83,8 @@ function startTracking(id: string) {
         cleanup();
       } else if (s.status === 'rejected') {
         status.value = 'rejected';
-        reasonKey.value = mapReason(undefined, s.reason);
+        // Public reject body has no reason — uniform shape for all denials.
+        reasonKey.value = mapReason(undefined, undefined);
         cleanup();
       } else if (s.status === 'broadcast' && status.value !== 'confirmed') {
         status.value = 'broadcast';
@@ -118,7 +119,7 @@ watch(
     status.value = initial.status;
     txId.value = initial.txId ?? null;
     if (initial.status === 'rejected') {
-      reasonKey.value = mapReason(undefined, initial.reason);
+      reasonKey.value = mapReason(undefined, undefined);
       return;
     }
     if (initial.status === 'challenged') {

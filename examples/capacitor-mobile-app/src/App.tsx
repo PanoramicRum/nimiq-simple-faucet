@@ -147,20 +147,22 @@ export default function App() {
       setPhase('submitting');
       setTxId(result.txId ?? null);
       if (result.status === 'rejected') {
+        // Public reject body has no reason — uniform shape for all denials.
+        // See SECURITY.md "Public-API silence on rejection".
         setPhase('rejected');
-        setErrorMessage(result.reason ?? 'Claim rejected');
+        setErrorMessage('Claim rejected');
         return;
       }
       if (result.status === 'challenged') {
         setPhase('rejected');
-        setErrorMessage(result.reason ?? 'Captcha challenge required');
+        setErrorMessage('Captcha challenge required');
         return;
       }
       setPhase('broadcast');
       const final = await client.waitForConfirmation(result.id);
       setTxId((prev) => final.txId ?? prev);
       setPhase(final.status === 'confirmed' ? 'confirmed' : 'rejected');
-      if (final.status === 'rejected' && final.reason) setErrorMessage(final.reason);
+      if (final.status === 'rejected') setErrorMessage('Claim rejected');
     } catch (err) {
       setPhase('error');
       setErrorMessage(err instanceof Error ? err.message : String(err));

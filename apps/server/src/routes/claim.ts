@@ -107,7 +107,7 @@ export async function claimRoutes(app: FastifyInstance, ctx: AppContext): Promis
     const rawBody = typeof req.body === 'string' ? req.body : JSON.stringify(req.body ?? {});
     const parsed = ClaimBody.safeParse(req.body);
     if (!parsed.success) {
-      return reply.code(400).send({ error: 'invalid body', issues: parsed.error.issues });
+      return reply.code(400).send({ error: 'invalid request' });
     }
 
     let integratorId: string | undefined;
@@ -143,7 +143,7 @@ export async function claimRoutes(app: FastifyInstance, ctx: AppContext): Promis
         },
       });
       if (!result.ok) {
-        return reply.code(401).send({ error: `integrator auth failed: ${result.reason}` });
+        return reply.code(401).send({ error: 'integrator auth failed' });
       }
       integratorId = result.integratorId;
       hostContextVerified = true;
@@ -182,10 +182,8 @@ export async function claimRoutes(app: FastifyInstance, ctx: AppContext): Promis
     let address: string;
     try {
       address = ctx.driver.parseAddress(parsed.data.address);
-    } catch (err) {
-      return reply
-        .code(400)
-        .send({ error: 'invalid address', message: (err as Error).message });
+    } catch {
+      return reply.code(400).send({ error: 'invalid address' });
     }
 
     // Idempotency lookup (#86). Scoped by:
@@ -272,14 +270,11 @@ export async function claimRoutes(app: FastifyInstance, ctx: AppContext): Promis
       });
       claimsTotal.inc({ status: 'rejected', decision: evaluation.decision });
       claimDuration.observe({ phase: 'total' }, (Date.now() - now) / 1000);
-      const reason = evaluation.reasons[0] ?? evaluation.decision;
-      return reply.code(evaluation.decision === 'deny' ? 403 : 202).send({
-        id,
-        status: 'rejected',
-        decision: evaluation.decision,
-        reason,
-        error: reason,
-      });
+      // Uniform public reject shape: no abuse-layer attribution, no
+      // deny-vs-review distinction (status code or body). Granular reasons
+      // remain in the DB row + claimsTotal Prom metric for operators.
+      // See SECURITY.md "Public-API silence on rejection".
+      return reply.code(403).send({ id, status: 'rejected' });
     }
 
     if (evaluation.decision === 'challenge') {
@@ -399,6 +394,10 @@ export async function claimRoutes(app: FastifyInstance, ctx: AppContext): Promis
     const { id } = req.params as { id: string };
     const [row] = await ctx.db.select().from(claims).where(eq(claims.id, id)).limit(1);
     if (!row) return reply.code(404).send({ error: 'not found' });
+    // Public claim-status response intentionally omits `decision` and
+    // `rejectionReason`. Operators querying for granular abuse-pipeline
+    // attribution use the admin endpoints (/v1/admin/claims/:id).
+    // See SECURITY.md "Public-API silence on rejection".
     return {
       id: row.id,
       status: row.status,
@@ -406,8 +405,6 @@ export async function claimRoutes(app: FastifyInstance, ctx: AppContext): Promis
       amountLuna: row.amountLuna,
       txId: row.txId,
       createdAt: row.createdAt,
-      decision: row.decision,
-      rejectionReason: row.rejectionReason,
     };
   });
 
