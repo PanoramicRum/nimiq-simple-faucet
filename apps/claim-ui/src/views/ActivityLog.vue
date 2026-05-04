@@ -3,15 +3,16 @@ import { onMounted, ref, watch } from 'vue';
 import ClaimDetailModal from '../components/ClaimDetailModal.vue';
 import { timeAgo, lunaToNim } from '../lib/format';
 
+// Mirrors the public `/v1/claims/recent` row shape. `decision` and
+// `rejectionReason` are intentionally absent — see SECURITY.md
+// "Public-API silence on rejection".
 interface ClaimRow {
   id: string;
   createdAt: string | number;
   address: string;
   amountLuna: string;
   status: string;
-  decision: string | null;
   txId: string | null;
-  rejectionReason: string | null;
 }
 
 const items = ref<ClaimRow[]>([]);
@@ -25,8 +26,9 @@ const pageSize = 20;
 function entryTitle(c: ClaimRow): string {
   if (c.status === 'confirmed') return 'Claim Successful';
   if (c.status === 'broadcast') return 'Faucet Sent';
-  if (c.status === 'rejected' && c.decision === 'deny') return 'Abuse Attempt Blocked';
-  if (c.status === 'rejected') return 'Rate Limit Exceeded';
+  // Public reject body is uniform — we no longer distinguish 'deny' vs
+  // other reject reasons in the activity log title. See SECURITY.md.
+  if (c.status === 'rejected') return 'Claim Rejected';
   if (c.status === 'challenged') return 'Processing Transaction';
   if (c.status === 'timeout') return 'Processing Transaction';
   return 'Claim ' + c.status;

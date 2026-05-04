@@ -2,15 +2,16 @@
 import { computed } from 'vue';
 import { lunaToNim } from '../lib/format';
 
+// Mirrors the public `/v1/claims/recent` row shape. `decision` and
+// `rejectionReason` are intentionally absent — see SECURITY.md
+// "Public-API silence on rejection".
 interface ClaimDetail {
   id: string;
   createdAt: string | number;
   address: string;
   amountLuna?: string;
   status: string;
-  decision: string | null;
   txId: string | null;
-  rejectionReason: string | null;
 }
 
 const props = defineProps<{ claim: ClaimDetail }>();
@@ -112,13 +113,13 @@ function copyToClipboard(text: string) {
             <span class="font-mono text-lg text-primary font-semibold">{{ lunaToNim(claim.amountLuna) }} NIM</span>
           </div>
 
-          <!-- Decision -->
-          <div class="bg-surface-container-low rounded-[16px] p-6 flex flex-col gap-2">
-            <span class="font-label text-xs uppercase tracking-wider text-on-surface-variant font-medium">Decision</span>
-            <span class="font-mono text-sm text-on-surface">{{ claim.decision ?? '—' }}</span>
-          </div>
-
           <!-- TX Hash (if exists) -->
+          <!-- Per SECURITY.md "Public-API silence on rejection": the
+               public claim-status response no longer carries `decision`
+               or `rejectionReason`. Operators see those fields via the
+               admin dashboard's claims-list view.
+               This modal renders only fields the public endpoint exposes. -->
+
           <div v-if="claim.txId" class="col-span-1 md:col-span-2 bg-surface-container-low rounded-[16px] p-6 flex flex-col gap-3">
             <span class="font-label text-xs uppercase tracking-wider text-on-surface-variant font-medium">Transaction Hash</span>
             <div class="flex items-center justify-between">
@@ -127,12 +128,6 @@ function copyToClipboard(text: string) {
                 📋
               </button>
             </div>
-          </div>
-
-          <!-- Rejection Reason (if exists) -->
-          <div v-if="claim.rejectionReason" class="col-span-1 md:col-span-2 bg-surface-container-low rounded-[16px] p-6 flex flex-col gap-3">
-            <span class="font-label text-xs uppercase tracking-wider text-on-surface-variant font-medium">Rejection Reason</span>
-            <span class="font-mono text-sm text-error">{{ claim.rejectionReason }}</span>
           </div>
 
           <!-- Claim ID -->

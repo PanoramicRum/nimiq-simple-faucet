@@ -9,15 +9,16 @@ interface StatsSummary {
   claims: Record<string, number>;
   blocked: Record<string, number>;
   successRate: number;
+  // Mirrors the public `/v1/stats/summary` response shape. `decision`,
+  // `rejectionReason`, and `topRejectionReasons` are intentionally
+  // absent — see SECURITY.md "Public-API silence on rejection".
   recentClaims: {
     id: string;
     createdAt: string | number;
     address: string;
     amountLuna: string;
     status: string;
-    decision: string;
     txId: string | null;
-    rejectionReason: string | null;
   }[];
   recentBlocked: {
     id: string;
@@ -25,11 +26,8 @@ interface StatsSummary {
     address: string;
     amountLuna: string;
     status: string;
-    decision: string;
     txId: string | null;
-    rejectionReason: string | null;
   }[];
-  topRejectionReasons: { reason: string; count: number }[];
 }
 
 interface SystemEvent {
@@ -157,7 +155,7 @@ onUnmounted(() => clearInterval(pollTimer));
               <div class="col-span-6 font-mono text-on-surface font-medium truncate pr-4">{{ truncateAddress(c.address) }}</div>
               <div class="col-span-3 text-on-surface-variant font-mono">{{ timeAgo(c.createdAt) }}</div>
               <div class="col-span-3 text-right font-mono font-semibold" :class="c.status === 'rejected' ? 'text-error' : 'text-primary'">
-                {{ c.status === 'rejected' ? c.rejectionReason ?? 'Blocked' : `+${lunaToNim(c.amountLuna)} NIM` }}
+                {{ c.status === 'rejected' ? 'Blocked' : `+${lunaToNim(c.amountLuna)} NIM` }}
               </div>
             </div>
           </div>
@@ -184,7 +182,7 @@ onUnmounted(() => clearInterval(pollTimer));
               <div class="col-span-5 font-mono text-on-surface font-medium truncate pr-4">{{ truncateAddress(c.address) }}</div>
               <div class="col-span-3 text-on-surface-variant font-mono">{{ timeAgo(c.createdAt) }}</div>
               <div class="col-span-4 text-right font-mono font-semibold text-error truncate">
-                {{ c.rejectionReason ?? 'Blocked' }}
+                Blocked
               </div>
             </div>
           </div>
