@@ -126,7 +126,9 @@ export const StatsResponse = registry.register(
   z.object({
     total: z.number().int(),
     byStatus: z.record(z.string(), z.number().int()),
-    byDecision: z.record(z.string(), z.number().int()),
+    // `byDecision` intentionally omitted from the public schema — see
+    // SECURITY.md "Public-API silence on rejection". Operators see it via
+    // /v1/admin/overview's bucketed counts.
   }),
 );
 

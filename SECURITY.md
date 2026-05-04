@@ -182,16 +182,27 @@ remain informative because they're documented gates with legitimate-client
 retry semantics, *or* they fire after the abuse pipeline approves so
 they're not abuse-layer attribution.
 
+**The same contract applies to every public read endpoint, not just
+the claim POST/GET.** Aggregate or recent-rows endpoints
+(`/v1/stats`, `/v1/stats/summary`, `/v1/claims/recent`) must NOT carry
+per-claim `decision`, `rejectionReason`, `signalsJson`, or
+`abuseScore`, and must NOT expose `topRejectionReasons` strings
+publicly. Otherwise an attacker reads the operator's recent-rejections
+leaderboard instead of A/B-testing their own claims — same intel leak,
+larger sample size. Operators see the granular shape via the
+authenticated `/v1/admin/*` routes (`/v1/admin/claims`,
+`/v1/admin/overview`).
+
 **Operator visibility is unchanged.** The granular `decision`,
 `rejectionReason`, `signalsJson`, and per-layer scores stay in the
 `claims` DB row, in the Prometheus `claimsTotal{decision="..."}`
-counters, and on the admin endpoints under `/v1/admin/claims`. SDKs
+counters, and on the admin endpoints under `/v1/admin/*`. SDKs
 (`@nimiq-faucet/sdk` and the framework wrappers) intentionally don't
 expose `decision` / `reason` types on public reject responses; consumers
 infer "rejected" purely from `status === "rejected"`.
 
-If a future contributor wants to add diagnostic fields back to the
-public reject body, that is a security-relevant change that needs a
+If a future contributor wants to add diagnostic fields back to any
+public route, that is a security-relevant change that needs a
 threat-model review — please don't quietly re-add them.
 
 ### What we don't defend against

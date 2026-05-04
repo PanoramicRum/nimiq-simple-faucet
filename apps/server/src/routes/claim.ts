@@ -409,19 +409,17 @@ export async function claimRoutes(app: FastifyInstance, ctx: AppContext): Promis
   });
 
   app.get('/v1/stats', async () => {
+    // Public response intentionally omits `byDecision` — that field carried
+    // pipeline-effectiveness intelligence (deny/review/allow ratios over
+    // the last 100 claims) which violates SECURITY.md "Public-API silence
+    // on rejection". Operators see the same data via /v1/admin/overview.
     const recent = await ctx.db
-      .select({
-        id: claims.id,
-        createdAt: claims.createdAt,
-        status: claims.status,
-        decision: claims.decision,
-      })
+      .select({ id: claims.id, status: claims.status })
       .from(claims)
       .limit(100);
     return {
       total: recent.length,
       byStatus: groupBy(recent.map((r) => r.status)),
-      byDecision: groupBy(recent.map((r) => r.decision)),
     };
   });
 
@@ -462,23 +460,18 @@ export async function claimRoutes(app: FastifyInstance, ctx: AppContext): Promis
     const blockedCount24h = blocked24h[0]?.n ?? 0;
     const total24h = successCount24h + blockedCount24h;
 
-    const topReasons = await ctx.db
-      .select({ reason: claims.rejectionReason, n: sql<number>`count(*)` })
-      .from(claims)
-      .where(and(gte(claims.createdAt, windows['24h']), isNotNull(claims.rejectionReason)))
-      .groupBy(claims.rejectionReason)
-      .orderBy(sql`count(*) desc`)
-      .limit(5);
-
+    // Public response intentionally omits `topRejectionReasons` and the
+    // per-row `decision` / `rejectionReason` fields — they leak abuse-layer
+    // attribution and contradict SECURITY.md "Public-API silence on
+    // rejection". Operators see the same granular data via
+    // /v1/admin/overview (topRejectionReasons) and /v1/admin/claims (rows).
     const claimFields = {
       id: claims.id,
       createdAt: claims.createdAt,
       address: claims.address,
       amountLuna: claims.amountLuna,
       status: claims.status,
-      decision: claims.decision,
       txId: claims.txId,
-      rejectionReason: claims.rejectionReason,
     };
 
     const [recentClaimsRaw, recentBlockedRaw] = await Promise.all([
@@ -511,13 +504,16 @@ export async function claimRoutes(app: FastifyInstance, ctx: AppContext): Promis
       successRate: total24h > 0 ? successCount24h / total24h : 0,
       recentClaims,
       recentBlocked,
-      topRejectionReasons: topReasons.map((r) => ({ reason: r.reason ?? 'unknown', count: r.n })),
     };
     summaryCache = { data, ts: now };
     return data;
   });
 
-  // ── /v1/claims/recent — public paginated claims (no sensitive fields) ──
+  // ── /v1/claims/recent — public paginated claims ──
+  // Per SECURITY.md "Public-API silence on rejection": this endpoint
+  // intentionally omits `decision` and `rejectionReason` (those carry
+  // abuse-layer attribution). Operators get the granular shape via
+  // /v1/admin/claims.
 
   app.get('/v1/claims/recent', async (req) => {
     const query = req.query as { limit?: string; offset?: string; status?: string };
@@ -534,9 +530,7 @@ export async function claimRoutes(app: FastifyInstance, ctx: AppContext): Promis
         address: claims.address,
         amountLuna: claims.amountLuna,
         status: claims.status,
-        decision: claims.decision,
         txId: claims.txId,
-        rejectionReason: claims.rejectionReason,
       })
       .from(claims)
       .where(conds)
