@@ -54,6 +54,7 @@ describe('onchain-nimiq abuse layer', () => {
       onchainEnabled: 'true',
       onchainDenyIfSweeper: 'true',
       dev: 'true',
+      rejectDelayMsMin: '0',
     });
     driver = new StubDriver();
     driver.historyFor.set(SWEEPER_ADDR, {

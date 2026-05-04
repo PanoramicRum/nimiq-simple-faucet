@@ -23,6 +23,22 @@ const ClaimBody = ClaimRequestSchema.transform(({ powSolution, hashcashSolution,
   hashcashSolution: hashcashSolution ?? powSolution,
 }));
 
+/**
+ * Pad a reject response so its wall-clock latency is at least `targetMs`
+ * relative to the request start. Defends against pipeline-position timing
+ * attribution (audits/findings-2026-05/024) — the pipeline short-circuits
+ * on the first hard deny, so without padding a rate-limit reject lands in
+ * ~5ms and an AI reject in ~2s, which leaks layer position even when the
+ * response body is uniform. Use the same floor for every public reject
+ * path so the existence of padding itself isn't a side-channel.
+ */
+async function padRejectDelay(startedAt: number, targetMs: number): Promise<void> {
+  if (targetMs <= 0) return;
+  const elapsed = Date.now() - startedAt;
+  if (elapsed >= targetMs) return;
+  await new Promise((r) => setTimeout(r, targetMs - elapsed));
+}
+
 export async function claimRoutes(app: FastifyInstance, ctx: AppContext): Promise<void> {
   app.get('/v1/config', async () => derivePublicConfig(ctx.config));
 
@@ -66,6 +82,13 @@ export async function claimRoutes(app: FastifyInstance, ctx: AppContext): Promis
     bodyLimit: 16 * 1024,
     preHandler: app.rateLimit({ max: ctx.config.rateLimitPerMinute, timeWindow: '1 minute' }),
   }, async (req, reply) => {
+    // Capture wall-clock start before any branch so every reject path
+    // can pad to the same minimum latency (audits/findings-2026-05/024).
+    // The browser/origin gates below are intentionally NOT padded — they
+    // have distinguishable bodies and fast-fail semantics for legitimate
+    // non-browser callers (Mini App SDKs, integrator backends).
+    const requestStart = Date.now();
+    const T_min = ctx.config.rejectDelayMsMin;
     // Browser-only enforcement: when enabled, reject requests that don't
     // originate from a real browser. Integrators bypass this via HMAC auth.
     if (ctx.config.requireBrowser) {
@@ -107,6 +130,7 @@ export async function claimRoutes(app: FastifyInstance, ctx: AppContext): Promis
     const rawBody = typeof req.body === 'string' ? req.body : JSON.stringify(req.body ?? {});
     const parsed = ClaimBody.safeParse(req.body);
     if (!parsed.success) {
+      await padRejectDelay(requestStart, T_min);
       return reply.code(400).send({ error: 'invalid request' });
     }
 
@@ -143,6 +167,7 @@ export async function claimRoutes(app: FastifyInstance, ctx: AppContext): Promis
         },
       });
       if (!result.ok) {
+        await padRejectDelay(requestStart, T_min);
         return reply.code(401).send({ error: 'integrator auth failed' });
       }
       integratorId = result.integratorId;
@@ -183,6 +208,7 @@ export async function claimRoutes(app: FastifyInstance, ctx: AppContext): Promis
     try {
       address = ctx.driver.parseAddress(parsed.data.address);
     } catch {
+      await padRejectDelay(requestStart, T_min);
       return reply.code(400).send({ error: 'invalid address' });
     }
 
@@ -274,6 +300,9 @@ export async function claimRoutes(app: FastifyInstance, ctx: AppContext): Promis
       // deny-vs-review distinction (status code or body). Granular reasons
       // remain in the DB row + claimsTotal Prom metric for operators.
       // See SECURITY.md "Public-API silence on rejection".
+      // Pad to T_min to defeat pipeline-position timing attribution
+      // (audits/findings-2026-05/024).
+      await padRejectDelay(requestStart, T_min);
       return reply.code(403).send({ id, status: 'rejected' });
     }
 
@@ -320,6 +349,7 @@ export async function claimRoutes(app: FastifyInstance, ctx: AppContext): Promis
       inflightClaims.delete(address);
       await decrementIpCounter(ctx.db, req.ip, now);
       if (err instanceof DriverError && err.code === 'RPC_-32602') {
+        await padRejectDelay(requestStart, T_min);
         return reply.code(400).send({
           error: 'invalid address',
           message: 'Address rejected by the network (invalid checksum or format)',
@@ -343,6 +373,7 @@ export async function claimRoutes(app: FastifyInstance, ctx: AppContext): Promis
       });
       claimsTotal.inc({ status: 'timeout', decision: 'allow' });
       claimDuration.observe({ phase: 'total' }, (Date.now() - now) / 1000);
+      await padRejectDelay(requestStart, T_min);
       return reply.code(503).send({
         id,
         status: 'error',

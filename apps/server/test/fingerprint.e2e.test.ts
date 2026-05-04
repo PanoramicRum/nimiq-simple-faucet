@@ -40,6 +40,7 @@ describe('fingerprint abuse layer', () => {
       fingerprintMaxUidsPerVisitor: '1',
       fingerprintMaxVisitorsPerUid: '10',
       dev: 'true',
+      rejectDelayMsMin: '0',
     });
     const built = await buildApp(config, { driverOverride: new StubDriver(), quietLogs: true });
     app = built.app;

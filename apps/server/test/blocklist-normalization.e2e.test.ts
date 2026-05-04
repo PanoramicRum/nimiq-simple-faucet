@@ -43,6 +43,7 @@ function baseConfig(dir: string, overrides: Record<string, unknown> = {}) {
     rateLimitPerIpPerDay: '100',
     adminPassword: 'test-password-123',
     dev: 'true',
+    rejectDelayMsMin: '0',
     // Trust loopback (added automatically in dev) so XFF in tests is
     // honoured — the e2e mocks the socket as 127.0.0.1.
     ...overrides,

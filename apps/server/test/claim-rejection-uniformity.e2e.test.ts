@@ -52,6 +52,10 @@ describe('public claim-reject responses are uniform', () => {
       rateLimitPerIpPerDay: '1',
       adminPassword: 'test-password-123',
       dev: 'true',
+      // Disable reject-delay padding here — these tests exercise body-shape
+      // correctness, not timing behaviour. Padding-correctness has its own
+      // dedicated test in claim-reject-timing-padding.e2e.test.ts.
+      rejectDelayMsMin: '0',
     });
     const built = await buildApp(config, { driverOverride: new FakeDriver(), quietLogs: true });
     app = built.app;

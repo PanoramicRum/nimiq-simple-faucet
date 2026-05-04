@@ -45,6 +45,7 @@ function baseConfig(dir: string, overrides: Record<string, unknown> = {}) {
     adminPassword: 'test-password-123',
     tlsRequired: false,
     corsOrigins: 'https://example.test',
+    rejectDelayMsMin: '0',
     ...overrides,
   });
 }
