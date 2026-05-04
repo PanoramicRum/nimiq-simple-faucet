@@ -95,9 +95,10 @@ test.describe('claim ui — homepage', () => {
 
   test('rate limit: sixth claim from the same IP hits the daily cap', async ({ request }) => {
     // The per-IP per-day cap is 5. Five same-IP claims should succeed, the
-    // sixth must be rejected with decision=deny & a rate-limit reason. We use
-    // distinct addresses so only the IP cap (not duplicate-address guards)
-    // fires.
+    // sixth must be rejected. We use distinct addresses so only the IP cap
+    // (not duplicate-address guards) fires. The reject body itself is
+    // uniform (`{id, status: 'rejected'}`) per SECURITY.md "Public-API
+    // silence on rejection" — granular attribution is admin-only.
     const addrs = Array.from(
       { length: 6 },
       (_v, i) => `NQ00 ${String(i).repeat(4)} 5555 5555 5555 5555 5555 5555 5555`,
@@ -122,10 +123,21 @@ test.describe('claim ui — homepage', () => {
     }
 
     const last = responses[responses.length - 1];
+    // Per SECURITY.md "Public-API silence on rejection": the public
+    // reject body collapses to `403 { id, status: 'rejected' }` with
+    // no abuse-layer attribution. We can no longer assert on a
+    // rate-limit-specific reason string from the body — confirm only
+    // the uniform shape + the 403 / 429 status code. The 429 path is
+    // for `claim_in_progress` (legitimate concurrency signal); 403 is
+    // the abuse-pipeline deny path.
     expect([403, 429]).toContain(last!.status);
-    const body = last!.body as { decision?: string; reason?: string; error?: string } | null;
-    const reasonBlob = `${body?.decision ?? ''} ${body?.reason ?? ''} ${body?.error ?? ''}`.toLowerCase();
-    expect(reasonBlob).toMatch(/cap|rate|limit|too many/);
+    const body = last!.body as Record<string, unknown> | null;
+    expect(body).not.toBeNull();
+    if (last!.status === 403) {
+      // Uniform reject shape — only id + status.
+      expect(Object.keys(body!).sort()).toEqual(['id', 'status']);
+      expect(body!['status']).toBe('rejected');
+    }
   });
 });
 

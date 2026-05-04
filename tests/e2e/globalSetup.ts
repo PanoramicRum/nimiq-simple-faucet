@@ -70,6 +70,11 @@ export default async function globalSetup(_config: FullConfig): Promise<void> {
     uiEnabled: 'true',
     dev: 'true',
     corsOrigins: '*',
+    // Disable reject-delay padding in e2e tests — the production
+    // default (1500ms) compounds with Playwright's per-test timeout
+    // budget and adds ~9s to the rate-limit test alone. Padding
+    // correctness is exercised by apps/server/test/claim-reject-timing-padding.e2e.test.ts.
+    rejectDelayMsMin: '0',
   });
 
   const driver = new StubDriver();
