@@ -1,14 +1,24 @@
 # Upstream report: `@nimiq/core` WASM panics with `'time not implemented on this platform'`
 
-**Status**: open against this repo as [issue #119](https://github.com/PanoramicRum/nimiq-simple-faucet/issues/119); not yet filed upstream.
+**Status (2026-04-30)**: upstream fix [nimiq/core-rs-albatross#3729](https://github.com/nimiq/core-rs-albatross/pull/3729) (`OffsetTime: use instant::SystemTime to avoid wasm32 panic`) **MERGED 2026-04-28** at commit `9789c532148994352a70e5f5231e44d2c348913c`. We ran a 10× × 120s smoke matrix locally against `@nimiq/core@2.2.2` (last-known-good baseline) and `pkg.pr.new/@nimiq/core@3729` (candidate fix) — both cleared 0/10 panics versus ~3/10 on the broken `2.4.0` (results in §"Smoke matrix results (2026-04-30)" below). Workaround for downstream consumers until npm ships the post-fix release: pin `@nimiq/core` to `2.2.2`. The post-fix npm release is not yet published — `latest` is still `2.4.0` (gitHead `e156ecc4...`); we'll bump our pin and revert the docs once that lands.
 
-**Hand-off target**: [`nimiq/core-rs-albatross`](https://github.com/nimiq/core-rs-albatross) (the `@nimiq/core` WASM client is built from this repo's web-client crate).
+**This repo**: tracked as [issue #119](https://github.com/PanoramicRum/nimiq-simple-faucet/issues/119); replies sent to the maintainer are saved in [`wasm-time-panic-maintainer-reply-2026-04-27.md`](./wasm-time-panic-maintainer-reply-2026-04-27.md) and [`wasm-time-panic-maintainer-reply-2026-04-30.md`](./wasm-time-panic-maintainer-reply-2026-04-30.md).
 
-This file is the source-of-truth for the upstream report. The maintainer
-copies the §"Report body" section into a new `core-rs-albatross` issue
-and adds whatever `core-rs-albatross` triage requires (labels, milestone,
-linked PRs). Update this file when the upstream issue is filed and again
-when it's resolved.
+**Upstream**: [`nimiq/core-rs-albatross`](https://github.com/nimiq/core-rs-albatross) (the `@nimiq/core` WASM client is built from this repo's web-client crate). Discussion happened in a chat with a `core-rs-albatross` maintainer; we did not need to file a public issue because the maintainer triaged it directly.
+
+## Follow-up TODO (revisit in the near future)
+
+- [x] **Check whether [PR #3729](https://github.com/nimiq/core-rs-albatross/pull/3729) has merged.** Merged 2026-04-28 at commit `9789c532148994352a70e5f5231e44d2c348913c`.
+- [x] **Run the smoke job 10×** against:
+  - [x] `@nimiq/core@2.2.2` (baseline) — 0/10 panics (10/10 healthz_ok). 2026-04-30.
+  - [x] `pkg.pr.new/@nimiq/core@3729` (candidate fix) — 0/10 panics (10/10 healthz_ok). 2026-04-30.
+  - [ ] First post-fix `@nimiq/core` release on npm, once published — should be 0/10.
+- [ ] **Bump our pin** from `^2.4.0` → first post-fix release in [`package.json`](../../package.json) and [`packages/driver-nimiq-wasm/package.json`](../../packages/driver-nimiq-wasm/package.json). Blocked on npm release (`latest` is still `2.4.0`, gitHead `e156ecc4...` — pre-fix).
+- [ ] **Flip the docs back**: revert the README + `docs/deployment-production.md` notes that recommend `FAUCET_SIGNER_DRIVER=rpc`, and remove the WASM smoke-test-only callout. Blocked on the bump.
+- [ ] **Re-arm CI**: drop the panic-string filter in [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml) so the smoke job hard-fails on the panic again — once we trust WASM, it should be a real regression signal. Blocked on the bump.
+- [ ] **Close [issue #119](https://github.com/PanoramicRum/nimiq-simple-faucet/issues/119)** with a link to the upstream PR and the version we bumped to. Blocked on the bump.
+
+This file remains the source-of-truth for the report. Update it when PR #3729 merges and again when this project bumps to the post-fix release.
 
 ---
 
@@ -202,3 +212,77 @@ When you file the upstream issue:
 - This repo: [issue #119](https://github.com/PanoramicRum/nimiq-simple-faucet/issues/119) — keep open until upstream is resolved.
 - Upstream: _to be filled in once filed against `nimiq/core-rs-albatross`._
 - Workaround in CI: [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml) downgrades the panic to a `::warning::` instead of failing the build.
+
+## On-disk confirmation (2026-04-27)
+
+After the maintainer confirmed they're investigating, we audited the
+actual `@nimiq/core` 2.4.0 bundle on disk. Time-shim symbol counts
+(`__wbg_now_*`, `Date.now`, `performance.now`) per bundle:
+
+| Bundle                               | Time shims | Size   |
+|--------------------------------------|-----------:|-------:|
+| `nodejs/main-wasm/index.js`          |          0 | 992 KB |
+| `nodejs/worker-wasm/index.js`        |          5 | 7.4 MB |
+| `web/main-wasm/index.js`             |          0 |        |
+| `web/worker-wasm/index.js`           |          1 |        |
+
+Both bundles are `wasm32-unknown-unknown` (otherwise no JS time shims
+would be needed). `worker-wasm` (the consensus/networking blob) has
+`web-time`-style shims wired via wasm-bindgen externs; `main-wasm`
+has none in either the Node or Web build.
+
+Any code path reaching `std::time::Instant::now()` /
+`SystemTime::now()` **directly** — i.e. not through a
+`web-time`-style wrapper — will link the stdlib's `unsupported` time
+backend on `wasm32-unknown-unknown` and panic with the exact message
+we observe. The intermittency is consistent with a callsite that
+only runs after a particular post-ZKP-handshake state is reached.
+
+**Suggested remediation patterns** (for upstream to validate):
+
+1. Replace `use std::time::{Instant, SystemTime}` with
+   `use web_time::{Instant, SystemTime}` across the workspace (or
+   add a `cargo patch` redirecting `instant` → `web-time`).
+2. For deps not owned by the workspace, add a
+   `[target.'cfg(target_arch = "wasm32")'.dependencies]` override.
+
+A grep for `std::time::Instant::now\|SystemTime::now` across
+`core-rs-albatross` + transitive deps that isn't already gated
+behind `cfg(not(target_arch = "wasm32"))` should turn up the
+offending callsite(s).
+
+---
+
+## Smoke matrix results (2026-04-30)
+
+After PR #3729 merged we ran a 10× × 120s smoke matrix locally to (a) give
+the maintainer independent confirmation that 2.2.2 is panic-free under
+the same harness that hits ~30% on 2.4.0, and (b) get a first signal on
+the candidate fix bundle from `pkg.pr.new`.
+
+**Harness**: `deploy/docker/Dockerfile` built per pin, then booted with
+the same env vars CI's `docker` smoke job uses. Modified vs CI: each
+container is held alive 120 s past `/healthz` so the post-handshake
+panic window is actually exercised — the original CI shape exits early
+on the surviving 70%, racing healthz against the panic. Per-boot we
+record healthz reachability and scan the container log for the panic
+string `time not implemented on this platform`.
+
+**Environment**: Linux Mint 22.3 (kernel 6.8.0-110), x86_64, 8 CPU,
+33 GB RAM, Docker 29.1.3. Pin swapped per worktree (`/tmp/faucet-smoke-2.2.2`
+and `/tmp/faucet-smoke-3729`) to avoid touching the working tree.
+
+| Pin                                          | healthz_ok | panic | Bundle SHA-256 (`nodejs/worker-wasm/index_bg.wasm`) |
+|----------------------------------------------|-----------:|------:|-----------------------------------------------------|
+| `@nimiq/core@2.4.0` (npm, broken — historical) | n/a (~7/10) | ~3/10 | `b59394305f2adf78276a0b21ac6d424b4e61ad71eb629559d1a8aae88e7ac5f3` |
+| `@nimiq/core@2.2.2` (npm, last-known-good)   | 10/10 | 0/10 | `baee5f7dc4b85610e467339fe5e428fbdec3623a0b648a2eabf046376a9862b7` |
+| `pkg.pr.new/@nimiq/core@3729` (candidate fix) | 10/10 | 0/10 | `b2d186ff9f982d1d26d611830754cd59808d4f170ab1f8c4313c6dc5d271712b` |
+
+All three bundles are distinct on disk, so we're testing what we think
+we're testing. Both the baseline and the candidate cleared the matrix
+with no panics, reaching `Consensus established` and surviving past
+`Requesting zkp from peer` in every boot.
+
+Once the post-fix npm release ships, we'll add a third row for it
+(also expected 0/10) and proceed with the bump → docs revert →
+CI panic-filter removal → close #119 sequence above.
