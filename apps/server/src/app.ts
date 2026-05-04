@@ -133,6 +133,24 @@ export async function buildApp(
 
   const ctx: AppContext = { config, db, driver, pipeline, stream, events };
 
+  // Deprecation surface for the legacy MCP static-token auth path
+  // (audits/findings-2026-05/027). The original audit's #88 fix replaced
+  // the static bearer with session+TOTP; the compat flag
+  // `adminMcpAllowStaticToken` was meant to be a one-minor grace, but
+  // there was no signal to operators that they were still on the legacy
+  // path. Surface a single boot WARN whenever both the legacy token is
+  // configured AND the flag is on (its current default). Operators flip
+  // the flag to silence; a future minor will flip the default to false.
+  if (config.adminMcpAllowStaticToken && config.adminMcpToken) {
+    app.log.warn(
+      '[deprecation] FAUCET_ADMIN_MCP_TOKEN is set with FAUCET_ADMIN_MCP_ALLOW_STATIC_TOKEN ' +
+        'defaulting to true. The static-token auth path is deprecated; migrate to ' +
+        'session+TOTP auth (see SECURITY.md "Trust-boundary model" → admin auth) and ' +
+        'set FAUCET_ADMIN_MCP_ALLOW_STATIC_TOKEN=false to silence this warning. The ' +
+        'default will flip to false in an upcoming release.',
+    );
+  }
+
   const isDriverReady = (): boolean => driver.isReady?.() !== false;
 
   // Push a one-time event when the driver becomes ready.

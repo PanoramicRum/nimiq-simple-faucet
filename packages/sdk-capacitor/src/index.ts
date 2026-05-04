@@ -16,6 +16,24 @@ export * from '@nimiq-faucet/sdk';
  * The returned value extends `FaucetClient`, so the full SDK surface
  * (`status`, `waitForConfirmation`, `config`, `requestChallenge`, `subscribe`)
  * is untouched and passes straight through.
+ *
+ * **SECURITY NOTE.** `visitorId` is **unsigned client input.** The faucet's
+ * fingerprint abuse-layer uses it for correlation, not authentication —
+ * an attacker who controls the Capacitor app (modified APK/IPA, JS
+ * tampering, runtime hook) can spoof this value to bypass per-device
+ * abuse correlation. Don't weight `visitorId` heavily in abuse scoring.
+ *
+ * For trust, rely on:
+ * 1. **Per-IP rate limit** (`FAUCET_RATE_LIMIT_PER_IP_PER_DAY`) — the
+ *    primary cap; can't be spoofed without distinct network paths.
+ * 2. **Signed `hostContext`** — when an integrator backend is in the
+ *    loop, sign hostContext server-side via `FaucetClient.signHostContext()`
+ *    (from `@nimiq-faucet/sdk`) and pass the signed envelope into this
+ *    SDK's `claim()` via the `hostContext` option. The mini-app-claim
+ *    examples follow this pattern.
+ *
+ * Mirror of audit finding #104 (closed for sdk-go and sdk-flutter), now
+ * documented for sdk-capacitor as findings-2026-05/028.
  */
 export class CapacitorFaucetClient extends FaucetClient {
   private cachedDeviceId: string | undefined;
