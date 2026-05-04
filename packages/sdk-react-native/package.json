@@ -30,7 +30,7 @@
     "@nimiq-faucet/sdk": "workspace:*"
   },
   "devDependencies": {
-    "typescript": "^5.6.2"
+    "typescript": "^6.0.3"
   },
   "keywords": ["nimiq", "faucet", "react-native", "mobile"]
 }

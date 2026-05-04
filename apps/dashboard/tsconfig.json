@@ -18,9 +18,8 @@
     "useDefineForClassFields": true,
     "allowImportingTsExtensions": false,
     "types": ["vite/client"],
-    "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["./src/*"]
     },
     "noEmit": true
   },
