@@ -57,6 +57,7 @@ describe('geoip abuse layer (e2e)', () => {
       geoipDenyVpn: 'true',
       geoipDenyHosting: 'true',
       dev: 'true',
+      rejectDelayMsMin: '0',
     });
     driver = new StubDriver();
     // Public-looking IPs so the geoip check doesn't short-circuit on "private-ip".

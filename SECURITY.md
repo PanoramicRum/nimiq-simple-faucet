@@ -205,6 +205,18 @@ If a future contributor wants to add diagnostic fields back to any
 public route, that is a security-relevant change that needs a
 threat-model review — please don't quietly re-add them.
 
+**Reject responses are also timing-padded.** The abuse pipeline
+short-circuits on the first hard `deny`, so a rate-limit reject
+naturally lands in ~5ms while a captcha or AI reject takes hundreds of
+ms — which leaks which layer fired even with a uniform body. Every
+public `/v1/claim` reject path therefore pads to a configurable floor
+(`FAUCET_REJECT_DELAY_MS_MIN`, default `1500ms`) before responding.
+The Zod-invalid, integrator-auth, address-parse, deny/review, RPC and
+send-failed paths all participate. The pre-pipeline `browser_required`
+and `origin_not_allowed` gates are intentionally exempt — they have
+distinguishable bodies and fast-fail semantics for legitimate
+non-browser callers.
+
 ### What we don't defend against
 
 - **Compromised integrator**. If an integrator's HMAC secret leaks, the

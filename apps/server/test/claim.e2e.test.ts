@@ -43,6 +43,7 @@ describe('POST /v1/claim', () => {
       rateLimitPerIpPerDay: '3',
       adminPassword: 'test-password-123',
       dev: 'true',
+      rejectDelayMsMin: '0',
     });
     driver = new FakeNimiqDriver();
     const built = await buildApp(config, { driverOverride: driver, quietLogs: true });

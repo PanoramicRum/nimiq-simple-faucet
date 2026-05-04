@@ -114,6 +114,18 @@ export const ServerConfigSchema = z.object({
   challengeRatePerMinute: z.coerce.number().int().min(1).default(10),
   keyringPath: z.string().optional(),
 
+  /**
+   * Minimum delay in milliseconds before any public claim-reject response
+   * is delivered. Defends against pipeline-position timing attribution
+   * (audits/findings-2026-05/024). The pipeline's short-circuit-on-deny
+   * means a rate-limit reject lands in ~5ms while a captcha or AI reject
+   * takes hundreds of ms; padding every reject to a single floor hides
+   * which layer fired. Set to 0 to disable the padding (e.g., in tests
+   * that want fast feedback). 1500ms is conservative — covers the
+   * captcha-provider HTTP roundtrip on most networks.
+   */
+  rejectDelayMsMin: z.coerce.number().int().min(0).default(1500),
+
   requireBrowser: z.coerce.boolean().default(false),
   uiEnabled: z.coerce.boolean().default(true),
   claimUiDir: z.string().optional(),
