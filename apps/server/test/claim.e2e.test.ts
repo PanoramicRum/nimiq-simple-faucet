@@ -101,8 +101,10 @@ describe('POST /v1/claim', () => {
     });
     expect(capped.statusCode).toBe(403);
     const body = capped.json();
-    expect(body.decision).toBe('deny');
-    expect(body.reason).toMatch(/daily cap/);
+    // Public reject body is uniform: { id, status: 'rejected' } only.
+    // No decision/reason leak. See SECURITY.md "Public-API silence on rejection".
+    expect(Object.keys(body).sort()).toEqual(['id', 'status']);
+    expect(body.status).toBe('rejected');
   });
 
   it('looks up a claim by id', async () => {

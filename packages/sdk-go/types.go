@@ -31,12 +31,14 @@ type ClaimOptions struct {
 }
 
 // ClaimResponse mirrors the TS `ClaimResponse`.
+//
+// Public reject responses are uniform: `{ id, status: "rejected" }` only.
+// No abuse-layer attribution leaks to clients.
+// See SECURITY.md "Public-API silence on rejection".
 type ClaimResponse struct {
-	ID       string `json:"id"`
-	Status   string `json:"status"` // queued | broadcast | confirmed | rejected | challenged
-	TxID     string `json:"txId,omitempty"`
-	Decision string `json:"decision,omitempty"` // allow | challenge | review | deny
-	Reason   string `json:"reason,omitempty"`
+	ID     string `json:"id"`
+	Status string `json:"status"` // queued | broadcast | confirmed | rejected | challenged
+	TxID   string `json:"txId,omitempty"`
 }
 
 // HashcashChallenge mirrors the TS `HashcashChallenge`.
@@ -69,10 +71,9 @@ type HashcashConfig struct {
 
 // FaucetError is returned for non-2xx server responses. It implements `error`.
 type FaucetError struct {
-	Status   int
-	Message  string
-	Code     string
-	Decision string
+	Status  int
+	Message string
+	Code    string
 }
 
 // Error implements the standard error interface.

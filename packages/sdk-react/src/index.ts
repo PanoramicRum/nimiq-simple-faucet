@@ -42,7 +42,6 @@ export function useFaucetClaim(args: UseFaucetClaimArgs): UseFaucetClaimResult {
     status: 'idle',
     id: null,
     txId: null,
-    decision: null,
     error: null,
   });
   const manager = useRef<ClaimManager | null>(null);
@@ -121,7 +120,6 @@ export type {
   ClaimOptions,
   ClaimResponse,
   ClaimStatus,
-  ClaimDecision,
   HostContext,
   FingerprintBundle,
   ClaimState,

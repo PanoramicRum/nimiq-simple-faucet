@@ -143,6 +143,57 @@ checked against `canonicalizeHostContext` (see
 | Integrator HMAC secrets    | Plaintext in DB — needed for symmetric verification. The DB is a sensitive-grade artefact; restrict filesystem access. |
 | Wallet private key         | XChaCha20-Poly1305 keyring blob when `FAUCET_KEY_PASSPHRASE` is set. RPC-driver deployments hold the key in the Nimiq node, not in the faucet's data dir. |
 
+### Public-API silence on rejection
+
+When the faucet rejects a `/v1/claim` request — for *any* reason: rate
+limit, blocklist, captcha failure, hashcash mismatch, GeoIP deny,
+fingerprint correlation, on-chain heuristic, AI scorer, soft-review
+fall-through — the **public response is uniform**:
+
+```http
+HTTP/1.1 403 Forbidden
+Content-Type: application/json
+
+{ "id": "<nanoid>", "status": "rejected" }
+```
+
+No `decision`, no `reason`, no `error`, no `code`, no `issues`. The
+response is byte-shape-identical regardless of which abuse layer fired,
+and `decision === "review"` collapses into the same 403 + body as a
+hard `deny` (no 202-vs-403 status-code split either).
+
+**Why**: revealing which layer rejected lets an attacker A/B-test their
+inputs until the rejection signal changes — that tells them they tripped
+a different gate, which is enough to enumerate and bypass the abuse
+pipeline. Distinguishing `deny` from `review` similarly leaks
+decision-class. Strict uniformity is the cheapest defence-in-depth here.
+
+The same principle applies to other public reject paths:
+- Zod-validation failures return `{ error: "invalid request" }` with no
+  `issues` field.
+- Integrator-auth failures return `{ error: "integrator auth failed" }`
+  with no per-reason detail.
+- Address-parse failures return `{ error: "invalid address" }` with no
+  underlying exception text.
+
+The `'browser_required'`, `'origin_not_allowed'`, `'claim_in_progress'`,
+and driver-side errors (`'invalid address'` on RPC -32602, `'send_failed'`)
+remain informative because they're documented gates with legitimate-client
+retry semantics, *or* they fire after the abuse pipeline approves so
+they're not abuse-layer attribution.
+
+**Operator visibility is unchanged.** The granular `decision`,
+`rejectionReason`, `signalsJson`, and per-layer scores stay in the
+`claims` DB row, in the Prometheus `claimsTotal{decision="..."}`
+counters, and on the admin endpoints under `/v1/admin/claims`. SDKs
+(`@nimiq-faucet/sdk` and the framework wrappers) intentionally don't
+expose `decision` / `reason` types on public reject responses; consumers
+infer "rejected" purely from `status === "rejected"`.
+
+If a future contributor wants to add diagnostic fields back to the
+public reject body, that is a security-relevant change that needs a
+threat-model review — please don't quietly re-add them.
+
 ### What we don't defend against
 
 - **Compromised integrator**. If an integrator's HMAC secret leaks, the

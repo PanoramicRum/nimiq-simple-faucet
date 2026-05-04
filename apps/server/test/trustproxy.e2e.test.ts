@@ -88,7 +88,7 @@ describe('trustProxy CIDR allow-list (#87)', () => {
     expect(a.statusCode).toBe(200);
     expect(b.statusCode).toBe(200);
     expect(c.statusCode).toBe(403);
-    expect(c.json().reason).toMatch(/daily cap/);
+    expect(c.json().status).toBe('rejected');
   });
 
   it('honours X-Forwarded-For when the upstream peer is in the trust list (dev → loopback auto-trusted)', async () => {

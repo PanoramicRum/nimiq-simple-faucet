@@ -81,7 +81,6 @@ describe('fingerprint abuse layer', () => {
       headers: { 'content-type': 'application/json' },
     });
     expect(second.statusCode).toBe(403);
-    expect(second.json().decision).toBe('deny');
-    expect(second.json().reason).toMatch(/uids/);
+    expect(second.json().status).toBe('rejected');
   });
 });

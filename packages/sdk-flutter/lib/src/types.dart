@@ -90,29 +90,25 @@ class ClaimOptions {
   }
 }
 
+/// Public reject responses are uniform: `{ id, status: "rejected" }` only.
+/// No abuse-layer attribution leaks to clients. See SECURITY.md
+/// "Public-API silence on rejection".
 class ClaimResponse {
   final String id;
   /// One of: 'queued' | 'broadcast' | 'confirmed' | 'rejected' | 'challenged'.
   final String status;
   final String? txId;
-  /// One of: 'allow' | 'challenge' | 'review' | 'deny'.
-  final String? decision;
-  final String? reason;
 
   const ClaimResponse({
     required this.id,
     required this.status,
     this.txId,
-    this.decision,
-    this.reason,
   });
 
   factory ClaimResponse.fromJson(Map<String, dynamic> json) => ClaimResponse(
         id: json['id'] as String,
         status: json['status'] as String,
         txId: json['txId'] as String?,
-        decision: json['decision'] as String?,
-        reason: json['reason'] as String?,
       );
 }
 
@@ -194,11 +190,10 @@ class FaucetException implements Exception {
   final int status;
   final String message;
   final String? code;
-  final String? decision;
 
-  const FaucetException(this.message, {required this.status, this.code, this.decision});
+  const FaucetException(this.message, {required this.status, this.code});
 
   @override
   String toString() =>
-      'FaucetException($status: $message${code != null ? ' code=$code' : ''}${decision != null ? ' decision=$decision' : ''})';
+      'FaucetException($status: $message${code != null ? ' code=$code' : ''})';
 }

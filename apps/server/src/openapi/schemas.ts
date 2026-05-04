@@ -60,9 +60,9 @@ export const ClaimResponse = registry.register(
   z.object({
     id: z.string(),
     status: z.enum(['broadcast', 'confirmed', 'rejected', 'challenged', 'timeout', 'expired', 'manual-allow']),
-    decision: z.enum(['allow', 'deny', 'review', 'challenge']).optional(),
+    // `decision` and `reason` intentionally omitted from the public reject
+    // response. See SECURITY.md "Public-API silence on rejection".
     txId: z.string().optional(),
-    reason: z.string().optional(),
   }),
 );
 
@@ -75,8 +75,9 @@ export const ClaimStatusResponse = registry.register(
     amountLuna: z.string(),
     txId: z.string().nullable(),
     createdAt: z.union([z.string(), z.number()]),
-    decision: z.string().nullable(),
-    rejectionReason: z.string().nullable(),
+    // `decision` and `rejectionReason` intentionally omitted from the
+    // public claim-status response. Operators retrieve granular abuse
+    // attribution via /v1/admin/claims (see ClaimListItem).
   }),
 );
 
@@ -135,7 +136,6 @@ export const ErrorResponse = registry.register(
     error: z.string(),
     code: z.string().optional(),
     message: z.string().optional(),
-    issues: z.array(z.unknown()).optional(),
   }),
 );
 

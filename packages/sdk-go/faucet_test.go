@@ -135,9 +135,13 @@ func TestClaimHMACSignedHeaders(t *testing.T) {
 }
 
 func TestErrorBodyDecoded(t *testing.T) {
+	// Public reject body shape is uniform: { id, status: "rejected" } only.
+	// The SDK still gracefully handles legacy bodies that include
+	// `error`/`code` fields (used by 4xx responses from non-pipeline
+	// rejections like 'invalid address' or 'integrator auth failed').
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(403)
-		_, _ = w.Write([]byte(`{"error":"denied","decision":"deny","code":"abuse"}`))
+		w.WriteHeader(401)
+		_, _ = w.Write([]byte(`{"error":"integrator auth failed","code":"auth"}`))
 	}))
 	defer srv.Close()
 	c := New(Config{URL: srv.URL})
@@ -149,7 +153,7 @@ func TestErrorBodyDecoded(t *testing.T) {
 	if !ok {
 		t.Fatalf("expected *FaucetError, got %T", err)
 	}
-	if fe.Status != 403 || fe.Decision != "deny" || fe.Code != "abuse" || fe.Message != "denied" {
+	if fe.Status != 401 || fe.Code != "auth" || fe.Message != "integrator auth failed" {
 		t.Fatalf("bad error fields: %+v", fe)
 	}
 }

@@ -35,7 +35,6 @@ export function useFaucetClaim(args: UseFaucetClaimArgs) {
     status: 'idle',
     id: null,
     txId: null,
-    decision: null,
     error: null,
   });
   const manager = new ClaimManager(client, (s) => Object.assign(state, s));
@@ -89,7 +88,6 @@ export type {
   ClaimOptions,
   ClaimResponse,
   ClaimStatus,
-  ClaimDecision,
   HostContext,
   FingerprintBundle,
   ClaimState,
