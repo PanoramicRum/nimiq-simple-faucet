@@ -19,20 +19,6 @@ updates:
         update-types:
           - minor
           - patch
-    ignore:
-      # otplib v13 redesigned the API entirely (no more `authenticator`
-      # export; replaced by TOTP/HOTP classes + generate/verify functions).
-      # The repo only uses `otplib` in `tests/e2e/helpers/server.ts` to
-      # mint deterministic 6-digit codes for the admin login flow; runtime
-      # admin auth uses `@otplib/preset-default` directly. We've reviewed
-      # PR #162 and decided not to migrate now — the e2e helper would need
-      # a real rewrite for marginal value. A separate cleanup PR can drop
-      # the `otplib` umbrella entirely by switching the helper to
-      # `@otplib/preset-default` (matching runtime), at which point this
-      # ignore can come out.
-      - dependency-name: "otplib"
-        update-types: [ "version-update:semver-major" ]
-
   - package-ecosystem: github-actions
     directory: /
     schedule:
