@@ -113,6 +113,58 @@ describe('public claim-reject responses are uniform', () => {
     expect(body['status']).toBe('rejected');
   });
 
+  it('GET /v1/stats omits byDecision from the public response', async () => {
+    const r = await app.inject({ method: 'GET', url: '/v1/stats' });
+    expect(r.statusCode).toBe(200);
+    const body = r.json() as Record<string, unknown>;
+    expect('byDecision' in body).toBe(false);
+    // Allowed public fields only.
+    expect(Object.keys(body).sort()).toEqual(['byStatus', 'total']);
+  });
+
+  it('GET /v1/stats/summary omits topRejectionReasons + per-row decision/rejectionReason', async () => {
+    // Trip a few rejects so the recentBlocked array isn't empty.
+    const headers = { 'content-type': 'application/json', 'x-forwarded-for': '198.51.100.80' };
+    await app.inject({ method: 'POST', url: '/v1/claim',
+      payload: { address: USER_ADDR.replace('9999', '8080') }, headers });
+    await app.inject({ method: 'POST', url: '/v1/claim',
+      payload: { address: USER_ADDR.replace('9999', '8181') }, headers });
+    const r = await app.inject({ method: 'GET', url: '/v1/stats/summary' });
+    expect(r.statusCode).toBe(200);
+    const body = r.json() as Record<string, unknown>;
+    expect('topRejectionReasons' in body).toBe(false);
+    const recentBlocked = body['recentBlocked'] as Array<Record<string, unknown>>;
+    if (recentBlocked.length > 0) {
+      const rowKeys = Object.keys(recentBlocked[0]!).sort();
+      // No abuse-layer attribution fields per row.
+      expect(rowKeys).not.toContain('decision');
+      expect(rowKeys).not.toContain('rejectionReason');
+    }
+    const recentClaims = body['recentClaims'] as Array<Record<string, unknown>>;
+    for (const row of recentClaims) {
+      const rowKeys = Object.keys(row);
+      expect(rowKeys).not.toContain('decision');
+      expect(rowKeys).not.toContain('rejectionReason');
+    }
+  });
+
+  it('GET /v1/claims/recent omits decision and rejectionReason from row shape', async () => {
+    const r = await app.inject({ method: 'GET', url: '/v1/claims/recent?status=rejected&limit=5' });
+    expect(r.statusCode).toBe(200);
+    const body = r.json() as { items: Array<Record<string, unknown>> };
+    for (const row of body.items) {
+      const rowKeys = Object.keys(row);
+      expect(rowKeys).not.toContain('decision');
+      expect(rowKeys).not.toContain('rejectionReason');
+    }
+    if (body.items.length > 0) {
+      // Allowed public fields only.
+      expect(Object.keys(body.items[0]!).sort()).toEqual(
+        ['address', 'amountLuna', 'createdAt', 'id', 'status', 'txId'],
+      );
+    }
+  });
+
   it('rejection response keys are stable across distinct deny reasons', async () => {
     // Cross-IP sweep: each pair of requests trips the rate limit on a
     // different IP, so the deny is independent. Bodies must be
