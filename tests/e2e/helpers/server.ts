@@ -1,4 +1,4 @@
-import { authenticator } from 'otplib';
+import { authenticator } from '@otplib/preset-default';
 
 export { StubDriver } from '../fixtures/StubDriver.js';
 
