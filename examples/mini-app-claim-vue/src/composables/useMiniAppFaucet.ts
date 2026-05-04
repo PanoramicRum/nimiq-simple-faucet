@@ -107,21 +107,23 @@ export function useMiniAppFaucet(faucetUrl: string) {
       const initial = await client.claim(address, initialOpts);
       state.txId = initial.txId ?? null;
       if (initial.status === 'rejected') {
+        // Public reject body has no reason — uniform shape for all denials.
+        // See SECURITY.md "Public-API silence on rejection".
         state.phase = 'rejected';
-        state.errorMessage = initial.reason ?? 'Claim rejected';
+        state.errorMessage = 'Claim rejected';
         return;
       }
       if (initial.status === 'challenged') {
         state.phase = 'challenged';
-        state.errorMessage = initial.reason ?? 'Captcha required';
+        state.errorMessage = 'Captcha required';
         return;
       }
       state.phase = 'broadcast';
       const final = await client.waitForConfirmation(initial.id);
       state.txId = final.txId ?? state.txId;
       state.phase = final.status === 'confirmed' ? 'confirmed' : 'rejected';
-      if (final.status === 'rejected' && final.reason) {
-        state.errorMessage = final.reason;
+      if (final.status === 'rejected') {
+        state.errorMessage = 'Claim rejected';
       }
     } catch (err) {
       state.phase = 'error';
