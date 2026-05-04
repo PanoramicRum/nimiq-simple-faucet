@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "description": "React 18 Nimiq Pay Mini App that claims NIM from a self-hosted nimiq-simple-faucet.",
+  "description": "React 19 Nimiq Pay Mini App that claims NIM from a self-hosted nimiq-simple-faucet.",
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
@@ -14,13 +14,13 @@
     "@nimiq/mini-app-sdk": "^0.0.2",
     "@nimiq-faucet/mini-app-claim-shared": "workspace:*",
     "@nimiq-faucet/sdk": "workspace:*",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5"
   },
   "devDependencies": {
     "@testing-library/react": "^16.0.1",
-    "@types/react": "^18.3.11",
-    "@types/react-dom": "^18.3.1",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.0.4",
     "happy-dom": "^20.9.0",
     "typescript": "^6.0.3",
