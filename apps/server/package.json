@@ -15,7 +15,7 @@
     "freeze:openapi": "tsx scripts/freeze-openapi.ts"
   },
   "dependencies": {
-    "@asteasolutions/zod-to-openapi": "^7.3.0",
+    "@asteasolutions/zod-to-openapi": "^8.5.0",
     "@fastify/cookie": "^11.0.1",
     "@fastify/cors": "^11.2.0",
     "@fastify/helmet": "^13.0.2",
@@ -47,7 +47,7 @@
     "prom-client": "^15.1.3",
     "undici": "^8.1.0",
     "yaml": "^2.6.0",
-    "zod": "^3.23.8"
+    "zod": "^4.4.1"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.11",

@@ -38,7 +38,7 @@ export const FingerprintDTO = registry.register(
   z.object({
     visitorId: z.string().optional(),
     confidence: z.number().min(0).max(1).optional(),
-    components: z.record(z.unknown()).optional(),
+    components: z.record(z.string(), z.unknown()).optional(),
   }),
 );
 
@@ -124,8 +124,8 @@ export const StatsResponse = registry.register(
   'StatsResponse',
   z.object({
     total: z.number().int(),
-    byStatus: z.record(z.number().int()),
-    byDecision: z.record(z.number().int()),
+    byStatus: z.record(z.string(), z.number().int()),
+    byDecision: z.record(z.string(), z.number().int()),
   }),
 );
 
@@ -242,7 +242,7 @@ export const AuditEntry = registry.register(
     action: z.string(),
     target: z.string().nullable(),
     // NOTE: signals shape will be tightened as admin actions stabilise.
-    signals: z.record(z.unknown()),
+    signals: z.record(z.string(), z.unknown()),
   }),
 );
 
@@ -283,9 +283,9 @@ export const AdminConfigResponse = registry.register(
       rateLimitPerIpPerDay: z.number().int(),
       abuseDenyThreshold: z.number(),
       abuseReviewThreshold: z.number(),
-      layers: z.record(z.boolean()),
+      layers: z.record(z.string(), z.boolean()),
     }),
-    overrides: z.record(z.unknown()),
+    overrides: z.record(z.string(), z.unknown()),
   }),
 );
 
