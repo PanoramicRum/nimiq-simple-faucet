@@ -172,11 +172,19 @@ export async function registerUi(app: FastifyInstance, config: ServerConfig): Pr
     }
     // Strip query string + leading slash; reject path-traversal attempts.
     const pathOnly = url.split('?')[0]?.replace(/^\/+/, '') ?? '';
-    if (pathOnly && !pathOnly.includes('..') && /\.[a-zA-Z0-9]+$/.test(pathOnly)) {
-      // Looks like an asset (has an extension) — try every non-active
-      // theme's dist before falling back to the SPA shell. This is what
-      // makes the picker's hashed assets resolve when ?theme=<slug>
-      // serves a different theme's HTML.
+    // Cross-theme asset probe: ONLY for paths under `assets/` (Vite's
+    // hashed-output directory). Restricting the probe scope here closes
+    // the cross-theme leak from audits/findings-2026-05/026 — without
+    // it, an operator who accidentally bundles a sensitive root-level
+    // file (e.g., `staging-config.json`) into one theme's dist makes it
+    // reachable from every other theme. Vite hashes its bundle outputs
+    // into `assets/`, so legitimate picker UX is unaffected.
+    if (
+      pathOnly &&
+      !pathOnly.includes('..') &&
+      pathOnly.startsWith('assets/') &&
+      /\.[a-zA-Z0-9]+$/.test(pathOnly)
+    ) {
       for (const altDir of altThemeDirs) {
         const candidate = resolve(altDir, pathOnly);
         if (existsSync(candidate)) {
