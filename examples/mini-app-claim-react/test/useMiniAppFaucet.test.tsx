@@ -75,26 +75,29 @@ describe('useMiniAppFaucet (React) — state machine', () => {
   it('rejected at submit', async () => {
     setupReady();
     mockClient.config.mockResolvedValue({});
-    mockClient.claim.mockResolvedValue({ id: 'cid-2', status: 'rejected', reason: 'rate limited' });
+    // Public reject body shape per SECURITY.md "Public-API silence on
+    // rejection": no `reason` field. The hook surfaces a static
+    // 'Claim rejected' fallback.
+    mockClient.claim.mockResolvedValue({ id: 'cid-2', status: 'rejected' });
 
     const { result } = renderHook(() => useMiniAppFaucet(FAUCET_URL));
     await waitFor(() => expect(result.current.state.phase).toBe('ready'));
     await act(async () => { await result.current.claim(); });
     expect(result.current.state.phase).toBe('rejected');
-    expect(result.current.state.errorMessage).toBe('rate limited');
+    expect(result.current.state.errorMessage).toBe('Claim rejected');
     expect(mockClient.waitForConfirmation).not.toHaveBeenCalled();
   });
 
   it('challenged response', async () => {
     setupReady();
     mockClient.config.mockResolvedValue({});
-    mockClient.claim.mockResolvedValue({ id: 'cid-3', status: 'challenged', reason: 'captcha required' });
+    mockClient.claim.mockResolvedValue({ id: 'cid-3', status: 'challenged' });
 
     const { result } = renderHook(() => useMiniAppFaucet(FAUCET_URL));
     await waitFor(() => expect(result.current.state.phase).toBe('ready'));
     await act(async () => { await result.current.claim(); });
     expect(result.current.state.phase).toBe('challenged');
-    expect(result.current.state.errorMessage).toBe('captcha required');
+    expect(result.current.state.errorMessage).toBe('Captcha required');
   });
 
   it('network error during claim → error phase', async () => {
