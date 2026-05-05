@@ -17,6 +17,7 @@ interface CspDirectives {
   'style-src': string[];
   'img-src': string[];
   'connect-src': string[];
+  'worker-src'?: string[];
   'frame-src'?: string[];
   'frame-ancestors': string[];
   'base-uri': string[];
@@ -67,10 +68,19 @@ function cspDirectives(
     'base-uri': ["'self'"],
     'form-action': ["'self'"],
   };
+  // FCaptcha runs the per-request challenge inside a Web Worker. The
+  // worker source is fetched from the FCaptcha origin (a regular URL on
+  // the captcha host) and/or constructed from a `blob:` URL. With our
+  // explicit `default-src 'self'` neither would load — we add an
+  // explicit `worker-src` allowlist when FCaptcha is configured.
+  const fcaptchaWorkerSources: string[] = fcaptchaOrigin
+    ? ["'self'", 'blob:', fcaptchaOrigin]
+    : [];
   if (profile === 'strict') {
     if (fcaptchaOrigin) {
       base['script-src'] = [...base['script-src'], ...fcaptchaScriptExtras];
       base['connect-src'] = [...base['connect-src'], fcaptchaOrigin];
+      base['worker-src'] = fcaptchaWorkerSources;
     }
     return base;
   }
@@ -97,6 +107,7 @@ function cspDirectives(
       'https://*.hcaptcha.com',
       ...(fcaptchaOrigin ? [fcaptchaOrigin] : []),
     ],
+    ...(fcaptchaOrigin ? { 'worker-src': fcaptchaWorkerSources } : {}),
   };
 }
 
