@@ -96,10 +96,13 @@ defineExpose({ connect });
     </button>
     <div class="paste-row" :class="{ valid: isValidPasteShape, dirty: modelValue.length > 0 }">
       <input
+        id="nimiq-address"
+        name="nimiq-address"
         type="text"
         spellcheck="false"
         autocomplete="off"
         autocorrect="off"
+        aria-label="Nimiq address"
         placeholder="Or paste an address: NQ00 0000 0000 …"
         :value="modelValue"
         :disabled="disabled"

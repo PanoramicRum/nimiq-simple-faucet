@@ -300,7 +300,9 @@ function handleClaim() {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.55rem;
+  /* Larger gap so the FCaptcha widget (when mounted in `.abuse-slot`)
+     visually breathes above the address row, instead of touching it. */
+  gap: 1.1rem;
   padding: 0.8rem 1.5rem 1rem;
   background: linear-gradient(180deg, rgba(20, 23, 46, 0) 0%, rgba(20, 23, 46, 0.85) 70%, rgba(20, 23, 46, 0.92) 100%);
 }
