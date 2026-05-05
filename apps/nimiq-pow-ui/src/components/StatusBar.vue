@@ -13,7 +13,7 @@ const message = computed(() => {
   switch (props.phase) {
     case 'idle': return 'Ready to mine your free NIM.';
     case 'loading-config': return 'Reading server config…';
-    case 'solving-hashcash': return `Verifying you're human… (${props.hashcashAttempts.toLocaleString()} attempts)`;
+    case 'solving-hashcash': return "Verifying you're human…";
     case 'submitting': return 'Submitting claim to the faucet…';
     case 'broadcast': return 'Broadcast — waiting for confirmation…';
     case 'confirmed': return 'Confirmed! Welcome to Nimiq.';

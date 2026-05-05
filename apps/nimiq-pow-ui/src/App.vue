@@ -6,14 +6,24 @@ import ClaimButton from './components/ClaimButton.vue';
 import StatusBar from './components/StatusBar.vue';
 import FooterBar from './components/FooterBar.vue';
 import ThemePicker from './components/ThemePicker.vue';
+import FCaptchaWidget from './components/FCaptchaWidget.vue';
 import { useClaim } from './composables/useClaim';
 import { isValidNimiqAddress } from './lib/nimiqAddress';
 
 const address = ref('');
 const connectedLabel = ref<string | null>(null);
+const captchaToken = ref('');
 const { config, state, claim, reset } = useClaim();
 
 const isAddressValid = computed(() => isValidNimiqAddress(address.value));
+
+// Captcha is required if the server config exposes a provider. Today
+// only fcaptcha is wired into this UI — turnstile / hcaptcha can be
+// added later by mounting their widgets in the same `.abuse-slot`.
+const captchaProvider = computed(() => config.value?.captcha?.provider ?? null);
+const needsCaptcha = computed(() => captchaProvider.value !== null);
+const fcaptchaServerUrl = computed(() => config.value?.captcha?.serverUrl ?? null);
+const fcaptchaSiteKey = computed(() => config.value?.captcha?.siteKey ?? null);
 
 // Ref to ConnectWallet so the top-right "Ready to mine…" pill can
 // trigger the same Hub-connect flow as the bottom-strip Connect button.
@@ -24,6 +34,7 @@ function triggerConnect(): void {
 
 const canClaim = computed(() => {
   if (!isAddressValid.value) return false;
+  if (needsCaptcha.value && !captchaToken.value) return false;
   return state.phase === 'idle' || state.phase === 'rejected' || state.phase === 'error' || state.phase === 'confirmed';
 });
 
@@ -36,7 +47,12 @@ function handleClaim() {
   if (state.phase === 'confirmed' || state.phase === 'rejected' || state.phase === 'error') {
     reset();
   }
-  void claim(address.value);
+  void claim(address.value, captchaToken.value || undefined).then(() => {
+    // Reset the captcha after every submission — most providers (FCaptcha
+    // included) emit a single-use token, so the next claim attempt needs
+    // a fresh challenge.
+    captchaToken.value = '';
+  });
 }
 </script>
 
@@ -89,8 +105,19 @@ function handleClaim() {
            messages today, and any future captcha widgets (turnstile /
            hcaptcha / fcaptcha iframes) when this UI integrates them. -->
       <div class="abuse-slot">
+        <FCaptchaWidget
+          v-if="
+            state.phase === 'idle' &&
+            captchaProvider === 'fcaptcha' &&
+            fcaptchaServerUrl &&
+            fcaptchaSiteKey
+          "
+          v-model="captchaToken"
+          :server-url="fcaptchaServerUrl"
+          :site-key="fcaptchaSiteKey"
+        />
         <StatusBar
-          v-if="state.phase !== 'idle'"
+          v-else-if="state.phase !== 'idle'"
           class="strip-status"
           :phase="state.phase"
           :tx-id="state.txId"
