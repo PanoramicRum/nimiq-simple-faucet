@@ -131,4 +131,19 @@ describe('fcaptchaCheck', () => {
     expect(captured).toBeDefined();
     expect(JSON.parse(captured as string)).toEqual({ token: 'tok-123', secret: 'super-secret' });
   });
+
+  it('forwards the user IP via X-Real-IP so FCaptcha can match the token ip_hash', async () => {
+    let capturedHeaders: Record<string, string> | undefined;
+    mockAgent
+      .get(SERVER_URL)
+      .intercept({ path: '/api/token/verify', method: 'POST' })
+      .reply(200, (opts) => {
+        capturedHeaders = opts.headers as Record<string, string>;
+        return { valid: true };
+      });
+
+    const check = fcaptchaCheck({ secret: 's', serverUrl: SERVER_URL });
+    await check.check(req('tok-123'));
+    expect(capturedHeaders?.['x-real-ip']).toBe('203.0.113.7');
+  });
 });

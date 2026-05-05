@@ -36,11 +36,23 @@ export function fcaptchaCheck(config: FCaptchaCheckConfig): AbuseCheck {
         };
       }
       const timeoutMs = config.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+      // FCaptcha binds the issued token to the requester's IP (token field
+      // `ip_hash`). At verify time it reads the client IP from `X-Real-IP`
+      // (preferred) or `X-Forwarded-For` headers, falling back to
+      // `req.socket.remoteAddress` — which on a server-to-server verify
+      // call is the faucet container's docker IP, NOT the user's. Without
+      // forwarding the user's IP, every real claim trips `ip_mismatch`.
+      // We pass `X-Real-IP`; FCaptcha matches that against the token's
+      // hashed IP and the verification succeeds.
+      const verifyHeaders: Record<string, string> = {
+        'content-type': 'application/json',
+      };
+      if (req.ip) verifyHeaders['x-real-ip'] = req.ip;
       let body: FCaptchaVerifyResponse;
       try {
         const res = await request(verifyUrl, {
           method: 'POST',
-          headers: { 'content-type': 'application/json' },
+          headers: verifyHeaders,
           body: JSON.stringify({ token: req.captchaToken, secret: config.secret }),
           headersTimeout: timeoutMs,
           bodyTimeout: timeoutMs,
