@@ -23,10 +23,19 @@ interface CspDirectives {
   'form-action': string[];
 }
 
+/** Strip a URL down to its origin (`https://host[:port]`) for CSP allowlisting. */
+function originOf(url: string): string | null {
+  try {
+    return new URL(url).origin;
+  } catch {
+    return null;
+  }
+}
+
 /** CSP directives per profile. `relaxed-for-ui` is default to let Turnstile + hCaptcha iframes load.
- *  FCaptcha's widget is served from the operator's own FCaptcha host (typically same-origin or
- *  reverse-proxied), so no third-party allowances are hardcoded for it — operators who run FCaptcha
- *  on a separate origin can add it to CSP via a reverse-proxy `script-src` allowlist.
+ *  When `fcaptchaPublicUrl` is configured, its origin is injected into `script-src` and
+ *  `connect-src` so the widget loaded from a separate origin (e.g. `https://captcha.example.com`)
+ *  is permitted. Operators running FCaptcha same-origin don't need this — `'self'` already covers it.
  *
  *  Audit finding #024 / issue #106: previously `connect-src` allowed the
  *  open-ended schemes `wss:` and `https:`, which let any compromised
@@ -35,8 +44,12 @@ interface CspDirectives {
  *  Operators on a different captcha provider should override the
  *  `helmetCsp` profile to `off` and emit their own CSP via a reverse
  *  proxy, OR fork this list. */
-function cspDirectives(profile: CspProfile): CspDirectives | false {
+function cspDirectives(
+  profile: CspProfile,
+  fcaptchaPublicUrl?: string,
+): CspDirectives | false {
   if (profile === 'off') return false;
+  const fcaptchaOrigin = fcaptchaPublicUrl ? originOf(fcaptchaPublicUrl) : null;
   const base: CspDirectives = {
     'default-src': ["'self'"],
     'script-src': ["'self'"],
@@ -47,13 +60,20 @@ function cspDirectives(profile: CspProfile): CspDirectives | false {
     'base-uri': ["'self'"],
     'form-action': ["'self'"],
   };
-  if (profile === 'strict') return base;
+  if (profile === 'strict') {
+    if (fcaptchaOrigin) {
+      base['script-src'] = [...base['script-src'], fcaptchaOrigin];
+      base['connect-src'] = [...base['connect-src'], fcaptchaOrigin];
+    }
+    return base;
+  }
   return {
     ...base,
     'script-src': [
       "'self'",
       'https://challenges.cloudflare.com',
       'https://js.hcaptcha.com',
+      ...(fcaptchaOrigin ? [fcaptchaOrigin] : []),
     ],
     'frame-src': [
       "'self'",
@@ -68,6 +88,7 @@ function cspDirectives(profile: CspProfile): CspDirectives | false {
       // hCaptcha verification (apex + subdomains used by the widget).
       'https://hcaptcha.com',
       'https://*.hcaptcha.com',
+      ...(fcaptchaOrigin ? [fcaptchaOrigin] : []),
     ],
   };
 }
@@ -171,7 +192,7 @@ export async function applyHardening(app: FastifyInstance, config: ServerConfig)
     app.log.warn('helmetCsp=off; CSP disabled — only use for debugging');
   }
 
-  const directives = cspDirectives(config.helmetCsp);
+  const directives = cspDirectives(config.helmetCsp, config.fcaptchaPublicUrl);
   // In dev mode the server is served over plain HTTP; helmet's default
   // `upgrade-insecure-requests` directive tells strict UAs (notably WebKit)
   // to rewrite every http://127.0.0.1 asset URL to https, which fails the
