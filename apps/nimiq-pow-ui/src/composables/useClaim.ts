@@ -50,7 +50,7 @@ export function useClaim() {
     },
   );
 
-  async function claim(address: string): Promise<void> {
+  async function claim(address: string, captchaToken?: string): Promise<void> {
     if (inFlight) return;
     if (!address.trim()) return;
     inFlight = true;
@@ -65,6 +65,7 @@ export function useClaim() {
         result = await client.solveAndClaim(address.trim(), {
           uid: 'nimiq-pow-ui',
           hostContext: { uid: 'nimiq-pow-ui' },
+          captchaToken,
           onProgress: (n) => {
             state.hashcashAttempts = n;
           },
@@ -73,6 +74,7 @@ export function useClaim() {
         state.phase = 'submitting';
         result = await client.claim(address.trim(), {
           hostContext: { uid: 'nimiq-pow-ui' },
+          captchaToken,
         });
       }
       state.phase = 'submitting';
