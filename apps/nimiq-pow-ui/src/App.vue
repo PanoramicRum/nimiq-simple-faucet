@@ -7,13 +7,23 @@ import StatusBar from './components/StatusBar.vue';
 import FooterBar from './components/FooterBar.vue';
 import ThemePicker from './components/ThemePicker.vue';
 import { useClaim } from './composables/useClaim';
+import { isValidNimiqAddress } from './lib/nimiqAddress';
 
 const address = ref('');
 const connectedLabel = ref<string | null>(null);
 const { config, state, claim, reset } = useClaim();
 
+const isAddressValid = computed(() => isValidNimiqAddress(address.value));
+
+// Ref to ConnectWallet so the top-right "Ready to mine…" pill can
+// trigger the same Hub-connect flow as the bottom-strip Connect button.
+const connectWalletRef = ref<{ connect: () => Promise<void> } | null>(null);
+function triggerConnect(): void {
+  void connectWalletRef.value?.connect();
+}
+
 const canClaim = computed(() => {
-  if (!address.value.trim()) return false;
+  if (!isAddressValid.value) return false;
   return state.phase === 'idle' || state.phase === 'rejected' || state.phase === 'error' || state.phase === 'confirmed';
 });
 
@@ -35,70 +45,81 @@ function handleClaim() {
     <!-- Decorative animated map fills the background. -->
     <WorldMap class="map-bg" />
 
-    <!-- Header bar -->
-    <header class="header">
-      <div class="brand">
+    <!-- Top-left: NIM brand pill (matches the wallet/web-miner top chrome) -->
+    <header class="top-left">
+      <div class="brand-pill">
         <svg class="logo" viewBox="0 0 64 64" aria-hidden="true">
-          <circle cx="32" cy="32" r="28" fill="#F6AE2D" />
+          <!-- Canonical Nimiq mark: yellow flat-top hexagon. -->
           <path
-            d="M32 14 L48 24 L48 40 L32 50 L16 40 L16 24 Z"
-            fill="#1F2348"
-            stroke="#1F2348"
-            stroke-width="2"
-            stroke-linejoin="round"
+            d="M50 32 L41 47.6 L23 47.6 L14 32 L23 16.4 L41 16.4 Z"
+            fill="#F6AE2D"
           />
         </svg>
-        <div class="title">
-          <h1>Nimiq Faucet</h1>
-          <p class="tagline">PoW theme &mdash; tribute to the original web-miner</p>
-        </div>
+        <span class="brand-label">NIM</span>
       </div>
-      <div class="header-right">
-        <ThemePicker :config="config" />
+      <ThemePicker :config="config" />
+    </header>
+
+    <!-- Top-right: stats grid (CLAIM / NETWORK / PoW / STATUS) -->
+    <aside class="top-right">
+      <div class="stat">
+        <span class="stat-label">Claim</span>
+        <span class="stat-value">
+          {{ config?.claimAmountLuna ? `${(Number(config.claimAmountLuna) / 1e5).toFixed(2)} NIM` : '—' }}
+        </span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">Network</span>
+        <span class="stat-value">{{ config?.network ? config.network.charAt(0).toUpperCase() + config.network.slice(1) : '—' }}</span>
+      </div>
+      <div class="stat status-stat">
+        <button type="button" class="connect-btn" @click="triggerConnect">
+          Connect Wallet
+        </button>
+      </div>
+    </aside>
+
+    <!-- Map fills the middle (world dot map renders through the decorative layer above) -->
+    <main class="middle"></main>
+
+    <!-- Bottom action strip: abuse-layer slot above, then Hub button + address input + Claim CTA -->
+    <section class="bottom-strip">
+      <!-- Reserved slot for any abuse-layer surface the server demands:
+           hashcash progress, submit/broadcast/confirmed/rejected/error
+           messages today, and any future captcha widgets (turnstile /
+           hcaptcha / fcaptcha iframes) when this UI integrates them. -->
+      <div class="abuse-slot">
         <StatusBar
+          v-if="state.phase !== 'idle'"
+          class="strip-status"
           :phase="state.phase"
           :tx-id="state.txId"
           :error-message="state.errorMessage"
           :hashcash-attempts="state.hashcashAttempts"
         />
       </div>
-    </header>
-
-    <!-- Centerpiece content -->
-    <main class="content">
-      <div class="panel">
-        <h2 class="hero">Claim your free NIM</h2>
-        <p class="sub">
-          Decentralised peer-to-peer cash. Connect your Nimiq Hub account (or paste an address) and we'll send
-          you {{ config?.claimAmountLuna ? `${(Number(config.claimAmountLuna) / 1e5).toFixed(2)} NIM` : 'some NIM' }} to get you started.
-          <span v-if="connectedLabel" class="claiming-to">Claiming to <strong>{{ connectedLabel }}</strong>.</span>
-        </p>
-
+      <div class="strip-inner">
         <ConnectWallet
+          ref="connectWalletRef"
           v-model="address"
           :disabled="isPending"
           :network="config?.network"
           @connected-label="connectedLabel = $event"
         />
-
-        <div class="cta-row">
-          <ClaimButton
-            :disabled="!canClaim"
-            :pending="isPending"
-            :label="
-              state.phase === 'confirmed' ? 'Claim again' :
-              state.phase === 'rejected' || state.phase === 'error' ? 'Try again' :
-              isPending ? 'Mining…' :
-              'Claim NIM'
-            "
-            @click="handleClaim"
-          />
-          <p v-if="config?.hashcash" class="hashcash-note">
-            Proof-of-work difficulty {{ config.hashcash.difficulty }} bits — solved in your browser.
-          </p>
-        </div>
+        <ClaimButton
+          class="claim-cta"
+          :disabled="!canClaim"
+          :pending="isPending"
+          :label="
+            state.phase === 'confirmed' ? 'Claim again' :
+            state.phase === 'rejected' || state.phase === 'error' ? 'Try again' :
+            isPending ? 'Mining…' :
+            'Claim NIM'
+          "
+          @click="handleClaim"
+        />
       </div>
-    </main>
+    </section>
 
     <FooterBar class="footer" />
   </div>
@@ -110,126 +131,189 @@ function handleClaim() {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  /* Clamp the layout to the viewport so wide absolute-positioned
+     children (e.g. top-right stats grid + status pill) can't expand
+     the document horizontally and shift map-bg's right edge offscreen. */
+  overflow-x: hidden;
+  width: 100%;
 }
 
 .map-bg {
-  position: absolute !important;
-  inset: 0;
+  /* Use explicit viewport-unit math instead of just `right: 12rem` —
+     belt-and-suspenders against any ancestor creating a containing
+     block that would shift `right`'s reference frame. With explicit
+     `left` and `width` derived from `100vw`, both edges are
+     unambiguous regardless of any layout overflow weirdness. */
+  position: fixed !important;
+  top: 0;
+  left: 12rem;
+  width: calc(100vw - 24rem);
+  height: calc(100vh - 1.5rem);
   z-index: 0;
-  opacity: 0.55;
+  opacity: 0.85;
 }
 
-.header {
-  position: relative;
-  z-index: 1;
+/* ── Top-left: NIM brand pill ─────────────────────────────── */
+.top-left {
+  position: absolute;
+  top: 1.25rem;
+  left: 1.5rem;
+  z-index: 2;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 1rem;
-  padding: 1.5rem 2rem;
+  gap: 0.75rem;
 }
 
-.brand {
-  display: flex;
+.brand-pill {
+  display: inline-flex;
   align-items: center;
-  gap: 1rem;
+  gap: 0.5rem;
+  padding: 0.5rem 0.9rem;
+  border-radius: 999px;
+  background: rgba(20, 23, 46, 0.7);
+  border: 1px solid var(--line);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 
 .logo {
-  width: 2.75rem;
-  height: 2.75rem;
-  filter: drop-shadow(0 4px 14px rgba(246, 174, 45, 0.35));
+  width: 1.5rem;
+  height: 1.5rem;
+  filter: drop-shadow(0 2px 8px rgba(246, 174, 45, 0.45));
 }
 
-.title h1 {
-  font-size: 1.4rem;
-  font-weight: 800;
-  letter-spacing: 0.02em;
+.brand-label {
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
   color: var(--text);
 }
-.tagline {
-  font-size: 0.7rem;
-  color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: 0.16em;
-}
 
-.header-right {
+/* ── Top-right: stats grid ────────────────────────────────── */
+.top-right {
+  position: absolute;
+  top: 1.25rem;
+  right: 1.5rem;
+  z-index: 2;
   display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 0;
+  padding: 0.6rem 0.5rem;
+  background: rgba(20, 23, 46, 0.7);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 
-.content {
+.stat {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 0.2rem 1rem;
+  border-right: 1px solid var(--line);
+  min-width: 96px;
+}
+.stat:last-child { border-right: none; }
+
+.stat-label {
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.stat-value {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-top: 0.15rem;
+  font-variant-numeric: tabular-nums;
+}
+.status-stat { padding: 0.2rem 0.5rem; min-width: auto; }
+
+/* Top-right Connect-Wallet button — fixed label, opens the same Hub
+   flow as the Connect button in the bottom strip. */
+.connect-btn {
+  display: inline-flex;
+  align-items: center;
+  height: 2rem;
+  padding: 0 0.95rem;
+  background: rgba(246, 174, 45, 0.08);
+  border: 1px solid var(--gold);
+  color: var(--text);
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 160ms ease, transform 120ms ease, box-shadow 200ms ease;
+}
+.connect-btn:hover {
+  background: rgba(246, 174, 45, 0.16);
+  transform: translateY(-1px);
+  box-shadow: 0 0 0 3px rgba(246, 174, 45, 0.10);
+}
+.connect-btn:active { transform: translateY(0); }
+
+/* ── Middle: blank space, world map shows through ─────────── */
+.middle {
   position: relative;
   z-index: 1;
   flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 2rem;
+  /* Map is decorative; this main element just claims the space. */
 }
 
-.panel {
+/* ── Bottom action strip ──────────────────────────────────── */
+.bottom-strip {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.8rem 1.5rem 1rem;
+  background: linear-gradient(180deg, rgba(20, 23, 46, 0) 0%, rgba(20, 23, 46, 0.85) 70%, rgba(20, 23, 46, 0.92) 100%);
+}
+
+/* Reserved row above the address strip for abuse-layer surfaces:
+   status pill, captcha widgets (turnstile/hcaptcha/fcaptcha render
+   targets), hashcash progress, etc. Centered, with a small minimum
+   height so the strip doesn't jump when content appears/disappears. */
+.abuse-slot {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  min-height: 2.4rem;
+}
+
+.strip-status {
+  align-self: center;
+}
+
+.strip-inner {
   width: 100%;
   max-width: 640px;
   display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-  padding: 2.5rem;
-  background: rgba(20, 23, 46, 0.78);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border: 1px solid var(--line);
-  border-radius: 18px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+  align-items: stretch;
+  gap: 0.5rem;
 }
-
-.hero {
-  font-size: 2rem;
-  font-weight: 800;
-  line-height: 1.15;
-  letter-spacing: -0.01em;
-}
-
-.sub {
-  font-size: 0.95rem;
-  line-height: 1.6;
-  color: var(--muted);
-}
-.claiming-to {
-  display: inline;
-  margin-left: 0.4rem;
-  color: var(--gold);
-}
-.claiming-to strong { color: var(--text); font-weight: 700; }
-
-.cta-row {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  align-items: flex-start;
-}
-
-.hashcash-note {
-  font-size: 0.75rem;
-  color: var(--muted);
-  font-style: italic;
-}
+/* Connect+input cluster grows; Claim button stays sized to its label. */
+.strip-inner > :first-child { flex: 1 1 auto; min-width: 0; }
+.claim-cta { flex: 0 0 auto; }
 
 .footer {
   position: relative;
-  z-index: 1;
+  z-index: 2;
 }
 
-@media (max-width: 640px) {
-  .panel {
-    padding: 1.5rem;
+@media (max-width: 720px) {
+  .top-right {
+    display: none; /* free up the small-screen real estate; status stays in the strip on mobile */
   }
-  .hero {
-    font-size: 1.5rem;
-  }
+  .strip-inner { flex-direction: column; align-items: stretch; }
 }
 </style>

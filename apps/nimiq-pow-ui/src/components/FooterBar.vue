@@ -10,7 +10,6 @@
     </div>
     <nav class="right">
       <a href="https://github.com/PanoramicRum/nimiq-simple-faucet" target="_blank" rel="noopener">GitHub</a>
-      <a href="https://github.com/nimiq/web-miner" target="_blank" rel="noopener" title="Visual tribute to the original">web-miner ↗</a>
     </nav>
   </footer>
 </template>

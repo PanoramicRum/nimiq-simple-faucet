@@ -1,249 +1,132 @@
 <script setup lang="ts">
-import { onMounted, onBeforeUnmount, ref } from 'vue';
+/**
+ * Decorative hex-tessellated world map.
+ *
+ * Tessellates the world into a pointy-top hex grid; each cell tests its
+ * (lng, lat) center against the continent polygons in `lib/landmask.ts`
+ * and renders as a hexagon if it falls on land. The set of land hex
+ * cells is stable across renders (the bitmap is static), so a future
+ * feature can light up specific cells by lat/lng — point a
+ * `pulse({lat, lng})` helper at the nearest cell and animate. For now
+ * the map is purely decorative.
+ */
+import { computed } from 'vue';
+import { isLand } from '../lib/landmask';
+
+// Density tuned to match the Nimiq wallet's network-tab map: smaller
+// individual hexes packed denser. The bitmap underneath is 360×170 at
+// 1° resolution, so 160×70 hex sampling (~2.25° lng × ~1.86° lat per
+// cell) is well within the bitmap's resolution limit. Row count tuned
+// so the SVG's intrinsic aspect (~2.63:1) is closer to the viewport's
+// (~2:1) — less empty vertical space between map and action strip.
+const COLS = 160;
+// Trimmed lat range so we don't render empty south-polar rows below
+// the lowest land (Patagonia tip ~-54°). The bitmap data underneath
+// runs to -85, but those rows are all sea and would only add empty
+// vertical space between the map and the address-input strip.
+const ROWS = 70;
+const LNG_MIN = -180;
+const LNG_MAX = 180;
+const LAT_MAX = 75;
+const LAT_MIN = -55;
+
+// Pointy-top hex geometry. We separate two radii:
+//   • CELL_R drives the grid pitch (column/row spacing)
+//   • HEX_R is the rendered hex's circumradius, smaller than CELL_R so
+//     each hex has visible breathing room around it. The ratio (0.65)
+//     keeps the hexagon shape readable at typical render sizes while
+//     leaving a clear gap between cells. Smaller ratios make the hex
+//     look like a circle (anti-aliasing rounds the corners under ~5px);
+//     larger ratios merge into a flush honeycomb.
+const CELL_R = 7;
+const HEX_R = CELL_R * 0.78;
+const SQRT3 = Math.sqrt(3);
+const CELL_W = CELL_R * SQRT3;       // column pitch (full hex width @ CELL_R)
+const ROW_PITCH = CELL_R * 1.5;      // row pitch
+const HEX_W = HEX_R * SQRT3;         // rendered hex width (smaller than CELL_W)
+
+const VIEW_W = COLS * CELL_W + CELL_W / 2; // +half for the staggered odd rows
+const VIEW_H = (ROWS - 1) * ROW_PITCH + HEX_R * 2;
+
+interface HexCell {
+  /** SVG `points` string for the hexagon polygon (6 vertices). */
+  points: string;
+}
 
 /**
- * Decorative world-dot map + peer-pulse animation.
- *
- * Visual tribute to nimiq/web-miner. The old miner did real PoW + showed
- * actual peer connections; this is purely decorative — pulses fire on a
- * timer to suggest network activity. The faucet claim itself is a plain
- * HTTP POST handled by `useClaim()` — none of this code path produces
- * cryptographic work.
- *
- * Implementation: canvas with a coarse dot grid clipped (loosely) to a
- * stylised continents bitmap. Every ~600 ms a few "peer" dots get a
- * pulse animation (radial expand + fade); independently, occasional
- * peer-to-peer lines fade in/out between random pairs.
+ * Build the SVG `points` string for a pointy-top hex centered at (cx, cy).
+ * Pointy-top vertices, starting at top and going clockwise:
+ *   (cx, cy - R)
+ *   (cx + HEX_W/2, cy - R/2)
+ *   (cx + HEX_W/2, cy + R/2)
+ *   (cx, cy + R)
+ *   (cx - HEX_W/2, cy + R/2)
+ *   (cx - HEX_W/2, cy - R/2)
  */
-
-const canvas = ref<HTMLCanvasElement | null>(null);
-
-// Coarse 60-col × 24-row continents bitmap. 1 = land, 0 = sea. This is a
-// stylised silhouette — not geographically accurate, just enough to read
-// as "world map" at a glance. A nicer-looking version is a future polish.
-const LAND_BITMAP: ReadonlyArray<string> = [
-  '............................................................',
-  '..........###........................##........#####.......',
-  '........######.....#######........#######......######......',
-  '.......#########..##########.....#########....#########....',
-  '......##############################...####...##########...',
-  '.....##########################........###...############..',
-  '....##########################...........#...##############',
-  '....########################..............#..##############',
-  '....#####################...................##############.',
-  '....##################...................#################.',
-  '.....################......................##############..',
-  '......##############......................################.',
-  '.......#############.......................##############..',
-  '........############........................############...',
-  '.........###########..........................##########...',
-  '..........#########............................########....',
-  '...........#######...............................######....',
-  '...........######..................................####....',
-  '............####.....................................##....',
-  '.............###..............................#.....##.....',
-  '.............##..............................##....##......',
-  '..............#.............................###....#.......',
-  '..............##............................##.............',
-  '...............#.............................#.............',
-];
-
-interface Peer {
-  // Grid coords (col, row) of an active land dot.
-  col: number;
-  row: number;
-  // Active = currently pulsing; resets after the animation duration.
-  pulseStartedAt: number | null;
+function hexPoints(cx: number, cy: number): string {
+  const halfW = HEX_W / 2;
+  const halfR = HEX_R / 2;
+  const verts: ReadonlyArray<readonly [number, number]> = [
+    [cx, cy - HEX_R],
+    [cx + halfW, cy - halfR],
+    [cx + halfW, cy + halfR],
+    [cx, cy + HEX_R],
+    [cx - halfW, cy + halfR],
+    [cx - halfW, cy - halfR],
+  ];
+  return verts.map((v) => `${v[0].toFixed(2)},${v[1].toFixed(2)}`).join(' ');
 }
 
-interface Link {
-  from: Peer;
-  to: Peer;
-  startedAt: number;
-}
-
-const PULSE_DURATION_MS = 1_400;
-const LINK_DURATION_MS = 2_400;
-const PULSE_SPAWN_INTERVAL_MS = 700;
-const LINK_SPAWN_INTERVAL_MS = 1_900;
-const ACTIVE_PEER_COUNT = 14;
-
-let rafId = 0;
-let resizeObserver: ResizeObserver | null = null;
-
-onMounted(() => {
-  const c = canvas.value;
-  if (!c) return;
-  const ctx = c.getContext('2d');
-  if (!ctx) return;
-
-  // Hand-pick `ACTIVE_PEER_COUNT` random land dots as our "peers".
-  const landDots: { col: number; row: number }[] = [];
-  for (let row = 0; row < LAND_BITMAP.length; row++) {
-    const line = LAND_BITMAP[row];
-    if (!line) continue;
-    for (let col = 0; col < line.length; col++) {
-      if (line[col] === '#') landDots.push({ col, row });
-    }
-  }
-
-  const peers: Peer[] = [];
-  // Use a deterministic shuffle to keep the visual stable across hot reloads.
-  const shuffled = [...landDots].sort((a, b) => (a.col * 31 + a.row * 7) - (b.col * 31 + b.row * 7));
-  const stride = Math.max(1, Math.floor(shuffled.length / ACTIVE_PEER_COUNT));
-  for (let i = 0; i < ACTIVE_PEER_COUNT && i * stride < shuffled.length; i++) {
-    const dot = shuffled[i * stride];
-    if (!dot) continue;
-    peers.push({ col: dot.col, row: dot.row, pulseStartedAt: null });
-  }
-
-  const links: Link[] = [];
-
-  let lastPulseAt = 0;
-  let lastLinkAt = 0;
-
-  function resize() {
-    if (!c) return;
-    const dpr = window.devicePixelRatio || 1;
-    const rect = c.getBoundingClientRect();
-    c.width = Math.floor(rect.width * dpr);
-    c.height = Math.floor(rect.height * dpr);
-    if (ctx) ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  }
-  resize();
-  resizeObserver = new ResizeObserver(resize);
-  resizeObserver.observe(c);
-
-  function tick(t: number) {
-    if (!c || !ctx) return;
-    const w = c.clientWidth;
-    const h = c.clientHeight;
-
-    // Cell sizing: fit the bitmap inside the canvas with some padding.
-    const cols = LAND_BITMAP[0]?.length ?? 60;
-    const rows = LAND_BITMAP.length;
-    const cell = Math.min(w / (cols + 2), h / (rows + 2));
-    const dotR = Math.max(1.2, cell * 0.22);
-    const offsetX = (w - cols * cell) / 2;
-    const offsetY = (h - rows * cell) / 2;
-
-    ctx.clearRect(0, 0, w, h);
-
-    // Dots — sea is faint, land is brighter. Peers are gold.
-    for (let row = 0; row < rows; row++) {
-      const line = LAND_BITMAP[row];
-      if (!line) continue;
-      for (let col = 0; col < cols; col++) {
-        const isLand = line[col] === '#';
-        const cx = offsetX + (col + 0.5) * cell;
-        const cy = offsetY + (row + 0.5) * cell;
-        ctx.beginPath();
-        ctx.arc(cx, cy, dotR, 0, Math.PI * 2);
-        ctx.fillStyle = isLand ? 'rgba(245, 246, 250, 0.42)' : 'rgba(158, 163, 199, 0.10)';
-        ctx.fill();
+/**
+ * Pre-computed once. Each entry is the SVG points string for a land
+ * hex cell.
+ */
+const cells = computed<HexCell[]>(() => {
+  const result: HexCell[] = [];
+  for (let row = 0; row < ROWS; row++) {
+    // Odd rows shift right by half a cell-width (pointy-top staggered packing).
+    const offsetX = (row % 2) * (CELL_W / 2);
+    const cy = HEX_R + row * ROW_PITCH;
+    for (let col = 0; col < COLS; col++) {
+      const cx = CELL_W / 2 + col * CELL_W + offsetX;
+      // Map cell center to (lng, lat); flip lat so row 0 is north.
+      const lng = LNG_MIN + (cx / VIEW_W) * (LNG_MAX - LNG_MIN);
+      const lat = LAT_MAX - (cy / VIEW_H) * (LAT_MAX - LAT_MIN);
+      if (isLand(lng, lat)) {
+        result.push({ points: hexPoints(cx, cy) });
       }
     }
-
-    // Spawn pulses at intervals.
-    if (t - lastPulseAt > PULSE_SPAWN_INTERVAL_MS) {
-      const idx = Math.floor(Math.random() * peers.length);
-      const peer = peers[idx];
-      if (peer) peer.pulseStartedAt = t;
-      lastPulseAt = t;
-    }
-
-    // Draw peer dots (gold) + ongoing pulses.
-    for (const peer of peers) {
-      const cx = offsetX + (peer.col + 0.5) * cell;
-      const cy = offsetY + (peer.row + 0.5) * cell;
-      ctx.beginPath();
-      ctx.arc(cx, cy, dotR * 1.4, 0, Math.PI * 2);
-      ctx.fillStyle = '#F6AE2D';
-      ctx.fill();
-
-      if (peer.pulseStartedAt !== null) {
-        const age = t - peer.pulseStartedAt;
-        if (age > PULSE_DURATION_MS) {
-          peer.pulseStartedAt = null;
-        } else {
-          const p = age / PULSE_DURATION_MS;
-          const r = dotR * 1.4 + p * cell * 4;
-          ctx.beginPath();
-          ctx.arc(cx, cy, r, 0, Math.PI * 2);
-          ctx.strokeStyle = `rgba(255, 177, 13, ${(1 - p) * 0.6})`;
-          ctx.lineWidth = 1.2;
-          ctx.stroke();
-        }
-      }
-    }
-
-    // Spawn p2p links occasionally.
-    if (t - lastLinkAt > LINK_SPAWN_INTERVAL_MS && peers.length >= 2) {
-      const a = peers[Math.floor(Math.random() * peers.length)];
-      let b = peers[Math.floor(Math.random() * peers.length)];
-      let attempts = 0;
-      while (b === a && attempts < 5) {
-        b = peers[Math.floor(Math.random() * peers.length)];
-        attempts++;
-      }
-      if (a && b && a !== b) links.push({ from: a, to: b, startedAt: t });
-      lastLinkAt = t;
-    }
-
-    // Draw + age-out links.
-    for (let i = links.length - 1; i >= 0; i--) {
-      const link = links[i];
-      if (!link) continue;
-      const age = t - link.startedAt;
-      if (age > LINK_DURATION_MS) {
-        links.splice(i, 1);
-        continue;
-      }
-      const p = age / LINK_DURATION_MS;
-      const alpha = p < 0.5 ? p * 2 * 0.55 : (1 - p) * 2 * 0.55;
-      const ax = offsetX + (link.from.col + 0.5) * cell;
-      const ay = offsetY + (link.from.row + 0.5) * cell;
-      const bx = offsetX + (link.to.col + 0.5) * cell;
-      const by = offsetY + (link.to.row + 0.5) * cell;
-      ctx.beginPath();
-      ctx.moveTo(ax, ay);
-      // Slight quadratic bezier so lines don't look like a wireframe.
-      const mx = (ax + bx) / 2;
-      const my = (ay + by) / 2 - cell * 1.5;
-      ctx.quadraticCurveTo(mx, my, bx, by);
-      ctx.strokeStyle = `rgba(255, 177, 13, ${alpha})`;
-      ctx.lineWidth = 1;
-      ctx.stroke();
-    }
-
-    rafId = requestAnimationFrame(tick);
   }
-  rafId = requestAnimationFrame(tick);
-});
-
-onBeforeUnmount(() => {
-  if (rafId) cancelAnimationFrame(rafId);
-  resizeObserver?.disconnect();
+  return result;
 });
 </script>
 
 <template>
-  <div class="world-map">
-    <canvas ref="canvas" />
-  </div>
+  <svg
+    class="world-map"
+    :viewBox="`0 0 ${VIEW_W} ${VIEW_H}`"
+    preserveAspectRatio="xMidYMid meet"
+    aria-hidden="true"
+  >
+    <polygon
+      v-for="(c, i) in cells"
+      :key="i"
+      :points="c.points"
+      class="hex"
+    />
+  </svg>
 </template>
 
 <style scoped>
 .world-map {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-}
-canvas {
-  width: 100%;
-  height: 100%;
   display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.hex {
+  /* Each hex is now visibly separated from its neighbours; no stroke
+     needed (a stroke would soften the gap by tinting the gutter). */
+  fill: rgba(245, 246, 250, 0.22);
 }
 </style>
