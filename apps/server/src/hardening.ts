@@ -50,6 +50,13 @@ function cspDirectives(
 ): CspDirectives | false {
   if (profile === 'off') return false;
   const fcaptchaOrigin = fcaptchaPublicUrl ? originOf(fcaptchaPublicUrl) : null;
+  // FCaptcha's challenge runtime evaluates dynamic JS at solve time
+  // (Function/eval) so the widget needs `'unsafe-eval'` in script-src.
+  // We only add it when the operator actually configured FCaptcha — no
+  // relaxation for deployments using only Turnstile / hCaptcha / hashcash.
+  const fcaptchaScriptExtras: string[] = fcaptchaOrigin
+    ? [fcaptchaOrigin, "'unsafe-eval'"]
+    : [];
   const base: CspDirectives = {
     'default-src': ["'self'"],
     'script-src': ["'self'"],
@@ -62,7 +69,7 @@ function cspDirectives(
   };
   if (profile === 'strict') {
     if (fcaptchaOrigin) {
-      base['script-src'] = [...base['script-src'], fcaptchaOrigin];
+      base['script-src'] = [...base['script-src'], ...fcaptchaScriptExtras];
       base['connect-src'] = [...base['connect-src'], fcaptchaOrigin];
     }
     return base;
@@ -73,7 +80,7 @@ function cspDirectives(
       "'self'",
       'https://challenges.cloudflare.com',
       'https://js.hcaptcha.com',
-      ...(fcaptchaOrigin ? [fcaptchaOrigin] : []),
+      ...fcaptchaScriptExtras,
     ],
     'frame-src': [
       "'self'",
