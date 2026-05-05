@@ -30,25 +30,25 @@ export interface ThemeManifest {
 }
 
 export const THEMES = {
-  'porcelain-vault': {
-    displayName: 'Porcelain Vault',
-    description:
-      'The default — clean, off-white, Material 3 palette. Vue 3 + Tailwind. Shipped in v2.2.1.',
-    distFromRepoRoot: 'apps/claim-ui/dist',
-    distInImage: '/app/themes/porcelain-vault/dist',
-  },
   'nimiq-pow': {
     displayName: 'Nimiq PoW',
     description:
-      'Visual tribute to the original nimiq/web-miner — world-dot map + peer-pulse animation, dark navy. Decorative; the claim is plain HTTP.',
+      'The default — visual tribute to the original nimiq/web-miner with hex world map + dark navy palette. Vue 3.',
     distFromRepoRoot: 'apps/nimiq-pow-ui/dist',
     distInImage: '/app/themes/nimiq-pow/dist',
+  },
+  'porcelain-vault': {
+    displayName: 'Porcelain Vault',
+    description:
+      'Clean, off-white, Material 3 palette. Vue 3 + Tailwind. Shipped in v2.2.1.',
+    distFromRepoRoot: 'apps/claim-ui/dist',
+    distInImage: '/app/themes/porcelain-vault/dist',
   },
 } as const satisfies Record<string, ThemeManifest>;
 
 export type ThemeSlug = keyof typeof THEMES;
 
-export const DEFAULT_THEME: ThemeSlug = 'porcelain-vault';
+export const DEFAULT_THEME: ThemeSlug = 'nimiq-pow';
 
 /**
  * Type guard: is the given string a slug we know about? Tolerates
