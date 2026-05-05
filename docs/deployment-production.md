@@ -134,7 +134,23 @@ docker cp compose-faucet-1:/data/faucet.db.backup /secure-backup/$(date +%F).db
 docker cp compose-faucet-1:/data/faucet.key /secure-backup/$(date +%F).key
 ```
 
-Rotation and offsite replication are your responsibility.
+Rotation and offsite replication are your responsibility. For docker-compose
+deploys, the [`scripts/rotate-secrets.sh`](../scripts/rotate-secrets.sh) helper
+covers the in-place credential rotation:
+
+```bash
+# rotate the four passphrase/password values (admin, hashcash, key, wallet)
+./scripts/rotate-secrets.sh --simple
+
+# additionally generate a fresh wallet keypair, sweep the on-chain balance
+# from the OLD address to the NEW one, and restart the container
+./scripts/rotate-secrets.sh --with-wallet
+```
+
+The script backs up `.env` to `.env.backup-<timestamp>` before any write,
+prints new secrets only on `/dev/tty` (never stdout/log), and re-creates
+the faucet container with the canonical compose flags. See the script's
+header comment for layout assumptions.
 
 ---
 
