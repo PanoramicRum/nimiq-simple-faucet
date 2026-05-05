@@ -131,12 +131,12 @@ export const ServerConfigSchema = z.object({
   claimUiDir: z.string().optional(),
   /**
    * Slug of a bundled Claim UI theme to serve when `claimUiDir` is unset.
-   * Default: `porcelain-vault`. Unknown values fall back to the default
-   * with a warning log so a typo in deployment env doesn't break the UI.
+   * Default: `nimiq-pow`. Unknown values fall back to the default with a
+   * warning log so a typo in deployment env doesn't break the UI.
    * See `apps/server/src/themes.ts` for the registry. Adding a new theme
    * is documented in `docs/contributing-a-frontend.md`.
    */
-  claimUiTheme: z.string().default('porcelain-vault'),
+  claimUiTheme: z.string().default('nimiq-pow'),
   /**
    * §3.0.16: when true, /v1/config exposes the bundled-theme list and
    * the server honours `?theme=<slug>` in the URL (in addition to the
