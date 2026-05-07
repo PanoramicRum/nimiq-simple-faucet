@@ -224,6 +224,15 @@ export async function applyHardening(app: FastifyInstance, config: ServerConfig)
   await app.register(helmet, {
     contentSecurityPolicy: cspWithUpgrade,
     crossOriginEmbedderPolicy: false,
+    // helmet's default `same-origin` severs `window.opener` for popups
+    // opened from the page, which breaks any cross-origin popup-based
+    // login flow that needs to postMessage back to its opener — the
+    // Nimiq Hub (`hub.nimiq.com` / `hub.nimiq-testnet.com`) being the
+    // motivating case here. `same-origin-allow-popups` keeps the
+    // anti-side-channel isolation for the page itself but lets popups
+    // communicate with their opener; this is exactly the policy spec'd
+    // for sites that act as identity-provider clients.
+    crossOriginOpenerPolicy: { policy: 'same-origin-allow-popups' },
     referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
     hsts: { maxAge: 15_552_000, includeSubDomains: true },
   });
