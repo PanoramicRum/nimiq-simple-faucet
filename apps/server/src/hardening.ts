@@ -224,6 +224,15 @@ export async function applyHardening(app: FastifyInstance, config: ServerConfig)
   await app.register(helmet, {
     contentSecurityPolicy: cspWithUpgrade,
     crossOriginEmbedderPolicy: false,
+    // The claim UI opens the Nimiq Hub (hub.nimiq.com / hub.nimiq-testnet.com)
+    // in a popup and talks to it via window.opener.postMessage. Helmet's
+    // default 'same-origin' severs that opener relationship for cross-origin
+    // popups, so the Hub never receives the chooseAddress request, hits its
+    // RPC client timeout, and renders 'Invalid request'. 'same-origin-allow-popups'
+    // keeps cross-origin attackers out (they still can't reach into us via
+    // window.opener) while preserving the bidirectional channel for popups
+    // we explicitly open.
+    crossOriginOpenerPolicy: { policy: 'same-origin-allow-popups' },
     referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
     hsts: { maxAge: 15_552_000, includeSubDomains: true },
   });

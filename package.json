@@ -65,10 +65,15 @@
       "//2": "Re-evaluate quarterly: if a new esbuild/vite advisory crosses into runtime reachability, drop the ignore and accept the vitest churn.",
       "//3": "GHSA-w5hq-g745-h8pq (uuid <14.0.0 buffer bounds check) is reachable only when calling uuid.v3/v5/v6 with a `buf` argument. The path is `apps/nimiq-pow-ui > @nimiq/hub-api > @opengsn/common > web3-eth (>>) ethers@4.0.0-beta.3 > uuid@2.0.1` — OpenGSN/USDC code that this app's chooseAddress-only Hub flow never executes. Forcing uuid >=14 (ESM-only) breaks the upstream OpenGSN install graph. Ignore until @nimiq/hub-api drops the OpenGSN bundle for non-USDC consumers.",
       "//4": "Re-evaluate when @nimiq/hub-api ships a slim build without @opengsn or when @opengsn updates its web3 chain.",
+      "//5": "GHSA-v2v4-37r5-5v8g (ip-address <=10.1.0 XSS in Address6 HTML-emitting methods), GHSA-9vqf-7f2p-gf9v (hono <4.12.16 bodyLimit bypass for chunked / unknown-length requests) and GHSA-69xw-7hcm-h432 (hono/jsx unvalidated tag-name HTML injection) all reach us only via @modelcontextprotocol/sdk@1.29.0's hono-bound HTTP transport (and its express-rate-limit / @hono/node-server transitives). The faucet's MCP integration imports ONLY `StreamableHTTPServerTransport` (apps/server/src/mcp/index.ts:27); the hono transport, JSX renderer, and Address6 HTML methods are never executed. Forcing patched versions before MCP SDK ships an update would require workspace-wide overrides that the lockfile resolver can't satisfy without churn. Drop these ignores once @modelcontextprotocol/sdk publishes >1.29.0 with patched transitives.",
+      "//6": "Re-evaluate weekly while these are open (advisories were filed 2026-05): once the MCP SDK bumps, remove these three GHSAs and run `pnpm install` to refresh the lockfile.",
       "ignoreGhsas": [
         "GHSA-67mh-4wv8-2f99",
         "GHSA-4w7w-66w2-5vf9",
-        "GHSA-w5hq-g745-h8pq"
+        "GHSA-w5hq-g745-h8pq",
+        "GHSA-v2v4-37r5-5v8g",
+        "GHSA-9vqf-7f2p-gf9v",
+        "GHSA-69xw-7hcm-h432"
       ]
     }
   }
