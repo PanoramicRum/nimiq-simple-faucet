@@ -25,8 +25,8 @@ importers:
         specifier: workspace:*
         version: link:packages/abuse-hashcash
       '@nimiq/core':
-        specifier: ^2.4.0
-        version: 2.4.0
+        specifier: ^2.5.0
+        version: 2.5.0
       '@types/node':
         specifier: ^25.6.0
         version: 25.6.0
@@ -614,8 +614,8 @@ importers:
         specifier: workspace:*
         version: link:../core
       '@nimiq/core':
-        specifier: ^2.4.0
-        version: 2.4.0
+        specifier: ^2.5.0
+        version: 2.5.0
     devDependencies:
       typescript:
         specifier: ^6.0.3
@@ -1926,8 +1926,8 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@nimiq/core@2.4.0':
-    resolution: {integrity: sha512-tkcvQTTy0tbOLEBQDOxDAcCv7KRS+riuEcd4gWulwyRU2rLziiTKOXD1WNszikHFKQ6S3zmbq1RQpJGTjQVBIg==}
+  '@nimiq/core@2.5.0':
+    resolution: {integrity: sha512-8kqIBwatzvyXyCcfn1hI8BlLKaH3adx9c7RUJNoQl1i7uuZDyj8chs4xwnrmzbYMQlBVnHV2SVd8eo596VAMUQ==}
 
   '@nimiq/fastspot-api@1.10.3':
     resolution: {integrity: sha512-CUkIAcF7R3OlN45idB+yC9Wnuz2YXTPx25xYswCdmbMGu/EGZFNnGHLIe6HkbHd8Eh+uBrwqBmLZGm8jyQ9+6A==}
@@ -7023,7 +7023,7 @@ snapshots:
   '@next/swc-win32-x64-msvc@16.2.6':
     optional: true
 
-  '@nimiq/core@2.4.0':
+  '@nimiq/core@2.5.0':
     dependencies:
       comlink: 4.4.2
       websocket: 1.0.35
@@ -7034,7 +7034,7 @@ snapshots:
 
   '@nimiq/hub-api@1.13.0(bufferutil@4.1.0)(typescript@6.0.3)(utf-8-validate@5.0.10)(zod@3.25.76)':
     dependencies:
-      '@nimiq/core': 2.4.0
+      '@nimiq/core': 2.5.0
       '@nimiq/fastspot-api': 1.10.3
       '@nimiq/rpc': 0.4.1
       '@nimiq/utils': 0.5.2
