@@ -11,8 +11,8 @@
     "@nimiq-faucet/react": "workspace:*",
     "@nimiq-faucet/sdk": "workspace:*",
     "next": "^16.2.5",
-    "react": "^19.2.5",
-    "react-dom": "^19.2.5"
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6"
   },
   "devDependencies": {
     "@types/react": "^19.2.14",
