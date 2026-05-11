@@ -5,7 +5,7 @@ import { useMiniAppFaucet } from './composables/useMiniAppFaucet';
 import FcaptchaWidget from './components/FcaptchaWidget.vue';
 
 const faucetUrl = import.meta.env.VITE_FAUCET_URL ?? 'http://localhost:8080';
-const explorerBase = import.meta.env.VITE_EXPLORER_URL ?? 'https://nimiq-testnet.observer/#tx/';
+const explorerBase = import.meta.env.VITE_EXPLORER_URL ?? 'https://test.nimiq.watch/#';
 
 const { state, captchaPrompt, claim, reset, canClaim } = useMiniAppFaucet(faucetUrl);
 

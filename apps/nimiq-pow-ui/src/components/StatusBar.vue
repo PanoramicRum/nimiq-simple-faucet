@@ -38,7 +38,7 @@ const tone = computed<'idle' | 'busy' | 'good' | 'bad'>(() => {
     <span v-if="txId" class="tx">
       tx
       <a
-        :href="`https://nimiq-testnet.observer/transactions/${txId}`"
+        :href="`https://test.nimiq.watch/#${txId}`"
         target="_blank"
         rel="noopener"
       >{{ txId.slice(0, 16) }}…</a>

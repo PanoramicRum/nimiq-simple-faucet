@@ -3,7 +3,7 @@ import { useMiniAppFaucet } from './hooks/useMiniAppFaucet';
 import { FcaptchaWidgetView } from './components/FcaptchaWidget';
 
 const FAUCET_URL = import.meta.env.VITE_FAUCET_URL ?? 'http://localhost:8080';
-const EXPLORER_BASE = import.meta.env.VITE_EXPLORER_URL ?? 'https://nimiq-testnet.observer/#tx/';
+const EXPLORER_BASE = import.meta.env.VITE_EXPLORER_URL ?? 'https://test.nimiq.watch/#';
 
 export function App() {
   const { state, captchaPrompt, claim, reset, canClaim } = useMiniAppFaucet(FAUCET_URL);
