@@ -513,6 +513,177 @@ Low-risk fixes shipped in PR #61; these are the larger follow-ups.
 
 ---
 
+## 2.3 — Integrator DX & SDK parity (from the May 2026 analysis)
+
+Filed from a developer-experience review of the integration surface
+(8 SDKs, the OpenAPI spec, the MCP server, the examples, AGENTS.md /
+`llms.txt`). Companion to §1.8's architecture cleanup — same "reduce
+drift" goal, aimed at the integrator side. Several items overlap
+existing roadmap entries (noted inline); those aren't re-scoped here,
+just cross-referenced.
+
+**Recommended order:** §2.3.1 (SDK parity sweep) → §2.3.2 (release
+cadence) → §2.3.3 (cross-SDK contract tests) → §2.3.4 + §2.3.5
+(onboarding) → §2.3.6 (typed errors) → §2.3.7 (MCP docs) →
+§2.3.8 (config reference) → §2.3.9 (snippets cleanup).
+
+### 2.3.1 SDK feature-parity sweep
+
+**Status:** → next up.
+
+**Goal:** every SDK exposes every shipped server capability. Today
+`idempotencyKey` (a v1.7.0 server feature, accepted on `POST /v1/claim`
+everywhere) is only surfaced by the Python SDK; the `timeout` / `expired`
+claim statuses (also v1.7.0) aren't uniformly in the SDK status enums;
+and the Flutter SDK's `HostContext` type is missing `verifiedIdentities`
+(v2.0.0).
+
+**Scope:**
+- Add an optional `idempotencyKey` to the claim-request surface of the
+  7 SDKs that lack it: `packages/sdk-ts`, `sdk-go`, `sdk-react` +
+  `sdk-vue` (hook/composable options), `sdk-flutter`, `sdk-capacitor`,
+  `sdk-react-native`.
+- Add `verifiedIdentities` to `packages/sdk-flutter/lib/src/types.dart`'s
+  `HostContext`.
+- Align the claim-status enum
+  (`queued | broadcast | confirmed | rejected | challenged | timeout | expired`)
+  across every SDK's type definitions and any `waitForConfirmation`
+  terminal-state checks.
+- Touch the SDK READMEs where the new field needs a one-liner.
+
+**Estimated effort:** 1–2 days.
+
+### 2.3.2 Release cadence (cut v2.3.0)
+
+**Goal:** the public CHANGELOG / tags reflect `main`. As of May 2026,
+`main` is several PRs ahead of `v2.2.1` (COOP/Hub popup fix,
+wallet-connect captcha gate, dependency bumps, mobile-header fixes) with
+the CHANGELOG top entry still `2.2.0`. Cut a `v2.3.0` once §2.3.1 lands.
+Optionally add a weekly CI check that flags CHANGELOG-vs-latest-tag
+drift.
+
+**Estimated effort:** 1–2 hours (+ small CI check if added).
+
+### 2.3.3 Cross-SDK contract test harness
+
+**Goal:** CI enforces SDK behavioural parity instead of relying on
+manual sync. Graduates the "Contract tests for every SDK" bullet under
+*Beyond 1.x — QA* into a scheduled item.
+
+**Scope:**
+- New `packages/sdk-contract-tests/` (or `tests/sdk-contract/`): boot a
+  reference faucet server fixture, run each SDK's `claim` / `status` /
+  `waitForConfirmation` / `solveAndClaim` / `signHostContext` against
+  it, assert identical behaviour (including `idempotencyKey`
+  round-trip: two claims with the same key → same id).
+- Wire into `pnpm pre-merge`.
+
+**Estimated effort:** 2–3 days.
+
+### 2.3.4 Minimal copy-paste starter per framework
+
+**Goal:** a developer can `cp -r` a working faucet integration in
+~50 lines, separate from the feature-complete examples. Today the only
+"complete" React example (`examples/nextjs-claim-page/`) is feature-rich,
+not minimal — there's no drop-in starter.
+
+**Scope:**
+- `examples/minimal-react/` — `useFaucetClaim` + a button, nothing else.
+- `examples/minimal-vue/` — the Vue composable equivalent.
+- Each with a Dockerfile (same pattern as the other examples) and a
+  README that's a 5-line getting-started.
+
+**Estimated effort:** 1 day. (See also §1.5.1 — the missing
+React Native example app — and §3.0.7 — example abuse-layer integration.)
+
+### 2.3.5 Framework-agnostic "abuse layers in your integration" guide
+
+**Goal:** one referenced pattern for handling abuse layers in an
+integration, instead of each example wiring captcha differently
+(`nextjs-claim-page`, `capacitor-mobile-app`, `mini-app-claim-*` all do
+it slightly differently). The AGENTS.md recipes work until the operator
+enables a layer — then a 429 from a hashcash-required server, or a
+missing captcha widget, is a surprise.
+
+**Scope:**
+- New `docs/integrators/abuse-layers-in-your-app.md` (surfaced in the
+  playground via `<!--@include:-->`): read `/v1/config`, render whichever
+  captcha widget the operator enabled (Turnstile / hCaptcha / FCaptcha),
+  use `solveAndClaim()` when hashcash is on, and forward a signed
+  `hostContext` from a backend (`FaucetClient.signHostContext()` /
+  `client.SignHostContext()` / `sign_host_context()`).
+- Point the existing examples and AGENTS.md recipes at this page rather
+  than re-explaining the pattern N times.
+
+**Estimated effort:** 1 day. (Complements §3.0.7.)
+
+### 2.3.6 Consistent typed errors across SDKs + uniform server error envelope
+
+**Goal:** every SDK surfaces failures the same way, and the server
+always responds with the same error shape. Today TS = `FaucetError{status,code}`,
+Python = `FaucetError{status,message,code,decision}` (richest), Go =
+`FaucetError{Status,Message}`, Flutter = `FaucetException` (message
+only). Server-side, an `ErrorResponse` Zod schema (`{error,code?,message?}`)
+exists but route handlers `reply.code(400).send({...})` ad-hoc, so the
+envelope isn't uniform.
+
+**Scope:**
+- Bring Flutter / Capacitor / React Native error objects up to
+  `{status, code, decision, message}` parity.
+- Add a Fastify `setErrorHandler` (and audit the ad-hoc `reply.send`
+  paths) so every error response is the `ErrorResponse` shape; document
+  the error codes in the OpenAPI spec.
+
+**Estimated effort:** 1–1.5 days.
+
+### 2.3.7 MCP tool docs + schema linkage
+
+**Goal:** an agent integrator can read what `/mcp` exposes without
+introspecting the protocol, and the tool schemas can't drift from the
+REST schemas. Today `AGENTS.md` mentions `/mcp` but doesn't enumerate
+the tools; tool input schemas are inline Zod, not derived from the REST
+request schemas.
+
+**Scope:**
+- `docs/mcp.md` (and a section in `AGENTS.md` / `llms.txt`): enumerate
+  the 3 public + 6 admin tools, their args, the auth model
+  (session + TOTP step-up vs. the deprecated static bearer token), and a
+  sample MCP-client config.
+- Derive tool input schemas from the same Zod source as the REST request
+  schemas where they overlap (e.g. `faucet.send` ↔ the admin-send body).
+
+**Estimated effort:** 0.5 day docs + ~1 day schema derivation.
+
+### 2.3.8 Generated config reference
+
+**Goal:** a single source for the ~51 `FAUCET_*` env vars instead of
+reading `config.ts`, `configView.ts`, `.env.example`, and the dashboard
+form. Narrower than §1.8.2 (issue #58, the full config-catalog refactor)
+— this is just the *reference doc*.
+
+**Scope:**
+- Build-time `docs/config-reference.md` (or an `apps/docs` page) emitted
+  from `apps/server/src/config.ts`'s Zod schema + JSDoc: each var, its
+  type/constraint, default, and which API surface (`/v1/config`,
+  `/admin/config` PATCH, none) it affects.
+- A weekly docs-drift CI check (the *Beyond 1.x — User testing*
+  "docs-drift detection" bullet) that fails if the generated doc is
+  stale.
+
+**Estimated effort:** 1 day.
+
+### 2.3.9 `/snippets/<framework>` link cleanup
+
+**Goal:** close out §1.2.2. The planned `scripts/generate-snippets.mts`
+never shipped — the work was absorbed into §3.0.3 (the playground SDK
+showcase, which did ship). Audit `docs/`, `apps/docs/`, and AGENTS.md
+for any reference to a live `/snippets/<framework>` URL and point it at
+the playground SDK pages (or drop it). Mark §1.2.2 done-by-substitution.
+
+**Estimated effort:** ~30 min.
+
+---
+
 ## 3.0 — Developer Playground & UI Overhaul
 
 A public-facing developer playground that demonstrates the faucet,
