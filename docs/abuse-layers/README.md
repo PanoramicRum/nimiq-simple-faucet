@@ -66,6 +66,8 @@ layers:
 
 The Nimiq Simple Faucet uses 10 pluggable abuse-prevention layers arranged in a defense-in-depth pipeline. Rate limiting is on by default; all other layers are opt-in via environment variables.
 
+> **Integrating an app against a faucet that has layers enabled?** The per-layer pages below are operator-facing (how to *configure* each layer). For the client side — how your app reads `/v1/config`, renders the captcha widget the operator chose, solves hashcash, and forwards a signed `hostContext` — see [**integration-guide.md**](integration-guide.md).
+
 ## How the pipeline works
 
 Every claim request passes through all enabled layers **sequentially**. Each layer returns:
