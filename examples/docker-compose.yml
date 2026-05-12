@@ -29,6 +29,19 @@ services:
     depends_on:
       - faucet
 
+  # Minimal React + Vite faucet integration — no abuse-layer handling, ~60
+  # lines of app code. See examples/minimal-react/README.md.
+  example-minimal-react:
+    build:
+      context: ..
+      dockerfile: examples/minimal-react/Dockerfile
+      args:
+        VITE_FAUCET_URL: http://localhost:8080
+    ports:
+      - "3008:80"
+    depends_on:
+      - faucet
+
   example-capacitor:
     build:
       context: ..
