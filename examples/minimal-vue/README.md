@@ -17,12 +17,11 @@ const { status, txId, error, isPending, claim, reset } = useFaucetClaim({
 > **Heads-up — this example does *not* handle abuse layers.** If your faucet
 > has a captcha (Cloudflare Turnstile / hCaptcha / FCaptcha) or hashcash
 > proof-of-work enabled, a plain `claim()` comes back `challenged` or gets
-> rejected. To handle those, read [`/v1/config`](../../docs/abuse-layers/),
-> render the captcha widget the server reports, and use
-> `client.solveAndClaim()` when hashcash is on — see
-> [`examples/vue-claim-page/`](../vue-claim-page) for a feature-complete Vue
-> example that wires all of it up, or the per-layer docs in
-> [`docs/abuse-layers/`](../../docs/abuse-layers/).
+> rejected. The framework-agnostic recipe for handling them — read
+> `/v1/config`, render the captcha widget the server reports, use
+> `client.solveAndClaim()` for hashcash, forward a signed `hostContext` —
+> is in [`docs/abuse-layers/integration-guide.md`](../../docs/abuse-layers/integration-guide.md).
+> For a full Vue implementation see [`examples/vue-claim-page/`](../vue-claim-page).
 
 ## Run
 
