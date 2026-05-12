@@ -50,6 +50,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@nimiq-faucet/sdk": "workspace:*",
     "@types/better-sqlite3": "^7.6.11",
     "@types/node": "^22.7.0",
     "@types/pg": "^8.20.0",

@@ -266,6 +266,9 @@ importers:
         specifier: ^4.4.3
         version: 4.4.3
     devDependencies:
+      '@nimiq-faucet/sdk':
+        specifier: workspace:*
+        version: link:../../packages/sdk-ts
       '@types/better-sqlite3':
         specifier: ^7.6.11
         version: 7.6.13
