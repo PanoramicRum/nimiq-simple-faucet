@@ -163,6 +163,15 @@ jobs:
           load: false
           platforms: linux/amd64
           tags: example-nextjs-claim:ci
+      - name: Build minimal-react example image
+        uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # v7
+        with:
+          context: .
+          file: examples/minimal-react/Dockerfile
+          push: false
+          load: false
+          platforms: linux/amd64
+          tags: example-minimal-react:ci
 
   compose-smoke:
     runs-on: ubuntu-latest

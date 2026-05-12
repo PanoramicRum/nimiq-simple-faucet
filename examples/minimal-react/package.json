@@ -1,0 +1,25 @@
+{
+  "name": "@nimiq-faucet/example-minimal-react",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "The smallest possible React + Vite faucet integration — copy this directory, set VITE_FAUCET_URL, done.",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@nimiq-faucet/react": "workspace:*",
+    "@nimiq-faucet/sdk": "workspace:*",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.0.4",
+    "typescript": "^6.0.3",
+    "vite": "^8.0.11"
+  }
+}

@@ -418,6 +418,37 @@ importers:
         specifier: ^3.2.8
         version: 3.2.8(typescript@6.0.3)
 
+  examples/minimal-react:
+    dependencies:
+      '@nimiq-faucet/react':
+        specifier: workspace:*
+        version: link:../../packages/sdk-react
+      '@nimiq-faucet/sdk':
+        specifier: workspace:*
+        version: link:../../packages/sdk-ts
+      react:
+        specifier: ^19.2.6
+        version: 19.2.6
+      react-dom:
+        specifier: ^19.2.6
+        version: 19.2.6(react@19.2.6)
+    devDependencies:
+      '@types/react':
+        specifier: ^19.2.14
+        version: 19.2.14
+      '@types/react-dom':
+        specifier: ^19.2.3
+        version: 19.2.3(@types/react@19.2.14)
+      '@vitejs/plugin-react':
+        specifier: ^5.0.4
+        version: 5.2.0(vite@8.0.11(@types/node@25.6.0)(esbuild@0.27.7)(jiti@2.6.1)(terser@5.46.1)(tsx@4.21.0)(yaml@2.9.0))
+      typescript:
+        specifier: ^6.0.3
+        version: 6.0.3
+      vite:
+        specifier: ^8.0.11
+        version: 8.0.11(@types/node@25.6.0)(esbuild@0.27.7)(jiti@2.6.1)(terser@5.46.1)(tsx@4.21.0)(yaml@2.9.0)
+
   examples/nextjs-claim-page:
     dependencies:
       '@nimiq-faucet/react':
