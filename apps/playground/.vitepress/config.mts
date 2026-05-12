@@ -65,6 +65,7 @@ export default defineConfig({
             { text: 'Next.js', link: '/examples/nextjs' },
             { text: 'Vue', link: '/examples/vue' },
             { text: 'Capacitor', link: '/examples/capacitor' },
+            { text: 'React Native (Expo)', link: '/examples/react-native' },
             { text: 'Flutter', link: '/examples/flutter' },
             { text: 'Go Backend', link: '/examples/go' },
             { text: 'Python Backend', link: '/examples/python' },

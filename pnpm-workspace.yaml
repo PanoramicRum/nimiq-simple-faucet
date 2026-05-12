@@ -5,6 +5,7 @@ packages:
   - "examples/vue-claim-page"
   - "examples/minimal-react"
   - "examples/minimal-vue"
+  - "examples/react-native-claim-app"
   - "examples/capacitor-mobile-app"
   - "examples/mini-app-claim-shared"
   - "examples/mini-app-claim-vue"

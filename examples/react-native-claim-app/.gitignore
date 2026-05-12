@@ -1,0 +1,13 @@
+# Expo / Metro
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+
+# Native dev-build output (created by `expo prebuild` / `expo run:*`)
+/android
+/ios
+
+# deps + local config
+node_modules/
+.env
