@@ -53,8 +53,10 @@ String _canonicalizeHostContext(HostContext ctx) {
     final sorted = List<String>.from(ctx.tags!)..sort();
     values['tags'] = sorted;
   }
-  // verifiedIdentities not yet on the Dart HostContext; the canonical
-  // order below already accounts for it so once added it lines up.
+  if (ctx.verifiedIdentities != null && ctx.verifiedIdentities!.isNotEmpty) {
+    final sorted = List<String>.from(ctx.verifiedIdentities!)..sort();
+    values['verifiedIdentities'] = sorted;
+  }
   final entries = <List<dynamic>>[];
   for (final k in _canonicalHostContextFields) {
     final v = values[k];
@@ -89,6 +91,7 @@ HostContext signHostContext(
     emailDomainHash: ctx.emailDomainHash,
     kycLevel: ctx.kycLevel,
     tags: ctx.tags,
+    verifiedIdentities: ctx.verifiedIdentities,
     signature: sig,
   );
 }

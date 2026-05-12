@@ -51,7 +51,8 @@ export function useFaucetClaim(args: UseFaucetClaimArgs): UseFaucetClaimResult {
     return () => manager.current?.destroy();
   }, [client]);
 
-  const { address, hostContext, captchaToken, hashcashSolution, fingerprint, pollForConfirmation } = args;
+  const { address, hostContext, captchaToken, hashcashSolution, idempotencyKey, fingerprint, pollForConfirmation } =
+    args;
 
   const claim = useCallback(
     async () => {
@@ -59,11 +60,12 @@ export function useFaucetClaim(args: UseFaucetClaimArgs): UseFaucetClaimResult {
         hostContext,
         captchaToken,
         hashcashSolution,
+        idempotencyKey,
         fingerprint,
         pollForConfirmation,
       });
     },
-    [address, hostContext, captchaToken, hashcashSolution, fingerprint, pollForConfirmation],
+    [address, hostContext, captchaToken, hashcashSolution, idempotencyKey, fingerprint, pollForConfirmation],
   );
 
   const reset = useCallback(() => manager.current?.reset(), []);
