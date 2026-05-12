@@ -4,6 +4,7 @@ packages:
   - "examples/nextjs-claim-page"
   - "examples/vue-claim-page"
   - "examples/minimal-react"
+  - "examples/minimal-vue"
   - "examples/capacitor-mobile-app"
   - "examples/mini-app-claim-shared"
   - "examples/mini-app-claim-vue"

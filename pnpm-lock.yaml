@@ -449,6 +449,31 @@ importers:
         specifier: ^8.0.11
         version: 8.0.11(@types/node@25.6.0)(esbuild@0.27.7)(jiti@2.6.1)(terser@5.46.1)(tsx@4.21.0)(yaml@2.9.0)
 
+  examples/minimal-vue:
+    dependencies:
+      '@nimiq-faucet/sdk':
+        specifier: workspace:*
+        version: link:../../packages/sdk-ts
+      '@nimiq-faucet/vue':
+        specifier: workspace:*
+        version: link:../../packages/sdk-vue
+      vue:
+        specifier: ^3.5.34
+        version: 3.5.34(typescript@6.0.3)
+    devDependencies:
+      '@vitejs/plugin-vue':
+        specifier: ^6.0.6
+        version: 6.0.6(vite@8.0.11(@types/node@25.6.0)(esbuild@0.27.7)(jiti@2.6.1)(terser@5.46.1)(tsx@4.21.0)(yaml@2.9.0))(vue@3.5.34(typescript@6.0.3))
+      typescript:
+        specifier: ^6.0.3
+        version: 6.0.3
+      vite:
+        specifier: ^8.0.11
+        version: 8.0.11(@types/node@25.6.0)(esbuild@0.27.7)(jiti@2.6.1)(terser@5.46.1)(tsx@4.21.0)(yaml@2.9.0)
+      vue-tsc:
+        specifier: ^3.2.8
+        version: 3.2.8(typescript@6.0.3)
+
   examples/nextjs-claim-page:
     dependencies:
       '@nimiq-faucet/react':
