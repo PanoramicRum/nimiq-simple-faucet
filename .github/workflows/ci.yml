@@ -172,6 +172,15 @@ jobs:
           load: false
           platforms: linux/amd64
           tags: example-minimal-react:ci
+      - name: Build minimal-vue example image
+        uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # v7
+        with:
+          context: .
+          file: examples/minimal-vue/Dockerfile
+          push: false
+          load: false
+          platforms: linux/amd64
+          tags: example-minimal-vue:ci
 
   compose-smoke:
     runs-on: ubuntu-latest

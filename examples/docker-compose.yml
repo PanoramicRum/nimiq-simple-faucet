@@ -42,6 +42,19 @@ services:
     depends_on:
       - faucet
 
+  # Minimal Vue 3 + Vite faucet integration — no abuse-layer handling.
+  # See examples/minimal-vue/README.md.
+  example-minimal-vue:
+    build:
+      context: ..
+      dockerfile: examples/minimal-vue/Dockerfile
+      args:
+        VITE_FAUCET_URL: http://localhost:8080
+    ports:
+      - "3009:80"
+    depends_on:
+      - faucet
+
   example-capacitor:
     build:
       context: ..
