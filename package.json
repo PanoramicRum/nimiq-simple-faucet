@@ -54,6 +54,7 @@
     "overrides": {
       "hono@<4.12.18": ">=4.12.18",
       "fast-uri@<3.1.2": ">=3.1.2",
+      "ip-address@<10.1.1": ">=10.1.1",
       "postcss@<8.5.10": ">=8.5.10",
       "happy-dom@<20.8.9": ">=20.8.9",
       "elliptic@<6.6.1": ">=6.6.1",
@@ -64,15 +65,10 @@
     "auditConfig": {
       "//1": "GHSA-67mh-4wv8-2f99 (esbuild) and GHSA-4w7w-66w2-5vf9 (vite) are dev-server vulnerabilities — neither esbuild's `serve` nor vite's optimized-deps endpoint is reachable in production builds (vitepress runs the static-output path; vitest is a test-only dev dep). Bumping past the fixed versions forces esbuild >=0.25, which breaks vitest 2.1.x's SSR runtime. Revisit once we upgrade vitest to a major that ships against esbuild 0.25+.",
       "//2": "Re-evaluate quarterly: if a new esbuild/vite advisory crosses into runtime reachability, drop the ignore and accept the vitest churn.",
-      "//3": "GHSA-w5hq-g745-h8pq (uuid <14.0.0 buffer bounds check) is reachable only when calling uuid.v3/v5/v6 with a `buf` argument. The path is `apps/nimiq-pow-ui > @nimiq/hub-api > @opengsn/common > web3-eth (>>) ethers@4.0.0-beta.3 > uuid@2.0.1` — OpenGSN/USDC code that this app's chooseAddress-only Hub flow never executes. Forcing uuid >=14 (ESM-only) breaks the upstream OpenGSN install graph. Ignore until @nimiq/hub-api drops the OpenGSN bundle for non-USDC consumers.",
-      "//4": "Re-evaluate when @nimiq/hub-api ships a slim build without @opengsn or when @opengsn updates its web3 chain.",
-      "//5": "GHSA-v2v4-37r5-5v8g (ip-address <=10.1.0 XSS in Address6 HTML-emitting methods) reaches us only via @modelcontextprotocol/sdk@1.29.0's hono-bound HTTP transport transitives. The faucet's MCP integration imports ONLY `StreamableHTTPServerTransport` (apps/server/src/mcp/index.ts), so the Address6 HTML-emitting methods are never executed. ip-address has no patched release at the time of writing (vuln range `<=10.1.0`, lockfile pin 10.1.0). Drop once a patched ip-address ships and propagates through the transitive graph.",
-      "//6": "Hono advisories (GHSA-9vqf-7f2p-gf9v bodyLimit bypass, GHSA-69xw-7hcm-h432 hono/jsx tag-name HTML injection, GHSA-qp7p-654g-cw7p hono/jsx CSS injection, GHSA-p77w-8qqv-26rm cache Vary leakage) and the two fast-uri advisories (GHSA-q3j6-qgpj-74h6, GHSA-v39h-62p7-jpjc) are all now resolved via `pnpm.overrides` above (hono >=4.12.18, fast-uri >=3.1.2) — patches that work cleanly through the MCP SDK / Fastify graphs without churn. No ignore entry needed.",
+      "//3": "Everything else pnpm audit would otherwise flag is patched via `pnpm.overrides` above rather than ignored: hono >=4.12.18 (GHSA-9vqf-7f2p-gf9v bodyLimit bypass, GHSA-69xw-7hcm-h432 hono/jsx tag-name HTML injection, GHSA-qp7p-654g-cw7p hono/jsx CSS injection, GHSA-p77w-8qqv-26rm cache Vary leakage), fast-uri >=3.1.2 (GHSA-q3j6-qgpj-74h6 path traversal, GHSA-v39h-62p7-jpjc host confusion), ip-address >=10.1.1 (GHSA-v2v4-37r5-5v8g Address6 XSS). All reach the tree only via @modelcontextprotocol/sdk@1.29.0 / Fastify transitives and all take a clean patch bump without resolver churn. The former uuid ignore (GHSA-w5hq-g745-h8pq) is gone outright — @nimiq/hub-api 1.14.0 dropped the @opengsn / web3 / ethers / uuid@2.0.1 chain it used to pull in.",
       "ignoreGhsas": [
         "GHSA-67mh-4wv8-2f99",
-        "GHSA-4w7w-66w2-5vf9",
-        "GHSA-w5hq-g745-h8pq",
-        "GHSA-v2v4-37r5-5v8g"
+        "GHSA-4w7w-66w2-5vf9"
       ]
     }
   }
