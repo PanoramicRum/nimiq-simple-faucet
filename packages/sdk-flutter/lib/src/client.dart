@@ -54,6 +54,7 @@ class FaucetClient {
     final body = <String, dynamic>{'address': address};
     if (opts.captchaToken != null) body['captchaToken'] = opts.captchaToken;
     if (opts.hashcashSolution != null) body['hashcashSolution'] = opts.hashcashSolution;
+    if (opts.idempotencyKey != null) body['idempotencyKey'] = opts.idempotencyKey;
     if (opts.fingerprint != null) body['fingerprint'] = opts.fingerprint!.toJson();
     if (opts.hostContext != null) body['hostContext'] = opts.hostContext!.toJson();
     final res = await _post('/v1/claim', body);
@@ -85,8 +86,9 @@ class FaucetClient {
     return claim(address, opts.copyWith(hashcashSolution: '${challenge.challenge}#$nonce'));
   }
 
-  /// Poll until status is `confirmed` or `rejected`. Throws `FaucetException`
-  /// with status 408 if `timeout` elapses first.
+  /// Poll until status reaches a terminal state (`confirmed`, `rejected`, or
+  /// `expired`). Throws `FaucetException` with status 408 if `timeout` elapses
+  /// first.
   Future<ClaimResponse> waitForConfirmation(
     String id, {
     Duration timeout = const Duration(seconds: 60),
@@ -94,7 +96,7 @@ class FaucetClient {
     final deadline = DateTime.now().add(timeout);
     while (DateTime.now().isBefore(deadline)) {
       final s = await status(id);
-      if (s.status == 'confirmed' || s.status == 'rejected') return s;
+      if (s.status == 'confirmed' || s.status == 'rejected' || s.status == 'expired') return s;
       await Future<void>.delayed(const Duration(seconds: 2));
     }
     throw FaucetException(

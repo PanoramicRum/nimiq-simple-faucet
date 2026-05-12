@@ -11,6 +11,10 @@ class HostContext {
   /// One of: 'none' | 'email' | 'phone' | 'id'.
   final String? kycLevel;
   final List<String>? tags;
+  /// SSO providers the integrator has authenticated the user against
+  /// (e.g. ['apple', 'google', 'github']). Max 10. Covered by the
+  /// hostContext signature when signed.
+  final List<String>? verifiedIdentities;
   final String? signature;
 
   const HostContext({
@@ -21,6 +25,7 @@ class HostContext {
     this.emailDomainHash,
     this.kycLevel,
     this.tags,
+    this.verifiedIdentities,
     this.signature,
   });
 
@@ -33,6 +38,7 @@ class HostContext {
     if (emailDomainHash != null) map['emailDomainHash'] = emailDomainHash;
     if (kycLevel != null) map['kycLevel'] = kycLevel;
     if (tags != null) map['tags'] = tags;
+    if (verifiedIdentities != null) map['verifiedIdentities'] = verifiedIdentities;
     if (signature != null) map['signature'] = signature;
     return map;
   }
@@ -59,6 +65,9 @@ class ClaimOptions {
   final FingerprintBundle? fingerprint;
   final String? captchaToken;
   final String? hashcashSolution;
+  /// Idempotency key for safe retries: two claims with the same key within
+  /// the server's retention window resolve to the same claim id. Max 128 chars.
+  final String? idempotencyKey;
   final String? uid;
   final void Function(int attempts)? onProgress;
 
@@ -67,6 +76,7 @@ class ClaimOptions {
     this.fingerprint,
     this.captchaToken,
     this.hashcashSolution,
+    this.idempotencyKey,
     this.uid,
     this.onProgress,
   });
@@ -76,6 +86,7 @@ class ClaimOptions {
     FingerprintBundle? fingerprint,
     String? captchaToken,
     String? hashcashSolution,
+    String? idempotencyKey,
     String? uid,
     void Function(int)? onProgress,
   }) {
@@ -84,6 +95,7 @@ class ClaimOptions {
       fingerprint: fingerprint ?? this.fingerprint,
       captchaToken: captchaToken ?? this.captchaToken,
       hashcashSolution: hashcashSolution ?? this.hashcashSolution,
+      idempotencyKey: idempotencyKey ?? this.idempotencyKey,
       uid: uid ?? this.uid,
       onProgress: onProgress ?? this.onProgress,
     );
@@ -95,7 +107,7 @@ class ClaimOptions {
 /// "Public-API silence on rejection".
 class ClaimResponse {
   final String id;
-  /// One of: 'queued' | 'broadcast' | 'confirmed' | 'rejected' | 'challenged'.
+  /// One of: 'queued' | 'broadcast' | 'confirmed' | 'rejected' | 'challenged' | 'timeout' | 'expired'.
   final String status;
   final String? txId;
 

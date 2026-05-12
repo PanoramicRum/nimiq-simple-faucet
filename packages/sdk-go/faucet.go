@@ -69,6 +69,7 @@ type claimBody struct {
 	Address          string             `json:"address"`
 	CaptchaToken     *string            `json:"captchaToken,omitempty"`
 	HashcashSolution *string            `json:"hashcashSolution,omitempty"`
+	IdempotencyKey   *string            `json:"idempotencyKey,omitempty"`
 	Fingerprint      *FingerprintBundle `json:"fingerprint,omitempty"`
 	HostContext      *HostContext       `json:"hostContext,omitempty"`
 }
@@ -79,6 +80,7 @@ func (c *Client) Claim(ctx context.Context, address string, opts ClaimOptions) (
 		Address:          address,
 		CaptchaToken:     opts.CaptchaToken,
 		HashcashSolution: opts.HashcashSolution,
+		IdempotencyKey:   opts.IdempotencyKey,
 		Fingerprint:      opts.Fingerprint,
 		HostContext:      opts.HostContext,
 	}
@@ -129,9 +131,9 @@ func (c *Client) SolveAndClaim(ctx context.Context, address string, opts ClaimOp
 	return c.Claim(ctx, address, opts)
 }
 
-// WaitForConfirmation polls Status until the claim is "confirmed" or
-// "rejected", or until `timeout` elapses. Returns a FaucetError with
-// Status 408 on timeout.
+// WaitForConfirmation polls Status until the claim reaches a terminal state
+// ("confirmed", "rejected", or "expired"), or until `timeout` elapses.
+// Returns a FaucetError with Status 408 on timeout.
 func (c *Client) WaitForConfirmation(ctx context.Context, id string, timeout time.Duration) (*ClaimResponse, error) {
 	deadline := time.Now().Add(timeout)
 	for time.Now().Before(deadline) {
@@ -139,7 +141,7 @@ func (c *Client) WaitForConfirmation(ctx context.Context, id string, timeout tim
 		if err != nil {
 			return nil, err
 		}
-		if resp.Status == "confirmed" || resp.Status == "rejected" {
+		if resp.Status == "confirmed" || resp.Status == "rejected" || resp.Status == "expired" {
 			return resp, nil
 		}
 		select {

@@ -50,6 +50,7 @@ export function useFaucetClaim(args: UseFaucetClaimArgs) {
         hostContext: args.hostContext,
         captchaToken: args.captchaToken,
         hashcashSolution: args.hashcashSolution,
+        idempotencyKey: args.idempotencyKey,
         fingerprint: args.fingerprint,
         pollForConfirmation: args.pollForConfirmation,
       }),

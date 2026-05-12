@@ -20,10 +20,22 @@ export interface ClaimOptions {
   fingerprint?: FingerprintBundle | undefined;
   captchaToken?: string | undefined;
   hashcashSolution?: string | undefined;
+  /**
+   * Idempotency key for safe retries. Two claims with the same key within the
+   * server's retention window resolve to the same claim id. Max 128 chars.
+   */
+  idempotencyKey?: string | undefined;
   signal?: AbortSignal | undefined;
 }
 
-export type ClaimStatus = 'queued' | 'broadcast' | 'confirmed' | 'rejected' | 'challenged';
+export type ClaimStatus =
+  | 'queued'
+  | 'broadcast'
+  | 'confirmed'
+  | 'rejected'
+  | 'challenged'
+  | 'timeout'
+  | 'expired';
 
 export interface ClaimResponse {
   id: string;
@@ -131,6 +143,7 @@ export class FaucetClient {
       address,
       captchaToken: options.captchaToken,
       hashcashSolution: options.hashcashSolution,
+      idempotencyKey: options.idempotencyKey,
       fingerprint: options.fingerprint,
       hostContext: options.hostContext,
     };
@@ -166,7 +179,7 @@ export class FaucetClient {
     const deadline = Date.now() + timeoutMs;
     while (Date.now() < deadline) {
       const s = await this.status(id);
-      if (s.status === 'confirmed' || s.status === 'rejected') return s;
+      if (s.status === 'confirmed' || s.status === 'rejected' || s.status === 'expired') return s;
       await new Promise((r) => setTimeout(r, 2_000));
     }
     throw new FaucetError(`Claim ${id} not confirmed in ${timeoutMs}ms`, 408);

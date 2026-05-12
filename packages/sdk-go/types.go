@@ -28,6 +28,10 @@ type ClaimOptions struct {
 	Fingerprint      *FingerprintBundle `json:"fingerprint,omitempty"`
 	CaptchaToken     *string            `json:"captchaToken,omitempty"`
 	HashcashSolution *string            `json:"hashcashSolution,omitempty"`
+	// IdempotencyKey lets callers retry safely: two claims with the same key
+	// within the server's retention window resolve to the same claim id.
+	// Max 128 chars.
+	IdempotencyKey *string `json:"idempotencyKey,omitempty"`
 }
 
 // ClaimResponse mirrors the TS `ClaimResponse`.
@@ -36,8 +40,9 @@ type ClaimOptions struct {
 // No abuse-layer attribution leaks to clients.
 // See SECURITY.md "Public-API silence on rejection".
 type ClaimResponse struct {
-	ID     string `json:"id"`
-	Status string `json:"status"` // queued | broadcast | confirmed | rejected | challenged
+	ID string `json:"id"`
+	// Status is one of: queued | broadcast | confirmed | rejected | challenged | timeout | expired.
+	Status string `json:"status"`
 	TxID   string `json:"txId,omitempty"`
 }
 
