@@ -357,15 +357,28 @@ function handleClaim() {
 }
 
 @media (max-width: 720px) {
+  /* The brand pill and the stats grid can't share the top row on a
+     narrow screen, so the stats grid drops onto its own line just
+     below the pill — right-aligned, tighter padding/fonts, borders
+     dropped, allowed to wrap on very small screens. (It used to be
+     `display: none` here, which made the whole right side of the
+     header disappear on mobile.) */
   .top-right {
-    display: none; /* free up the small-screen real estate; status stays in the strip on mobile */
+    top: 4.5rem;
+    padding: 0.4rem 0.5rem;
+    max-width: calc(100vw - 3rem);
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    row-gap: 0.2rem;
   }
-  /* The 12rem/24rem insets above are sized to clear the desktop top
-     chrome (brand pill + stats grid). On mobile the stats grid is
-     hidden and the pill is only ~3.5rem wide, so those insets just
-     shrink the map to a thin band (negative width below ~384px).
-     Let it fill the viewport — the brand pill keeps its own opaque
-     backdrop, so it stays legible on top. */
+  .top-right .stat { min-width: 0; padding: 0.15rem 0.7rem; border-right: none; }
+  .top-right .stat-label { font-size: 0.55rem; letter-spacing: 0.1em; }
+  .top-right .stat-value { font-size: 0.82rem; }
+  .top-right .connect-btn { height: 1.85rem; padding: 0 0.75rem; font-size: 0.72rem; }
+  /* The 12rem/24rem insets above clear the desktop top chrome; on
+     mobile the chrome stacks vertically instead, so let the map fill
+     the viewport width (the brand pill keeps its own opaque backdrop,
+     so it stays legible on top). */
   .map-bg {
     left: 0;
     width: 100vw;
