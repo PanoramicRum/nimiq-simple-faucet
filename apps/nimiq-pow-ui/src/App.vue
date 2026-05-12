@@ -343,6 +343,16 @@ function handleClaim() {
   .top-right {
     display: none; /* free up the small-screen real estate; status stays in the strip on mobile */
   }
+  /* The 12rem/24rem insets above are sized to clear the desktop top
+     chrome (brand pill + stats grid). On mobile the stats grid is
+     hidden and the pill is only ~3.5rem wide, so those insets just
+     shrink the map to a thin band (negative width below ~384px).
+     Let it fill the viewport — the brand pill keeps its own opaque
+     backdrop, so it stays legible on top. */
+  .map-bg {
+    left: 0;
+    width: 100vw;
+  }
   .strip-inner { flex-direction: column; align-items: stretch; }
 }
 </style>
