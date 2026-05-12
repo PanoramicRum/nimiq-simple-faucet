@@ -22,7 +22,13 @@ import { isValidNimiqAddress } from '../lib/nimiqAddress';
 
 const props = defineProps<{
   modelValue: string;
+  // Locks the whole row (paste input + Connect + Disconnect) while a
+  // claim is in flight.
   disabled?: boolean;
+  // Locks only the Hub "Connect" button — lets the parent keep the
+  // abuse-layer gate (captcha) in front of the wallet-connect flow
+  // without also freezing the paste input or the Disconnect link.
+  connectDisabled?: boolean;
   network: FaucetConfig['network'] | undefined;
 }>();
 const emit = defineEmits<{
@@ -83,7 +89,7 @@ defineExpose({ connect });
     <button
       type="button"
       class="hub-btn"
-      :disabled="disabled || isConnecting"
+      :disabled="disabled || connectDisabled || isConnecting"
       @click="connect"
     >
       <svg class="hub-logo" viewBox="0 0 64 64" aria-hidden="true">

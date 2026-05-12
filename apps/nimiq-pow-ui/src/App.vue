@@ -32,11 +32,26 @@ function triggerConnect(): void {
   void connectWalletRef.value?.connect();
 }
 
-const canClaim = computed(() => {
-  if (!isAddressValid.value) return false;
+// Phases where the user can act rather than wait on a claim in flight.
+const isClaimablePhase = computed(
+  () =>
+    state.phase === 'idle' ||
+    state.phase === 'rejected' ||
+    state.phase === 'error' ||
+    state.phase === 'confirmed',
+);
+
+// The abuse-layer gate the Claim button enforces, minus the address
+// requirement: captcha solved (when a provider is configured) and not
+// mid-claim. The wallet-connect controls (the top-right pill and the
+// in-strip Connect button) are disabled until this passes, so a visitor
+// has to clear the captcha before the page will open the Nimiq Hub.
+const canConnect = computed(() => {
   if (needsCaptcha.value && !captchaToken.value) return false;
-  return state.phase === 'idle' || state.phase === 'rejected' || state.phase === 'error' || state.phase === 'confirmed';
+  return isClaimablePhase.value;
 });
+
+const canClaim = computed(() => canConnect.value && isAddressValid.value);
 
 const isPending = computed(() =>
   ['loading-config', 'solving-hashcash', 'submitting', 'broadcast'].includes(state.phase),
@@ -89,7 +104,7 @@ function handleClaim() {
         <span class="stat-value">{{ config?.network ? config.network.charAt(0).toUpperCase() + config.network.slice(1) : '—' }}</span>
       </div>
       <div class="stat status-stat">
-        <button type="button" class="connect-btn" @click="triggerConnect">
+        <button type="button" class="connect-btn" :disabled="!canConnect" @click="triggerConnect">
           Connect Wallet
         </button>
       </div>
@@ -130,6 +145,7 @@ function handleClaim() {
           ref="connectWalletRef"
           v-model="address"
           :disabled="isPending"
+          :connect-disabled="!canConnect"
           :network="config?.network"
           @connected-label="connectedLabel = $event"
         />
@@ -278,12 +294,13 @@ function handleClaim() {
   white-space: nowrap;
   transition: background-color 160ms ease, transform 120ms ease, box-shadow 200ms ease;
 }
-.connect-btn:hover {
+.connect-btn:not(:disabled):hover {
   background: rgba(246, 174, 45, 0.16);
   transform: translateY(-1px);
   box-shadow: 0 0 0 3px rgba(246, 174, 45, 0.10);
 }
-.connect-btn:active { transform: translateY(0); }
+.connect-btn:not(:disabled):active { transform: translateY(0); }
+.connect-btn:disabled { opacity: 0.55; cursor: not-allowed; }
 
 /* ── Middle: blank space, world map shows through ─────────── */
 .middle {
