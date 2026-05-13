@@ -1,6 +1,6 @@
 {
   "name": "@nimiq-faucet/react",
-  "version": "0.0.1",
+  "version": "2.3.0",
   "description": "React hooks for the Nimiq Simple Faucet, built on @nimiq-faucet/sdk.",
   "license": "MIT",
   "author": "Nimiq <richy@nimiq.com>",

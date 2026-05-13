@@ -1,6 +1,6 @@
 {
   "name": "@nimiq-faucet/playground",
-  "version": "2.2.0",
+  "version": "2.3.0",
   "private": true,
   "description": "Nimiq Simple Faucet — Developer Playground (GitHub Pages)",
   "scripts": {

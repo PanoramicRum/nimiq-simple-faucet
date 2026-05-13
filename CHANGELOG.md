@@ -6,6 +6,160 @@ This project uses [changesets](https://github.com/changesets/changesets) for
 versioning. Run `pnpm changeset` to add entries, then `pnpm changeset version`
 (invoked by the release workflow) to regenerate this file.
 
+## 2.3.0 (2026-05-13)
+
+### Added
+- **§2.3.1 SDK feature-parity sweep**: `idempotencyKey` surfaced across
+  every SDK that lacked it (`@nimiq-faucet/sdk`, `@nimiq-faucet/react`,
+  `@nimiq-faucet/vue`, `@nimiq-faucet/capacitor`,
+  `@nimiq-faucet/react-native`, `sdk-go`, `sdk-flutter`). Claim status
+  enums aligned across all 8 SDKs
+  (`queued|broadcast|confirmed|rejected|challenged|timeout|expired`).
+  Flutter `HostContext` gained `verifiedIdentities`. (#209)
+- **§2.3.3 Cross-SDK contract test harness** —
+  `apps/server/test/sdk-contract.e2e.test.ts` boots a reference faucet
+  server and asserts identical `claim`/`status`/`waitForConfirmation`/
+  `solveAndClaim`/`signHostContext` behaviour across SDKs, including
+  `idempotencyKey` round-trip. Wired into `pnpm pre-merge`. (#210)
+- **§2.3.4 Minimal copy-paste starters**:
+  [examples/minimal-react/](examples/minimal-react/) and
+  [examples/minimal-vue/](examples/minimal-vue/) — ~60 LOC each,
+  Dockerfile + nginx, served on ports `:3008` / `:3009` from the
+  compose stack. (#211, #212)
+- **§2.3.5 Framework-agnostic abuse-layers integrator guide** —
+  [docs/abuse-layers/integration-guide.md](docs/abuse-layers/integration-guide.md):
+  one pattern for reading `/v1/config`, rendering the operator-selected
+  captcha (Turnstile / hCaptcha / FCaptcha), `solveAndClaim()` for
+  hashcash, and backend-signed `hostContext` via
+  `FaucetClient.signHostContext()`. (#213)
+- **§1.5.1 React Native (Expo) example app** at
+  [examples/react-native-claim-app/](examples/react-native-claim-app/) —
+  full Expo app using `createReactNativeFaucetClient`, device-fingerprint
+  via `react-native-device-info`, graceful degradation on Expo Go / web.
+  In-tree workspace member; documented `node-linker=hoisted` requirement
+  for Expo's Metro bundler. (#214)
+- **§2.3.6 Uniform server `ErrorResponse` envelope** — every 4xx/5xx now
+  returns `{error, code, message?}` with a stable `SCREAMING_SNAKE_CASE`
+  `code` (`INVALID_REQUEST`, `BROWSER_REQUIRED`, `INTEGRATOR_AUTH_FAILED`,
+  `HASHCASH_DISABLED`, `CLAIM_IN_PROGRESS`, …). Documented enum on
+  `ErrorResponse` Zod schema. The uniform public reject body
+  (`{id, status: 'rejected'}`) and the 202 challenge body are preserved
+  by design (SECURITY.md "Public-API silence on rejection"). (#215)
+- **FCaptcha self-hosted CAPTCHA integration** —
+  [packages/abuse-fcaptcha/](packages/abuse-fcaptcha/) driver,
+  `FCaptchaWidget.vue` in [apps/nimiq-pow-ui/](apps/nimiq-pow-ui/),
+  `deploy/compose/fcaptcha.yml` profile. PoW + behavioural-signal CAPTCHA
+  with optional invisible mode. (#190, #191, #189, #187, #173)
+- **`scripts/rotate-secrets.sh`** — in-place credential rotation for
+  compose deployments. (#194)
+- **`pnpm pre-merge` target** — full local verification (typecheck +
+  build + test) before push. (#184)
+- **Hub-API wallet integration** for the NimiqPoW theme: connect button
+  is now the primary path, with paste-address as fallback (§3.0.15).
+
+### Changed
+- **§3.0.14 NimiqPoW is now the default Claim UI theme**
+  ([apps/nimiq-pow-ui/](apps/nimiq-pow-ui/)). Default `FAUCET_CLAIM_UI_THEME`
+  switched; previous Porcelain Vault theme still bundled and selectable
+  via env var or the theme picker. (#188)
+- **nimiq-pow-ui wallet-style polish** — hex world map background,
+  tighter action strip, refined typography. (#186)
+- **`@nimiq/core` 2.4.0 → 2.5.0** — upstream fix for the WASM
+  `'time not implemented on this platform'` panic; all in-repo
+  workarounds for #119 dropped. (#200)
+- **React/react-dom 18 → 19** across examples and `@nimiq-faucet/react`.
+  (#175)
+- **TS SDK**: `ClaimState.error` and `StatusState.error` narrowed from
+  `Error | null` to `FaucetError | null`. Network and abort errors get
+  wrapped as `FaucetError(msg, 0, 'NETWORK_ERROR' | 'ABORTED')` so the
+  React/Vue hooks always surface a `FaucetError`. (#215)
+- **Python SDK**: `FaucetError` no longer carries `decision` (the server
+  never emits it publicly — SECURITY.md uniform-rejection guarantee).
+  (#215)
+- **Helm chart** bumped to `2.3.0` / `appVersion: 2.3.0`.
+- **Flutter SDK** bumped to `2.3.0`.
+- **Python SDK** bumped to `2.3.0`.
+- **npm `@nimiq-faucet/*` SDKs** bumped from `1.0.0` to `2.3.0`.
+  Closes the post-1.0 publish gap where every v2.X tag silently
+  no-op'd `changeset publish`: source `package.json` versions are now
+  explicitly carried with each release.
+
+### Fixed
+- **COOP=`same-origin-allow-popups`** — Hub-API popup `chooseAddress`
+  no longer hits "Invalid request" timeout. Root cause: Helmet's default
+  `same-origin` severed the popup's `window.opener` relationship,
+  blocking the bidirectional Hub RPC. (#199)
+- **nimiq-pow-ui mobile**: stats grid stays visible, world map fills
+  the viewport, top-right header no longer disappears under narrow
+  viewports. (#204, #207)
+- **Wallet-connect gated behind captcha + claimable phase** — the
+  Connect Wallet button is now disabled until abuse layers are
+  satisfied. (#206)
+- **FCaptcha**: forward client IP via `X-Real-IP` so server-side
+  `/api/verify` matches the token's `ip_hash`; CSP allowlist
+  `fcaptchaPublicUrl` + Web Worker source; abuse-slot gap; address
+  input id/name. (#192, #189, #187, #191)
+- **mini-app + Next.js + Playwright e2e tests** aligned with the new
+  uniform-rejection contract — no more `result.reason` / `final.reason`
+  references on the public reject path. (#181, #182, #183)
+- **Dropped silent `dart analyze` regression** in
+  `packages/sdk-flutter/test/client_test.dart` (referenced a
+  non-existent `decision` constructor param). (#215)
+
+### Security
+- **§2.3.6 Uniform error envelope** also tightens the public-error
+  contract — every non-success response now uses the same shape and a
+  documented code enum; no route-specific shape variation can leak
+  attribution. (#215)
+- **Uniform reject responses on `POST /v1/claim`** — no abuse-layer
+  attribution leaks. Public reject body is exactly `{id, status: 'rejected'}`.
+  (#176, #177)
+- **Pad public reject responses** to a configurable minimum latency
+  (`FAUCET_REJECT_DELAY_MS_MIN`) to defeat pipeline-position timing
+  attribution (audits/findings-2026-05/024). (#178)
+- **Cross-theme asset probe scoped to `assets/`** — closes the
+  cross-theme leak from audits/findings-2026-05/026. MCP-server
+  bearer-token auth deprecation warning. Capacitor unsigned-visitorId
+  documented as low-trust. (#179)
+- **Dependency advisories patched via `pnpm.overrides`**:
+  fast-uri ≥3.1.2 (CVE-2026-6321/6322, path traversal + host
+  confusion); hono ≥4.12.18 (four advisories — bodyLimit bypass, JSX
+  tag-name HTML injection, JSX CSS injection, cache Vary leakage);
+  ip-address ≥10.1.1 (Address6 XSS). Dropped the dead `uuid` ignore
+  (the chain that pulled it in was removed upstream). (#201, #205)
+- **Audit trail filed** to [audits/findings-2026-05/](audits/findings-2026-05/)
+  for the 2026-05 re-audit. (#180)
+
+### Deps
+- production-dependencies group: 7 bumps. (#203)
+- development-dependencies group: 4 + 3 bumps. (#185, #196)
+- `next` 16.2.5 in the Next.js example. (#201)
+- Individual action/package bumps: `actions/setup-node` 5.0.0 → 6.4.0,
+  `github/codeql-action` 4.35.2 → 4.35.3. (#171, #170)
+
+## 2.2.1 (2026-04-18)
+
+### Added
+- **Developer playground app** at [apps/playground/](apps/playground/) —
+  VitePress site with 8 path pages, 8 SDK pages, 6 example pages,
+  monitoring, fraud prevention, analytics. CardGrid component;
+  build-time data loaders from `START.md` and frameworks YAML.
+  Deployed to GitHub Pages via the `playground.yml` workflow. (§3.0.3)
+- **ClaimUI overhaul** ([apps/claim-ui/](apps/claim-ui/)) — Vue Router
+  3 routes, Stitch "Porcelain Vault" design, cat-as-claim-button,
+  status dashboard, activity log with detail modal, system error
+  recording, auto wallet re-unlock. (§3.0.1)
+- **Public stats API**: `/v1/stats/summary`, `/v1/claims/recent`,
+  `/v1/events` — drives the playground + claim UI metrics widgets.
+- **Docs integration** — playground pages use `<!--@include:-->` to
+  pull from `docs/`, `packages/*/README.md`, `examples/*/README.md`,
+  `CONTRIBUTING.md`. Single source of truth, no content duplication.
+  (§3.0.4)
+
+### Changed
+- Helm chart bumped to `2.2.1` / `appVersion: 2.2.1`.
+- Flutter SDK bumped to `2.2.1`.
+
 ## 2.2.0 (2026-04-18)
 
 ### Added
