@@ -1,0 +1,20 @@
+{
+  "expo": {
+    "name": "Nimiq Faucet — RN Example",
+    "slug": "nimiq-faucet-rn-example",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.nimiq.faucet.rnexample"
+    },
+    "android": {
+      "package": "com.nimiq.faucet.rnexample"
+    },
+    "web": {
+      "bundler": "metro"
+    }
+  }
+}

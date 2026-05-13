@@ -149,7 +149,8 @@ const result = await client.waitForConfirmation(id);
 ### React Native
 
 1. `pnpm add @nimiq-faucet/react-native react-native-device-info`
-2. Import `FaucetClient` from `@nimiq-faucet/react-native`.
+2. `import { createReactNativeFaucetClient } from '@nimiq-faucet/react-native'`; `createReactNativeFaucetClient({ url }).claim(address)`. The device fingerprint is auto-injected from `react-native-device-info` (no-op without it).
+3. Runnable Expo app: [`examples/react-native-claim-app/`](examples/react-native-claim-app/). (pnpm monorepos need `node-linker=hoisted` in `.npmrc` for Metro — see that example's README.)
 
 ### Flutter
 

@@ -1,0 +1,29 @@
+{
+  "name": "@nimiq-faucet/example-react-native",
+  "version": "0.0.0",
+  "private": true,
+  "main": "index.ts",
+  "description": "Expo app demonstrating the @nimiq-faucet/react-native SDK — claim NIM from a self-hosted faucet, with the device fingerprint auto-injected on dev builds.",
+  "scripts": {
+    "start": "expo start",
+    "web": "expo start --web",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
+    "build": "tsc --noEmit",
+    "build:web": "expo export -p web"
+  },
+  "dependencies": {
+    "@expo/metro-runtime": "~55.0.11",
+    "@nimiq-faucet/react-native": "workspace:*",
+    "expo": "~55.0.0",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6",
+    "react-native": "0.83.6",
+    "react-native-device-info": "^15.0.2",
+    "react-native-web": "^0.21.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.14",
+    "typescript": "^6.0.3"
+  }
+}
