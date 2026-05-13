@@ -555,14 +555,18 @@ and the Flutter SDK's `HostContext` type is missing `verifiedIdentities`
 
 ### 2.3.2 Release cadence (cut v2.3.0)
 
-**Goal:** the public CHANGELOG / tags reflect `main`. As of May 2026,
-`main` is several PRs ahead of `v2.2.1` (COOP/Hub popup fix,
-wallet-connect captcha gate, dependency bumps, mobile-header fixes) with
-the CHANGELOG top entry still `2.2.0`. Cut a `v2.3.0` once §2.3.1 lands.
-Optionally add a weekly CI check that flags CHANGELOG-vs-latest-tag
-drift.
+**Status:** ✅ shipped in v2.3.0 (2026-05-13). The release also fixed
+the long-standing post-1.0 npm publish gap: source `package.json`
+versions are now explicitly bumped in each release PR (instead of
+staying at `"0.0.1"`), so `changeset publish` actually pushes the new
+versions. v2.3.0 was the first npm publish since v1.0.0 — all 5
+`@nimiq-faucet/*` SDKs jumped from `1.0.0` to `2.3.0` to match the
+Docker image / Helm chart cadence.
 
-**Estimated effort:** 1–2 hours (+ small CI check if added).
+**Original scope:** the public CHANGELOG / tags reflect `main`. As of
+May 2026, `main` was 122 commits ahead of `v2.2.1`. Cut a `v2.3.0` once
+§2.3.1 lands. Optionally add a weekly CI check that flags
+CHANGELOG-vs-latest-tag drift (deferred to a follow-up).
 
 ### 2.3.3 Cross-SDK contract test harness
 
