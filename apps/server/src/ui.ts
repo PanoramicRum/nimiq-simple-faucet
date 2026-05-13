@@ -168,7 +168,7 @@ export async function registerUi(app: FastifyInstance, config: ServerConfig): Pr
       url === '/readyz' ||
       url === '/llms.txt'
     ) {
-      return reply.code(404).send({ error: 'not found' });
+      return reply.code(404).send({ error: 'not found', code: 'NOT_FOUND' });
     }
     // Strip query string + leading slash; reject path-traversal attempts.
     const pathOnly = url.split('?')[0]?.replace(/^\/+/, '') ?? '';

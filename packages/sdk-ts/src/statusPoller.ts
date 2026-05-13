@@ -2,6 +2,7 @@
  * Framework-agnostic claim status poller.
  */
 import type { ClaimResponse } from './index.js';
+import { FaucetError } from './index.js';
 
 export type FaucetStatusClient = {
   status(id: string): Promise<ClaimResponse>;
@@ -9,7 +10,7 @@ export type FaucetStatusClient = {
 
 export interface StatusState {
   data: ClaimResponse | null;
-  error: Error | null;
+  error: FaucetError | null;
   loading: boolean;
 }
 
@@ -55,7 +56,18 @@ export class StatusPoller {
       const next = await this.#client.status(id);
       if (n === this.#tick) this.#set({ data: next, loading: false });
     } catch (err) {
-      if (n === this.#tick) this.#set({ error: err as Error, loading: false });
+      if (n !== this.#tick) return;
+      const faucetErr =
+        err instanceof FaucetError
+          ? err
+          : new FaucetError(
+              err instanceof Error ? err.message : String(err),
+              0,
+              (err as { name?: string } | null)?.name === 'AbortError'
+                ? 'ABORTED'
+                : 'NETWORK_ERROR',
+            );
+      this.#set({ error: faucetErr, loading: false });
     }
   }
 

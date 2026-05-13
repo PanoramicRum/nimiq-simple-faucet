@@ -73,7 +73,7 @@ export async function adminAuthRoutes(app: FastifyInstance, ctx: AppContext): Pr
     async (req, reply) => {
       const parsed = LoginBody.safeParse(req.body);
       if (!parsed.success) {
-        return reply.code(400).send({ error: 'invalid body' });
+        return reply.code(400).send({ error: 'invalid body', code: 'INVALID_BODY' });
       }
       const { password, totp } = parsed.data;
 
@@ -86,10 +86,10 @@ export async function adminAuthRoutes(app: FastifyInstance, ctx: AppContext): Pr
       // First-login seeding.
       if (!existing) {
         if (!ctx.config.adminPassword) {
-          return reply.code(403).send({ error: 'admin not configured' });
+          return reply.code(403).send({ error: 'admin not configured', code: 'ADMIN_NOT_CONFIGURED' });
         }
         if (!safeEqualUtf8(password, ctx.config.adminPassword)) {
-          return reply.code(401).send({ error: 'invalid credentials' });
+          return reply.code(401).send({ error: 'invalid credentials', code: 'INVALID_CREDENTIALS' });
         }
         const { hash, salt } = await hashPassword(password);
         const secret = ctx.config.adminTotpSecret || genTotpSecret();
@@ -126,13 +126,13 @@ export async function adminAuthRoutes(app: FastifyInstance, ctx: AppContext): Pr
       // Subsequent logins: password + TOTP (if enrolled).
       const ok = await verifyPassword(password, existing.passwordHash, existing.passwordSalt);
       if (!ok) {
-        return reply.code(401).send({ error: 'invalid credentials' });
+        return reply.code(401).send({ error: 'invalid credentials', code: 'INVALID_CREDENTIALS' });
       }
       // Unified error for all TOTP failures — prevents authentication
       // enumeration where distinct messages reveal password correctness
       // or TOTP enrolment status (#55).
       if (existing.totpSecret && (!totp || !verifyTotp(existing.totpSecret, totp))) {
-        return reply.code(401).send({ error: 'invalid credentials' });
+        return reply.code(401).send({ error: 'invalid credentials', code: 'INVALID_CREDENTIALS' });
       }
       const { token, expiresAt } = await issueSession(
         ctx.db,
@@ -168,11 +168,11 @@ export async function adminAuthRoutes(app: FastifyInstance, ctx: AppContext): Pr
   // so it's not exploitable without knowing the configured password.
   app.post('/admin/auth/reset', async (req, reply) => {
     if (!ctx.config.dev) {
-      return reply.code(404).send({ error: 'not found' });
+      return reply.code(404).send({ error: 'not found', code: 'NOT_FOUND' });
     }
     const body = req.body as { password?: string } | null;
     if (!body?.password || body.password !== ctx.config.adminPassword) {
-      return reply.code(401).send({ error: 'password required' });
+      return reply.code(401).send({ error: 'password required', code: 'PASSWORD_REQUIRED' });
     }
     await ctx.db.delete(adminSessions);
     await ctx.db.delete(adminUsers);
@@ -191,7 +191,7 @@ export async function adminAuthRoutes(app: FastifyInstance, ctx: AppContext): Pr
       .where(eq(adminUsers.id, ADMIN_USER_ID))
       .limit(1);
     if (existing) {
-      return reply.code(409).send({ error: 'already enrolled' });
+      return reply.code(409).send({ error: 'already enrolled', code: 'ALREADY_ENROLLED' });
     }
     const secret = genTotpSecret();
     return reply

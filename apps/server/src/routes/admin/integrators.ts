@@ -42,14 +42,14 @@ export async function adminIntegratorsRoutes(
     { bodyLimit: 32 * 1024, preHandler: [requireAdminCsrf(ctx), requireTotpStepUp(ctx)] },
     async (req, reply) => {
       const parsed = CreateBody.safeParse(req.body);
-      if (!parsed.success) return reply.code(400).send({ error: 'invalid body' });
+      if (!parsed.success) return reply.code(400).send({ error: 'invalid body', code: 'INVALID_BODY' });
       const { id } = parsed.data;
       const [existing] = await ctx.db
         .select()
         .from(integratorKeys)
         .where(eq(integratorKeys.id, id))
         .limit(1);
-      if (existing) return reply.code(409).send({ error: 'integrator exists' });
+      if (existing) return reply.code(409).send({ error: 'integrator exists', code: 'INTEGRATOR_EXISTS' });
       const apiKey = mintApiKey();
       const hmacSecret = mintHmacSecret();
       await ctx.db.insert(integratorKeys).values({
@@ -77,7 +77,7 @@ export async function adminIntegratorsRoutes(
     async (req, reply) => {
       const { id } = req.params as { id: string };
       const [row] = await ctx.db.select().from(integratorKeys).where(eq(integratorKeys.id, id)).limit(1);
-      if (!row) return reply.code(404).send({ error: 'not found' });
+      if (!row) return reply.code(404).send({ error: 'not found', code: 'NOT_FOUND' });
       const apiKey = mintApiKey();
       const hmacSecret = mintHmacSecret();
       // Optimistic locking: only update if the key hash hasn't changed
@@ -89,7 +89,7 @@ export async function adminIntegratorsRoutes(
         .where(and(eq(integratorKeys.id, id), eq(integratorKeys.apiKeyHash, row.apiKeyHash)))
         .run();
       if ((result as { changes?: number }).changes === 0) {
-        return reply.code(409).send({ error: 'concurrent rotation detected, retry' });
+        return reply.code(409).send({ error: 'concurrent rotation detected, retry', code: 'CONCURRENT_ROTATION' });
       }
       await writeAudit(ctx.db, {
         actor: req.adminUser?.id ?? 'admin',
@@ -110,7 +110,7 @@ export async function adminIntegratorsRoutes(
     async (req, reply) => {
       const { id } = req.params as { id: string };
       const [row] = await ctx.db.select().from(integratorKeys).where(eq(integratorKeys.id, id)).limit(1);
-      if (!row) return reply.code(404).send({ error: 'not found' });
+      if (!row) return reply.code(404).send({ error: 'not found', code: 'NOT_FOUND' });
       await ctx.db
         .update(integratorKeys)
         .set({ revokedAt: new Date() })

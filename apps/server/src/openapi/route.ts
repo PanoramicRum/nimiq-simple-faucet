@@ -48,7 +48,7 @@ export async function openapiRoute(app: FastifyInstance, ctx: AppContext): Promi
 
   app.get('/docs/api', async (_req, reply) => {
     if (!ctx.config.dev && !ctx.config.openapiPublic) {
-      return reply.code(404).send({ error: 'not found' });
+      return reply.code(404).send({ error: 'not found', code: 'NOT_FOUND' });
     }
     reply.type('text/html; charset=utf-8');
     return DOCS_HTML;

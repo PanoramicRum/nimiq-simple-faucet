@@ -40,7 +40,7 @@ export async function adminConfigRoutes(app: FastifyInstance, ctx: AppContext): 
     async (req, reply) => {
       const parsed = PatchBody.safeParse(req.body);
       if (!parsed.success) {
-        return reply.code(400).send({ error: 'invalid body', issues: parsed.error.issues });
+        return reply.code(400).send({ error: 'invalid body', code: 'INVALID_BODY', issues: parsed.error.issues });
       }
       const entries = Object.entries(parsed.data);
       for (const [k, v] of entries) {

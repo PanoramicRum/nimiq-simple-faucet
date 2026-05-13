@@ -6,6 +6,7 @@
  * this with its own reactivity primitives (useState / ref).
  */
 import type { ClaimOptions, ClaimResponse, ClaimStatus } from './index.js';
+import { FaucetError } from './index.js';
 
 export type FaucetClaimClient = {
   claim(address: string, options?: ClaimOptions): Promise<ClaimResponse>;
@@ -16,7 +17,7 @@ export interface ClaimState {
   status: 'idle' | 'pending' | ClaimStatus;
   id: string | null;
   txId: string | null;
-  error: Error | null;
+  error: FaucetError | null;
 }
 
 const INITIAL_STATE: ClaimState = {
@@ -63,7 +64,22 @@ export class ClaimManager {
         });
       }
     } catch (err) {
-      this.#set({ error: err as Error, status: 'rejected' });
+      // Wrap so consumers always get a FaucetError off ClaimState.error.
+      // FaucetClient.#handle throws FaucetError for non-2xx responses; fetch
+      // failures (offline, DNS, abort) raise generic Error/DOMException — we
+      // surface those with status=0 and a synthetic code so integrators can
+      // still branch on `err.code`.
+      const faucetErr =
+        err instanceof FaucetError
+          ? err
+          : new FaucetError(
+              err instanceof Error ? err.message : String(err),
+              0,
+              (err as { name?: string } | null)?.name === 'AbortError'
+                ? 'ABORTED'
+                : 'NETWORK_ERROR',
+            );
+      this.#set({ error: faucetErr, status: 'rejected' });
     } finally {
       this.#controller = null;
     }

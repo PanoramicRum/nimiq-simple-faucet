@@ -148,5 +148,4 @@ class FaucetClient:
                 status=e.code,
                 message=err_body.get("error") or err_body.get("message") or str(e),
                 code=err_body.get("code", ""),
-                decision=err_body.get("decision", ""),
             ) from e

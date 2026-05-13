@@ -7,7 +7,7 @@ import { AuditListQuery as ListQuery } from '../../openapi/schemas.js';
 export async function adminAuditRoutes(app: FastifyInstance, ctx: AppContext): Promise<void> {
   app.get('/admin/audit-log', async (req, reply) => {
     const parsed = ListQuery.safeParse(req.query);
-    if (!parsed.success) return reply.code(400).send({ error: 'invalid query' });
+    if (!parsed.success) return reply.code(400).send({ error: 'invalid query', code: 'INVALID_QUERY' });
     const { limit, offset } = parsed.data;
     const rows = await ctx.db
       .select()

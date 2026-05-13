@@ -14,7 +14,7 @@ import {
 export async function adminBlocklistRoutes(app: FastifyInstance, ctx: AppContext): Promise<void> {
   app.get('/admin/blocklist', async (req, reply) => {
     const parsed = ListQuery.safeParse(req.query);
-    if (!parsed.success) return reply.code(400).send({ error: 'invalid query' });
+    if (!parsed.success) return reply.code(400).send({ error: 'invalid query', code: 'INVALID_QUERY' });
     const { limit, offset } = parsed.data;
     const rows = await ctx.db
       .select()
@@ -31,7 +31,7 @@ export async function adminBlocklistRoutes(app: FastifyInstance, ctx: AppContext
     { bodyLimit: 32 * 1024, preHandler: requireAdminCsrf(ctx) },
     async (req, reply) => {
       const parsed = CreateBody.safeParse(req.body);
-      if (!parsed.success) return reply.code(400).send({ error: 'invalid body' });
+      if (!parsed.success) return reply.code(400).send({ error: 'invalid body', code: 'INVALID_BODY' });
       const id = nanoid();
       let expiresAt: Date | null = null;
       if (parsed.data.expiresAt !== undefined) {
@@ -40,7 +40,7 @@ export async function adminBlocklistRoutes(app: FastifyInstance, ctx: AppContext
             ? new Date(parsed.data.expiresAt)
             : new Date(parsed.data.expiresAt);
         if (Number.isNaN(d.getTime())) {
-          return reply.code(400).send({ error: 'invalid expiresAt' });
+          return reply.code(400).send({ error: 'invalid expiresAt', code: 'INVALID_BODY' });
         }
         expiresAt = d;
       }
@@ -71,7 +71,7 @@ export async function adminBlocklistRoutes(app: FastifyInstance, ctx: AppContext
     async (req, reply) => {
       const { id } = req.params as { id: string };
       const [row] = await ctx.db.select().from(blocklist).where(eq(blocklist.id, id)).limit(1);
-      if (!row) return reply.code(404).send({ error: 'not found' });
+      if (!row) return reply.code(404).send({ error: 'not found', code: 'NOT_FOUND' });
       await ctx.db.delete(blocklist).where(eq(blocklist.id, id));
       await writeAudit(ctx.db, {
         actor: req.adminUser?.id ?? 'admin',
