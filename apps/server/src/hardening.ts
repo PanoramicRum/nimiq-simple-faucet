@@ -247,17 +247,22 @@ export async function applyHardening(app: FastifyInstance, config: ServerConfig)
     });
   }
 
-  if (!config.dev) {
-    app.setErrorHandler((err: Error & { statusCode?: number; code?: string }, req, reply) => {
-      req.log.error({ err }, 'request failed');
-      const status =
-        typeof err.statusCode === 'number' && err.statusCode >= 400 && err.statusCode < 600
-          ? err.statusCode
-          : 500;
-      reply.code(status).send({
-        error: status >= 500 ? 'internal error' : err.name || 'error',
-        code: err.code ?? 'INTERNAL',
-      });
-    });
-  }
+  // Uniform ErrorResponse envelope ({error, code, message?}) for all
+  // unhandled errors. Registered in both dev and prod: dev includes
+  // `message` for faster debugging, prod hides it for 5xx (no stack
+  // traces or env strings leaking via err.message — see hardening.e2e
+  // `error handler: in prod mode a thrown error yields 500 with no stack`).
+  app.setErrorHandler((err: Error & { statusCode?: number; code?: string }, req, reply) => {
+    req.log.error({ err }, 'request failed');
+    const status =
+      typeof err.statusCode === 'number' && err.statusCode >= 400 && err.statusCode < 600
+        ? err.statusCode
+        : 500;
+    const body: { error: string; code: string; message?: string } = {
+      error: status >= 500 ? 'internal error' : err.name || 'error',
+      code: err.code ?? 'INTERNAL',
+    };
+    if (config.dev || status < 500) body.message = err.message;
+    reply.code(status).send(body);
+  });
 }

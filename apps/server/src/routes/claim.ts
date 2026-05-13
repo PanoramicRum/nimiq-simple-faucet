@@ -49,7 +49,7 @@ export async function claimRoutes(app: FastifyInstance, ctx: AppContext): Promis
     },
   }, async (req, reply) => {
     if (!ctx.config.hashcashSecret) {
-      return reply.code(404).send({ error: 'hashcash not enabled' });
+      return reply.code(404).send({ error: 'hashcash not enabled', code: 'HASHCASH_DISABLED' });
     }
     // Browser-only enforcement for challenge minting too.
     if (ctx.config.requireBrowser) {
@@ -58,6 +58,7 @@ export async function claimRoutes(app: FastifyInstance, ctx: AppContext): Promis
       if (!hasIntegratorAuth && !req.headers['sec-fetch-site']) {
         return reply.code(403).send({
           error: 'browser_required',
+          code: 'BROWSER_REQUIRED',
           message: 'Challenges must be requested from a browser.',
         });
       }
@@ -101,6 +102,7 @@ export async function claimRoutes(app: FastifyInstance, ctx: AppContext): Promis
         if (!secFetchSite) {
           return reply.code(403).send({
             error: 'browser_required',
+            code: 'BROWSER_REQUIRED',
             message: 'Claims must be submitted from a browser. Use the ClaimUI or an authorized integrator SDK.',
           });
         }
@@ -120,6 +122,7 @@ export async function claimRoutes(app: FastifyInstance, ctx: AppContext): Promis
         ) {
           return reply.code(403).send({
             error: 'origin_not_allowed',
+            code: 'ORIGIN_NOT_ALLOWED',
             message: 'Request origin is not in the allowed list.',
           });
         }
@@ -131,7 +134,7 @@ export async function claimRoutes(app: FastifyInstance, ctx: AppContext): Promis
     const parsed = ClaimBody.safeParse(req.body);
     if (!parsed.success) {
       await padRejectDelay(requestStart, T_min);
-      return reply.code(400).send({ error: 'invalid request' });
+      return reply.code(400).send({ error: 'invalid request', code: 'INVALID_REQUEST' });
     }
 
     let integratorId: string | undefined;
@@ -168,7 +171,7 @@ export async function claimRoutes(app: FastifyInstance, ctx: AppContext): Promis
       });
       if (!result.ok) {
         await padRejectDelay(requestStart, T_min);
-        return reply.code(401).send({ error: 'integrator auth failed' });
+        return reply.code(401).send({ error: 'integrator auth failed', code: 'INTEGRATOR_AUTH_FAILED' });
       }
       integratorId = result.integratorId;
       hostContextVerified = true;
@@ -209,7 +212,7 @@ export async function claimRoutes(app: FastifyInstance, ctx: AppContext): Promis
       address = ctx.driver.parseAddress(parsed.data.address);
     } catch {
       await padRejectDelay(requestStart, T_min);
-      return reply.code(400).send({ error: 'invalid address' });
+      return reply.code(400).send({ error: 'invalid address', code: 'INVALID_ADDRESS' });
     }
 
     // Idempotency lookup (#86). Scoped by:
@@ -338,6 +341,7 @@ export async function claimRoutes(app: FastifyInstance, ctx: AppContext): Promis
     if (inflightClaims.has(address)) {
       return reply.code(429).send({
         error: 'claim_in_progress',
+        code: 'CLAIM_IN_PROGRESS',
         message: 'A claim for this address is already being processed. Try again shortly.',
       });
     }
@@ -352,6 +356,7 @@ export async function claimRoutes(app: FastifyInstance, ctx: AppContext): Promis
         await padRejectDelay(requestStart, T_min);
         return reply.code(400).send({
           error: 'invalid address',
+          code: 'INVALID_ADDRESS',
           message: 'Address rejected by the network (invalid checksum or format)',
         });
       }
@@ -378,6 +383,7 @@ export async function claimRoutes(app: FastifyInstance, ctx: AppContext): Promis
         id,
         status: 'error',
         error: 'send_failed',
+        code: 'SEND_FAILED',
         message: 'Faucet is temporarily unavailable. Please try again shortly.',
       });
     }
@@ -424,7 +430,7 @@ export async function claimRoutes(app: FastifyInstance, ctx: AppContext): Promis
   app.get('/v1/claim/:id', async (req, reply) => {
     const { id } = req.params as { id: string };
     const [row] = await ctx.db.select().from(claims).where(eq(claims.id, id)).limit(1);
-    if (!row) return reply.code(404).send({ error: 'not found' });
+    if (!row) return reply.code(404).send({ error: 'not found', code: 'NOT_FOUND' });
     // Public claim-status response intentionally omits `decision` and
     // `rejectionReason`. Operators querying for granular abuse-pipeline
     // attribution use the admin endpoints (/v1/admin/claims/:id).

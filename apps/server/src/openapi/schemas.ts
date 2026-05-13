@@ -132,6 +132,35 @@ export const StatsResponse = registry.register(
   }),
 );
 
+/**
+ * Uniform error envelope returned for every non-success response.
+ *
+ * - `error`: short machine-readable identifier (e.g. `'invalid request'`,
+ *   `'browser_required'`). Stable across releases; integrators may match
+ *   on it for backwards-compatibility, but new code should prefer `code`.
+ * - `code`: stable error code in `SCREAMING_SNAKE_CASE`. Use this for
+ *   programmatic branching. Codes currently in use:
+ *   - **Public claim API**: `INVALID_REQUEST`, `INVALID_ADDRESS`,
+ *     `INTEGRATOR_AUTH_FAILED`, `HASHCASH_DISABLED`, `BROWSER_REQUIRED`,
+ *     `ORIGIN_NOT_ALLOWED`, `CLAIM_IN_PROGRESS`, `SEND_FAILED`,
+ *     `DRIVER_NOT_READY`, `NOT_FOUND`, `TLS_REQUIRED`.
+ *   - **Admin API**: `UNAUTHORIZED`, `CSRF_TOKEN_MISSING`,
+ *     `CSRF_TOKEN_MISMATCH`, `TOTP_NOT_ENROLLED`, `TOTP_STEP_UP_REQUIRED`,
+ *     `INVALID_TOTP`, `INVALID_CREDENTIALS`, `ADMIN_NOT_CONFIGURED`,
+ *     `ALREADY_ENROLLED`, `PASSWORD_REQUIRED`, `INVALID_QUERY`,
+ *     `INVALID_BODY`, `INTEGRATOR_EXISTS`, `CONCURRENT_ROTATION`,
+ *     `METRICS_DISABLED`.
+ *   - **Fallback** (unhandled errors via `setErrorHandler`): `INTERNAL`.
+ * - `message`: human-readable detail. Always present for 4xx; suppressed
+ *   for unhandled 5xx in production (no stack/secret leakage) but
+ *   included in dev mode. Optional and informative — never rely on its
+ *   wording.
+ *
+ * The public claim-reject path (`POST /v1/claim` with `decision='deny'`
+ * or `'review'`) returns `{id, status: 'rejected'}` instead, by design
+ * (SECURITY.md "Public-API silence on rejection"). Status responses for
+ * non-error 4xx/5xx (e.g. challenge body) use route-specific schemas.
+ */
 export const ErrorResponse = registry.register(
   'ErrorResponse',
   z.object({

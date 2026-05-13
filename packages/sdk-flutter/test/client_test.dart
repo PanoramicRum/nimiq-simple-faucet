@@ -80,13 +80,12 @@ void main() {
   });
 
   group('FaucetException', () {
-    test('toString includes status, code, and decision when present', () {
-      const err = FaucetException('denied', status: 403, code: 'abuse', decision: 'deny');
+    test('toString includes status, message, and code when present', () {
+      const err = FaucetException('denied', status: 403, code: 'INVALID_REQUEST');
       final s = err.toString();
       expect(s, contains('403'));
       expect(s, contains('denied'));
-      expect(s, contains('abuse'));
-      expect(s, contains('deny'));
+      expect(s, contains('INVALID_REQUEST'));
     });
   });
 }

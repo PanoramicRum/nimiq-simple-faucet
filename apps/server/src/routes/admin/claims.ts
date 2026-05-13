@@ -9,7 +9,7 @@ import { ClaimsListQuery as ListQuery } from '../../openapi/schemas.js';
 export async function adminClaimsRoutes(app: FastifyInstance, ctx: AppContext): Promise<void> {
   app.get('/admin/claims', async (req, reply) => {
     const parsed = ListQuery.safeParse(req.query);
-    if (!parsed.success) return reply.code(400).send({ error: 'invalid query' });
+    if (!parsed.success) return reply.code(400).send({ error: 'invalid query', code: 'INVALID_QUERY' });
     const { limit, offset, status, decision, address } = parsed.data;
 
     const conds: SQL[] = [];
@@ -48,7 +48,7 @@ export async function adminClaimsRoutes(app: FastifyInstance, ctx: AppContext): 
   app.get('/admin/claims/:id/explain', async (req, reply) => {
     const { id } = req.params as { id: string };
     const [row] = await ctx.db.select().from(claims).where(eq(claims.id, id)).limit(1);
-    if (!row) return reply.code(404).send({ error: 'not found' });
+    if (!row) return reply.code(404).send({ error: 'not found', code: 'NOT_FOUND' });
     let signals: unknown = {};
     try {
       signals = JSON.parse(row.signalsJson);
@@ -64,7 +64,7 @@ export async function adminClaimsRoutes(app: FastifyInstance, ctx: AppContext): 
     async (req, reply) => {
       const { id } = req.params as { id: string };
       const [row] = await ctx.db.select().from(claims).where(eq(claims.id, id)).limit(1);
-      if (!row) return reply.code(404).send({ error: 'not found' });
+      if (!row) return reply.code(404).send({ error: 'not found', code: 'NOT_FOUND' });
       await ctx.db
         .update(claims)
         .set({ status: 'manual-allow', decision: 'allow', rejectionReason: null })
@@ -87,7 +87,7 @@ export async function adminClaimsRoutes(app: FastifyInstance, ctx: AppContext): 
       const body = (req.body ?? {}) as { reason?: string };
       const reason = typeof body.reason === 'string' ? body.reason.slice(0, 256) : 'manual deny';
       const [row] = await ctx.db.select().from(claims).where(eq(claims.id, id)).limit(1);
-      if (!row) return reply.code(404).send({ error: 'not found' });
+      if (!row) return reply.code(404).send({ error: 'not found', code: 'NOT_FOUND' });
       await ctx.db
         .update(claims)
         .set({ status: 'rejected', decision: 'deny', rejectionReason: reason })

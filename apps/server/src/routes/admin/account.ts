@@ -47,13 +47,13 @@ export async function adminAccountRoutes(app: FastifyInstance, ctx: AppContext):
     { bodyLimit: 32 * 1024, preHandler: [requireAdminCsrf(ctx), requireTotpStepUp(ctx)] },
     async (req, reply) => {
       const parsed = SendBody.safeParse(req.body);
-      if (!parsed.success) return reply.code(400).send({ error: 'invalid body' });
+      if (!parsed.success) return reply.code(400).send({ error: 'invalid body', code: 'INVALID_BODY' });
       const { to, amountLuna, memo } = parsed.data;
       let address: string;
       try {
         address = ctx.driver.parseAddress(to);
       } catch (err) {
-        return reply.code(400).send({ error: 'invalid address', message: (err as Error).message });
+        return reply.code(400).send({ error: 'invalid address', code: 'INVALID_ADDRESS', message: (err as Error).message });
       }
       const amount =
         typeof amountLuna === 'string' ? BigInt(amountLuna) : BigInt(amountLuna);

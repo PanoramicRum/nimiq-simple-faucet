@@ -59,12 +59,12 @@ export function requireAdminSession(ctx: AppContext) {
   return async (req: FastifyRequest, reply: FastifyReply): Promise<void> => {
     const token = getCookie(req, cookieName);
     if (!token) {
-      await reply.code(401).send({ error: 'unauthorized' });
+      await reply.code(401).send({ error: 'unauthorized', code: 'UNAUTHORIZED' });
       return;
     }
     const session = await validateSession(ctx.db, token);
     if (!session) {
-      await reply.code(401).send({ error: 'unauthorized' });
+      await reply.code(401).send({ error: 'unauthorized', code: 'UNAUTHORIZED' });
       return;
     }
     req.adminUser = { id: session.userId, sessionToken: token };
@@ -87,13 +87,13 @@ export function requireAdminCsrf(ctx: AppContext) {
     const header = req.headers[ADMIN_CSRF_HEADER];
     const headerStr = Array.isArray(header) ? header[0] : header;
     if (!cookie || !headerStr || typeof headerStr !== 'string') {
-      await reply.code(403).send({ error: 'csrf token missing' });
+      await reply.code(403).send({ error: 'csrf token missing', code: 'CSRF_TOKEN_MISSING' });
       return;
     }
     const a = Buffer.from(cookie);
     const b = Buffer.from(headerStr);
     if (a.length !== b.length || !timingSafeEqual(a, b)) {
-      await reply.code(403).send({ error: 'csrf token mismatch' });
+      await reply.code(403).send({ error: 'csrf token mismatch', code: 'CSRF_TOKEN_MISMATCH' });
       return;
     }
   };
@@ -106,7 +106,7 @@ export function requireAdminCsrf(ctx: AppContext) {
 export function requireTotpStepUp(ctx: AppContext) {
   return async (req: FastifyRequest, reply: FastifyReply): Promise<void> => {
     if (!req.adminUser) {
-      await reply.code(401).send({ error: 'unauthorized' });
+      await reply.code(401).send({ error: 'unauthorized', code: 'UNAUTHORIZED' });
       return;
     }
     const [user] = await ctx.db
@@ -115,17 +115,17 @@ export function requireTotpStepUp(ctx: AppContext) {
       .where(eq(adminUsers.id, req.adminUser.id))
       .limit(1);
     if (!user?.totpSecret) {
-      await reply.code(403).send({ error: 'totp not enrolled' });
+      await reply.code(403).send({ error: 'totp not enrolled', code: 'TOTP_NOT_ENROLLED' });
       return;
     }
     const header = req.headers[ADMIN_TOTP_HEADER];
     const code = Array.isArray(header) ? header[0] : header;
     if (!code || typeof code !== 'string') {
-      await reply.code(403).send({ error: 'totp step-up required' });
+      await reply.code(403).send({ error: 'totp step-up required', code: 'TOTP_STEP_UP_REQUIRED' });
       return;
     }
     if (!verifyTotp(user.totpSecret, code)) {
-      await reply.code(403).send({ error: 'invalid totp' });
+      await reply.code(403).send({ error: 'invalid totp', code: 'INVALID_TOTP' });
       return;
     }
     // Caller route may choose to mark the session step-up afterwards.

@@ -185,6 +185,7 @@ export async function buildApp(
       reply.header('Retry-After', '10');
       return reply.code(503).send({
         error: 'driver_not_ready',
+        code: 'DRIVER_NOT_READY',
         message: 'Signer driver is still establishing consensus. Retry shortly.',
       });
     }
@@ -275,7 +276,7 @@ export async function buildApp(
     return { ready: allOk, checks };
   });
   app.get('/metrics', async (_req, reply) => {
-    if (!config.metricsEnabled) return reply.code(404).send({ error: 'metrics disabled' });
+    if (!config.metricsEnabled) return reply.code(404).send({ error: 'metrics disabled', code: 'METRICS_DISABLED' });
     driverReady.set(isDriverReady() ? 1 : 0);
     try {
       walletBalance.set(Number(await driver.getBalance()));
