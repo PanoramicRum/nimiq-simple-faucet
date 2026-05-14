@@ -23,14 +23,14 @@
     "dev": "tsc -p tsconfig.json --watch"
   },
   "peerDependencies": {
-    "@capacitor/core": "^8.3.3",
+    "@capacitor/core": "^8.3.4",
     "@capacitor/device": "^8.0.2"
   },
   "dependencies": {
     "@nimiq-faucet/sdk": "workspace:*"
   },
   "devDependencies": {
-    "@capacitor/core": "^8.3.3",
+    "@capacitor/core": "^8.3.4",
     "@capacitor/device": "^8.0.2",
     "typescript": "^6.0.3"
   },
