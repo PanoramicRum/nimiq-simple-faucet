@@ -13,7 +13,7 @@
     "@faucet/core": "workspace:*",
     "@nimiq-faucet/sdk": "workspace:*",
     "vue": "^3.5.34",
-    "vue-router": "^5.0.6"
+    "vue-router": "^5.0.7"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.2.4",

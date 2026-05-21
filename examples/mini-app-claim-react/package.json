@@ -11,7 +11,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@nimiq/mini-app-sdk": "^0.0.2",
+    "@nimiq/mini-app-sdk": "^0.1.0",
     "@nimiq-faucet/mini-app-claim-shared": "workspace:*",
     "@nimiq-faucet/sdk": "workspace:*",
     "react": "^19.2.6",

@@ -11,7 +11,7 @@
     "./i18n": "./src/i18n.ts"
   },
   "dependencies": {
-    "@nimiq/mini-app-sdk": "^0.0.2",
+    "@nimiq/mini-app-sdk": "^0.1.0",
     "@nimiq-faucet/sdk": "workspace:*"
   },
   "devDependencies": {
