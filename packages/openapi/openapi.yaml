@@ -33,10 +33,13 @@ components:
     adminSession:
       type: apiKey
       in: cookie
-      name: faucet_session
-      description: Session cookie issued by POST /admin/auth/login. Mutating calls
-        also require the `X-Faucet-Csrf` double-submit header matching the
-        `faucet_csrf` cookie.
+      name: __Host-faucet_session
+      description: Session cookie issued by POST /admin/auth/login. The `__Host-`
+        prefix binds the cookie to the exact host (Secure, Path=/, no Domain).
+        Mutating calls also require the `X-Faucet-Csrf` double-submit header
+        matching the `__Host-faucet_csrf` cookie. In dev mode (no HTTPS) the
+        unprefixed names `faucet_session` / `faucet_csrf` are used because the
+        prefix requires Secure.
     adminMcpToken:
       type: apiKey
       in: header
@@ -136,16 +139,7 @@ components:
             - timeout
             - expired
             - manual-allow
-        decision:
-          type: string
-          enum:
-            - allow
-            - deny
-            - review
-            - challenge
         txId:
-          type: string
-        reason:
           type: string
       required:
         - id
@@ -169,14 +163,6 @@ components:
           anyOf:
             - type: string
             - type: number
-        decision:
-          type:
-            - string
-            - "null"
-        rejectionReason:
-          type:
-            - string
-            - "null"
       required:
         - id
         - status
@@ -184,8 +170,6 @@ components:
         - amountLuna
         - txId
         - createdAt
-        - decision
-        - rejectionReason
     FaucetConfig:
       type: object
       properties:
@@ -203,6 +187,8 @@ components:
               type: boolean
             hcaptcha:
               type: boolean
+            fcaptcha:
+              type: boolean
             hashcash:
               type: boolean
             geoip:
@@ -216,6 +202,7 @@ components:
           required:
             - turnstile
             - hcaptcha
+            - fcaptcha
             - hashcash
             - geoip
             - fingerprint
@@ -231,8 +218,12 @@ components:
               enum:
                 - turnstile
                 - hcaptcha
+                - fcaptcha
             siteKey:
               type: string
+            serverUrl:
+              type: string
+              format: uri
           required:
             - provider
             - siteKey
@@ -283,14 +274,9 @@ components:
           type: object
           additionalProperties:
             type: integer
-        byDecision:
-          type: object
-          additionalProperties:
-            type: integer
       required:
         - total
         - byStatus
-        - byDecision
     ErrorResponse:
       type: object
       properties:
@@ -300,9 +286,6 @@ components:
           type: string
         message:
           type: string
-        issues:
-          type: array
-          items: {}
       required:
         - error
     LoginRequest:
@@ -595,6 +578,8 @@ components:
             turnstile:
               type: boolean
             hcaptcha:
+              type: boolean
+            fcaptcha:
               type: boolean
             hashcash:
               type: boolean
@@ -901,6 +886,50 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/StatsResponse"
+  /v1/stats/summary:
+    get:
+      tags:
+        - Public
+      summary: Time-windowed stats summary with balance and recent claims
+      responses:
+        "200":
+          description: Summary (cached 30s)
+  /v1/claims/recent:
+    get:
+      tags:
+        - Public
+      summary: Recent public claims (paginated, no sensitive fields)
+      parameters:
+        - schema:
+            type:
+              - integer
+              - "null"
+          required: false
+          name: limit
+          in: query
+        - schema:
+            type:
+              - integer
+              - "null"
+          required: false
+          name: offset
+          in: query
+        - schema:
+            type: string
+          required: false
+          name: status
+          in: query
+      responses:
+        "200":
+          description: Public claims list
+  /v1/events:
+    get:
+      tags:
+        - Public
+      summary: Recent faucet system events
+      responses:
+        "200":
+          description: System events from in-memory ring buffer
   /admin/auth/login:
     post:
       tags:

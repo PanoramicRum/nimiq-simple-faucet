@@ -44,8 +44,8 @@
       "adminSession": {
         "type": "apiKey",
         "in": "cookie",
-        "name": "faucet_session",
-        "description": "Session cookie issued by POST /admin/auth/login. Mutating calls also require the `X-Faucet-Csrf` double-submit header matching the `faucet_csrf` cookie."
+        "name": "__Host-faucet_session",
+        "description": "Session cookie issued by POST /admin/auth/login. The `__Host-` prefix binds the cookie to the exact host (Secure, Path=/, no Domain). Mutating calls also require the `X-Faucet-Csrf` double-submit header matching the `__Host-faucet_csrf` cookie. In dev mode (no HTTPS) the unprefixed names `faucet_session` / `faucet_csrf` are used because the prefix requires Secure."
       },
       "adminMcpToken": {
         "type": "apiKey",
@@ -180,19 +180,7 @@
               "manual-allow"
             ]
           },
-          "decision": {
-            "type": "string",
-            "enum": [
-              "allow",
-              "deny",
-              "review",
-              "challenge"
-            ]
-          },
           "txId": {
-            "type": "string"
-          },
-          "reason": {
             "type": "string"
           }
         },
@@ -231,18 +219,6 @@
                 "type": "number"
               }
             ]
-          },
-          "decision": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "rejectionReason": {
-            "type": [
-              "string",
-              "null"
-            ]
           }
         },
         "required": [
@@ -251,9 +227,7 @@
           "address",
           "amountLuna",
           "txId",
-          "createdAt",
-          "decision",
-          "rejectionReason"
+          "createdAt"
         ]
       },
       "FaucetConfig": {
@@ -278,6 +252,9 @@
               "hcaptcha": {
                 "type": "boolean"
               },
+              "fcaptcha": {
+                "type": "boolean"
+              },
               "hashcash": {
                 "type": "boolean"
               },
@@ -297,6 +274,7 @@
             "required": [
               "turnstile",
               "hcaptcha",
+              "fcaptcha",
               "hashcash",
               "geoip",
               "fingerprint",
@@ -314,11 +292,16 @@
                 "type": "string",
                 "enum": [
                   "turnstile",
-                  "hcaptcha"
+                  "hcaptcha",
+                  "fcaptcha"
                 ]
               },
               "siteKey": {
                 "type": "string"
+              },
+              "serverUrl": {
+                "type": "string",
+                "format": "uri"
               }
             },
             "required": [
@@ -393,18 +376,11 @@
             "additionalProperties": {
               "type": "integer"
             }
-          },
-          "byDecision": {
-            "type": "object",
-            "additionalProperties": {
-              "type": "integer"
-            }
           }
         },
         "required": [
           "total",
-          "byStatus",
-          "byDecision"
+          "byStatus"
         ]
       },
       "ErrorResponse": {
@@ -418,10 +394,6 @@
           },
           "message": {
             "type": "string"
-          },
-          "issues": {
-            "type": "array",
-            "items": {}
           }
         },
         "required": [
@@ -872,6 +844,9 @@
                 "type": "boolean"
               },
               "hcaptcha": {
+                "type": "boolean"
+              },
+              "fcaptcha": {
                 "type": "boolean"
               },
               "hashcash": {
@@ -1344,6 +1319,77 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/v1/stats/summary": {
+      "get": {
+        "tags": [
+          "Public"
+        ],
+        "summary": "Time-windowed stats summary with balance and recent claims",
+        "responses": {
+          "200": {
+            "description": "Summary (cached 30s)"
+          }
+        }
+      }
+    },
+    "/v1/claims/recent": {
+      "get": {
+        "tags": [
+          "Public"
+        ],
+        "summary": "Recent public claims (paginated, no sensitive fields)",
+        "parameters": [
+          {
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "required": false,
+            "name": "offset",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "status",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Public claims list"
+          }
+        }
+      }
+    },
+    "/v1/events": {
+      "get": {
+        "tags": [
+          "Public"
+        ],
+        "summary": "Recent faucet system events",
+        "responses": {
+          "200": {
+            "description": "System events from in-memory ring buffer"
           }
         }
       }
