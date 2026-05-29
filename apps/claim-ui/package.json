@@ -16,13 +16,13 @@
     "vue-router": "^5.0.6"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4.2.4",
-    "@vitejs/plugin-vue": "^6.0.6",
+    "@tailwindcss/postcss": "^4.3.0",
+    "@vitejs/plugin-vue": "^6.0.7",
     "autoprefixer": "^10.4.20",
-    "postcss": "^8.5.14",
-    "tailwindcss": "^4.2.4",
+    "postcss": "^8.5.15",
+    "tailwindcss": "^4.3.0",
     "typescript": "^6.0.3",
-    "vite": "^8.0.11",
-    "vue-tsc": "^3.2.8"
+    "vite": "^8.0.14",
+    "vue-tsc": "^3.3.2"
   }
 }
