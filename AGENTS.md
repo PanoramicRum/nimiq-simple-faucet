@@ -65,6 +65,7 @@ When you need exact wire shape, SDK surface, or behaviour — consult these, in 
 - **API wire shape:** `GET /openapi.json` on a running instance, or the frozen [packages/openapi/openapi.yaml](packages/openapi/openapi.yaml).
 - **Per-package contract:** `packages/<name>/README.md` + `packages/<name>/llms.txt`.
 - **Machine-readable overview:** `/llms.txt` and `/llms-full.txt` served by the faucet.
+- **MCP server:** [docs/mcp.md](docs/mcp.md) enumerates the 9 tools (3 public + 6 admin), the auth model, and client config snippets.
 - **Anti-fraud details:** [docs/fraud-prevention.md](docs/fraud-prevention.md).
 
 ## Stable facts (do not invent alternatives)
