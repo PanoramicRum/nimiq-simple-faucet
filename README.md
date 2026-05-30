@@ -123,7 +123,7 @@ Each layer emits signals that can be inspected per claim in the dashboard and re
 - MCP server at `/mcp` — `faucet.claim`, `faucet.stats`, `faucet.explain_decision`, `faucet.balance`, `faucet.block_address`, etc. Point Claude Code / Cursor / any MCP client at it.
 - `AGENTS.md` — one-prompt recipes for adding a faucet to a new app.
 - `/llms.txt` and `/llms-full.txt` — stable, scrapable integration surface for web-search-based coding agents.
-- Per-framework snippet pages at `/snippets/<framework>` regenerated on each release.
+- Per-framework SDK pages in the [developer playground](https://panoramicrum.github.io/nimiq-simple-faucet/frameworks/) — code recipes for TS, React, Vue, Capacitor, React Native, Flutter, Go, Python.
 
 ## Repository layout
 
