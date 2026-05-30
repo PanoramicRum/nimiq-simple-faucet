@@ -1,6 +1,6 @@
 {
   "name": "@nimiq-faucet/mini-app-claim-shared",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "private": true,
   "type": "module",
   "description": "Framework-agnostic glue between @nimiq/mini-app-sdk and @nimiq-faucet/sdk. Used by the Vue and React mini-app claim examples; promoted to a published package once a third framework example exists.",

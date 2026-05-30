@@ -1,10 +1,14 @@
 {
   "name": "@nimiq-faucet/sdk",
-  "version": "2.3.0",
+  "version": "2.3.1",
   "description": "Framework-agnostic client for the Nimiq Simple Faucet. Works in browser and Node.",
   "license": "MIT",
   "author": "Nimiq <richy@nimiq.com>",
-  "repository": { "type": "git", "url": "https://github.com/PanoramicRum/nimiq-simple-faucet.git", "directory": "packages/sdk-ts" },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/PanoramicRum/nimiq-simple-faucet.git",
+    "directory": "packages/sdk-ts"
+  },
   "homepage": "https://github.com/PanoramicRum/nimiq-simple-faucet/tree/main/packages/sdk-ts#readme",
   "type": "module",
   "main": "./dist/index.js",
@@ -15,14 +19,25 @@
       "import": "./dist/index.js"
     }
   },
-  "files": ["dist", "llms.txt", "README.md"],
-  "publishConfig": { "access": "public" },
+  "files": [
+    "dist",
+    "llms.txt",
+    "README.md"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "dev": "tsc -p tsconfig.json --watch"
   },
-  "keywords": ["nimiq", "faucet", "crypto", "sdk"],
+  "keywords": [
+    "nimiq",
+    "faucet",
+    "crypto",
+    "sdk"
+  ],
   "devDependencies": {
     "@types/node": "^25.9.1",
     "typescript": "^6.0.3"

@@ -1,6 +1,6 @@
 {
   "name": "@nimiq-faucet/example-mini-app-vue",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "private": true,
   "type": "module",
   "description": "Vue 3 Nimiq Pay Mini App that claims NIM from a self-hosted nimiq-simple-faucet.",

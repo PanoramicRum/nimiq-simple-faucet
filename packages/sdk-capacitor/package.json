@@ -1,10 +1,14 @@
 {
   "name": "@nimiq-faucet/capacitor",
-  "version": "2.3.0",
+  "version": "2.3.1",
   "description": "Capacitor integration for the Nimiq Simple Faucet. Auto-populates fingerprint from Device.getId().",
   "license": "MIT",
   "author": "Nimiq <richy@nimiq.com>",
-  "repository": { "type": "git", "url": "https://github.com/PanoramicRum/nimiq-simple-faucet.git", "directory": "packages/sdk-capacitor" },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/PanoramicRum/nimiq-simple-faucet.git",
+    "directory": "packages/sdk-capacitor"
+  },
   "homepage": "https://github.com/PanoramicRum/nimiq-simple-faucet/tree/main/packages/sdk-capacitor#readme",
   "type": "module",
   "main": "./dist/index.js",
@@ -15,8 +19,14 @@
       "import": "./dist/index.js"
     }
   },
-  "files": ["dist", "llms.txt", "README.md"],
-  "publishConfig": { "access": "public" },
+  "files": [
+    "dist",
+    "llms.txt",
+    "README.md"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
@@ -34,5 +44,10 @@
     "@capacitor/device": "^8.0.2",
     "typescript": "^6.0.3"
   },
-  "keywords": ["nimiq", "faucet", "capacitor", "mobile"]
+  "keywords": [
+    "nimiq",
+    "faucet",
+    "capacitor",
+    "mobile"
+  ]
 }

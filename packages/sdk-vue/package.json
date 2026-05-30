@@ -1,10 +1,14 @@
 {
   "name": "@nimiq-faucet/vue",
-  "version": "2.3.0",
+  "version": "2.3.1",
   "description": "Vue 3 composables for the Nimiq Simple Faucet, built on @nimiq-faucet/sdk.",
   "license": "MIT",
   "author": "Nimiq <richy@nimiq.com>",
-  "repository": { "type": "git", "url": "https://github.com/PanoramicRum/nimiq-simple-faucet.git", "directory": "packages/sdk-vue" },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/PanoramicRum/nimiq-simple-faucet.git",
+    "directory": "packages/sdk-vue"
+  },
   "homepage": "https://github.com/PanoramicRum/nimiq-simple-faucet/tree/main/packages/sdk-vue#readme",
   "type": "module",
   "main": "./dist/index.js",
@@ -15,8 +19,14 @@
       "import": "./dist/index.js"
     }
   },
-  "files": ["dist", "llms.txt", "README.md"],
-  "publishConfig": { "access": "public" },
+  "files": [
+    "dist",
+    "llms.txt",
+    "README.md"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
@@ -32,5 +42,10 @@
     "typescript": "^6.0.3",
     "vue": "^3.5.35"
   },
-  "keywords": ["nimiq", "faucet", "vue", "composables"]
+  "keywords": [
+    "nimiq",
+    "faucet",
+    "vue",
+    "composables"
+  ]
 }
