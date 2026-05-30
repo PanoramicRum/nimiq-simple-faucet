@@ -26,6 +26,13 @@ If no admin auth is presented (or it fails), public tools still work but admin t
 
 There are **9 tools**: 3 public, 6 admin-scoped.
 
+> **Schema sources.** Input schemas for tools that overlap REST endpoints are derived from the canonical Zod sources in [apps/server/src/openapi/schemas.ts](../apps/server/src/openapi/schemas.ts) so they cannot drift. Specifically:
+> - `faucet.send` → `to` picked from `AdminSendRequest`; `amountLuna` kept stricter (decimal-integer string only — JSON-number precision is not enough for large Luna values)
+> - `faucet.block_address` → full shape derived from `BlocklistCreateRequest`
+> - `faucet.unblock_address` → `kind` + `value` picked from `BlocklistCreateRequest`
+>
+> The remaining tools either have no REST overlap (`faucet.stats`, `faucet.balance`, `faucet.status`, `faucet.explain_decision`) or have intentionally different constraints (`faucet.recent_claims` and `faucet.list_blocks` accept larger limits than the admin-UI pagination endpoints).
+
 ### Public
 
 #### `faucet.status`
