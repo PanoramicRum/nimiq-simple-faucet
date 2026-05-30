@@ -39,6 +39,10 @@ Response: `{ id, status, txId?, decision?, reason? }`. Poll `GET /v1/claim/:id` 
 - Flutter: [/snippets/flutter](./snippets/flutter)
 - Go backend: [/snippets/go](./snippets/go)
 
+## MCP server
+
+`POST /mcp` exposes 9 tools (3 public + 6 admin) for AI coding assistants — claim history, abuse decisions, stats, and with admin auth: blocklist + send-tx. Discovery: `GET /mcp`. See [docs/mcp.md](https://github.com/PanoramicRum/nimiq-simple-faucet/blob/main/docs/mcp.md) for the full tool catalogue, auth model (session+TOTP step-up vs deprecated static token), and client config snippets.
+
 ## Full reference
 
 Fetch `/openapi.json` for the authoritative schema or `/llms-full.txt` for an LLM-ready flat dump of docs, snippets and decisions.

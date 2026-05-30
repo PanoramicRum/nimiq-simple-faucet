@@ -642,7 +642,9 @@ envelope isn't uniform.
 
 ### 2.3.7 MCP tool docs + schema linkage
 
-**Goal:** an agent integrator can read what `/mcp` exposes without
+**Status:** docs half (a) shipped in v2.3.1 — [docs/mcp.md](docs/mcp.md) enumerates the 3 public + 6 admin tools, their input/output shapes, the resources channel, the auth model (session+TOTP step-up vs deprecated static `FAUCET_ADMIN_MCP_TOKEN`), and client config snippets for Claude Code / Cursor / curl. AGENTS.md + llms.txt link to it. Schema-derivation half (b) — replacing the inline Zod in `apps/server/src/mcp/server.ts` with imports from canonical REST schemas — is the follow-up PR also in v2.3.1.
+
+**Original goal:** an agent integrator can read what `/mcp` exposes without
 introspecting the protocol, and the tool schemas can't drift from the
 REST schemas. Today `AGENTS.md` mentions `/mcp` but doesn't enumerate
 the tools; tool input schemas are inline Zod, not derived from the REST
