@@ -241,7 +241,7 @@ export const ServerConfigSchema = z.object({
 
 export type ServerConfig = z.infer<typeof ServerConfigSchema>;
 
-const ENV_KEYS: Record<string, string> = {
+export const ENV_KEYS: Record<string, string> = {
   host: 'FAUCET_HOST',
   port: 'FAUCET_PORT',
   network: 'FAUCET_NETWORK',
