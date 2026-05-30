@@ -1,10 +1,14 @@
 {
   "name": "@nimiq-faucet/react",
-  "version": "2.3.0",
+  "version": "2.3.1",
   "description": "React hooks for the Nimiq Simple Faucet, built on @nimiq-faucet/sdk.",
   "license": "MIT",
   "author": "Nimiq <richy@nimiq.com>",
-  "repository": { "type": "git", "url": "https://github.com/PanoramicRum/nimiq-simple-faucet.git", "directory": "packages/sdk-react" },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/PanoramicRum/nimiq-simple-faucet.git",
+    "directory": "packages/sdk-react"
+  },
   "homepage": "https://github.com/PanoramicRum/nimiq-simple-faucet/tree/main/packages/sdk-react#readme",
   "type": "module",
   "main": "./dist/index.js",
@@ -15,8 +19,14 @@
       "import": "./dist/index.js"
     }
   },
-  "files": ["dist", "llms.txt", "README.md"],
-  "publishConfig": { "access": "public" },
+  "files": [
+    "dist",
+    "llms.txt",
+    "README.md"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
@@ -33,5 +43,10 @@
     "react": "^19.2.6",
     "typescript": "^6.0.3"
   },
-  "keywords": ["nimiq", "faucet", "react", "hooks"]
+  "keywords": [
+    "nimiq",
+    "faucet",
+    "react",
+    "hooks"
+  ]
 }
