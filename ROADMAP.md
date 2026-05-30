@@ -662,7 +662,9 @@ request schemas.
 
 ### 2.3.8 Generated config reference
 
-**Goal:** a single source for the ~51 `FAUCET_*` env vars instead of
+**Status:** ✅ shipped in v2.3.1. [scripts/generate-config-reference.mts](scripts/generate-config-reference.mts) reads the `ServerConfigSchema` from [apps/server/src/config.ts](apps/server/src/config.ts) at runtime, introspects each Zod field (type, default, constraints, optional/required), parses JSDoc from the source for the description column, and renders [docs/config-reference.md](docs/config-reference.md) — 74 `FAUCET_*` env vars in a single table. Drift is caught by `pnpm pre-merge` (the `config-reference:check` step) on every PR, plus a weekly [.github/workflows/config-reference-drift.yml](.github/workflows/config-reference-drift.yml) cron that opens a PR if the generated output diverges from what's committed. Linked from [AGENTS.md](AGENTS.md) so AI integrators discover it. Field counter ended up at 74, slightly higher than the original estimate (~51) — the schema grew across the v1.x → v2.3 work.
+
+**Original goal:** a single source for the ~51 `FAUCET_*` env vars instead of
 reading `config.ts`, `configView.ts`, `.env.example`, and the dashboard
 form. Narrower than §1.8.2 (issue #58, the full config-catalog refactor)
 — this is just the *reference doc*.
