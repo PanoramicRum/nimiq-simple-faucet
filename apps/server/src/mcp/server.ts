@@ -14,6 +14,10 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { blocklist, claims } from '../db/schema.js';
 import type { AppContext } from '../context.js';
 import { writeAudit } from '../auth/audit.js';
+import {
+  AdminSendRequest,
+  BlocklistCreateRequest,
+} from '../openapi/schemas.js';
 
 /** Identifies who invoked an admin-scoped MCP tool. */
 export type AdminPrincipal =
@@ -50,7 +54,9 @@ export const ALL_TOOLS: readonly string[] = [
   'faucet.explain_decision',
 ];
 
-const BLOCK_KINDS = ['ip', 'address', 'uid', 'asn', 'country'] as const;
+// Block-kind enum is the source of truth in `openapi/schemas.ts`
+// (`BlocklistCreateRequest.shape.kind`). MCP-tool schemas pick it via
+// `.shape` so a new kind added on the REST side propagates here.
 
 /**
  * Enforces the admin-principal policy for a tool call. Throws a plain `Error`
@@ -211,8 +217,12 @@ export function buildMcpServer(ctx: AppContext, opts: BuildMcpServerOptions = {}
     'faucet.send',
     {
       description: 'Send Luna out of the faucet wallet. Admin-scoped.',
+      // `to` derived from `AdminSendRequest` (REST: POST /admin/account/send)
+      // so address-validation changes propagate. `amountLuna` is intentionally
+      // stricter than REST — MCP only accepts a decimal-integer string to
+      // avoid JSON-number precision loss for large Luna amounts.
       inputSchema: {
-        to: z.string().min(1),
+        to: AdminSendRequest.shape.to,
         amountLuna: z.string().regex(/^[0-9]+$/, 'amountLuna must be a decimal integer string'),
       },
     },
@@ -228,12 +238,9 @@ export function buildMcpServer(ctx: AppContext, opts: BuildMcpServerOptions = {}
     'faucet.block_address',
     {
       description: 'Add an entry to the blocklist. Admin-scoped.',
-      inputSchema: {
-        kind: z.enum(BLOCK_KINDS),
-        value: z.string().min(1),
-        reason: z.string().optional(),
-        expiresAt: z.number().int().positive().optional(),
-      },
+      // Derived from `BlocklistCreateRequest` (REST: POST /admin/blocklist)
+      // so the kind enum and length limits stay in sync.
+      inputSchema: BlocklistCreateRequest.shape,
     },
     async ({ kind, value, reason, expiresAt }) => {
       await guard('faucet.block_address');
@@ -253,10 +260,9 @@ export function buildMcpServer(ctx: AppContext, opts: BuildMcpServerOptions = {}
     'faucet.unblock_address',
     {
       description: 'Remove blocklist entries matching (kind, value). Admin-scoped.',
-      inputSchema: {
-        kind: z.enum(BLOCK_KINDS),
-        value: z.string().min(1),
-      },
+      // Same kind+value pair as `BlocklistCreateRequest`; picked so the enum
+      // and length limit don't drift from the canonical schema.
+      inputSchema: BlocklistCreateRequest.pick({ kind: true, value: true }).shape,
     },
     async ({ kind, value }) => {
       await guard('faucet.unblock_address');

@@ -642,7 +642,7 @@ envelope isn't uniform.
 
 ### 2.3.7 MCP tool docs + schema linkage
 
-**Status:** docs half (a) shipped in v2.3.1 — [docs/mcp.md](docs/mcp.md) enumerates the 3 public + 6 admin tools, their input/output shapes, the resources channel, the auth model (session+TOTP step-up vs deprecated static `FAUCET_ADMIN_MCP_TOKEN`), and client config snippets for Claude Code / Cursor / curl. AGENTS.md + llms.txt link to it. Schema-derivation half (b) — replacing the inline Zod in `apps/server/src/mcp/server.ts` with imports from canonical REST schemas — is the follow-up PR also in v2.3.1.
+**Status:** ✅ shipped in v2.3.1. Half (a) — [docs/mcp.md](docs/mcp.md) enumerates the 3 public + 6 admin tools, their input/output shapes, the resources channel, the auth model (session+TOTP step-up vs deprecated static `FAUCET_ADMIN_MCP_TOKEN`), and client config snippets for Claude Code / Cursor / curl. AGENTS.md + llms.txt link to it. Half (b) — `apps/server/src/mcp/server.ts` now derives input schemas for `faucet.send` (picks `to` from `AdminSendRequest`), `faucet.block_address` (full shape from `BlocklistCreateRequest`), and `faucet.unblock_address` (picks `kind`+`value` from `BlocklistCreateRequest`). The kind enum + value-length limits cannot drift; a new block kind added to the REST canonical schema propagates to MCP automatically. Other tools intentionally retain inline schemas where MCP needs different constraints (larger limits, no query-string coercion).
 
 **Original goal:** an agent integrator can read what `/mcp` exposes without
 introspecting the protocol, and the tool schemas can't drift from the
