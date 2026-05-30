@@ -238,9 +238,9 @@ we go the shared-wallet route).
 
 ### 1.2.2 Live `/snippets/<framework>` URLs
 
-**Status:** → absorbed into §3.0.3 (interactive SDK showcase in the playground).
+**Status:** ✅ done by substitution. The `scripts/generate-snippets.mts` generator was never built; the playground SDK showcase (§3.0.3, shipped in v2.2.1) covers the same need with per-framework pages at [playground/frameworks/](apps/playground/frameworks/). Remaining dead `/snippets/` links were cleaned up in §2.3.9.
 
-**Goal:** the "latest working snippet" URL referenced from each integration doc is actually generated and served.
+**Original goal:** the "latest working snippet" URL referenced from each integration doc is actually generated and served.
 
 **Scope:**
 - New `scripts/generate-snippets.mts` at the repo root that:
@@ -678,11 +678,9 @@ form. Narrower than §1.8.2 (issue #58, the full config-catalog refactor)
 
 ### 2.3.9 `/snippets/<framework>` link cleanup
 
-**Goal:** close out §1.2.2. The planned `scripts/generate-snippets.mts`
-never shipped — the work was absorbed into §3.0.3 (the playground SDK
-showcase, which did ship). Audit `docs/`, `apps/docs/`, and AGENTS.md
-for any reference to a live `/snippets/<framework>` URL and point it at
-the playground SDK pages (or drop it). Mark §1.2.2 done-by-substitution.
+**Status:** ✅ shipped in v2.3.1. Dead `/snippets/<framework>` references in [apps/docs/public/llms.txt](apps/docs/public/llms.txt) and [README.md](README.md) were redirected to the live playground SDK pages at `https://panoramicrum.github.io/nimiq-simple-faucet/frameworks/<name>`. Python added to the list (previously only TS/React/Vue/Capacitor/RN/Flutter/Go). §1.2.2 marked done-by-substitution above. While in `llms.txt`, also corrected the public claim response field list to match §2.3.6's uniform reject envelope (removed `decision`, `reason`).
+
+**Original goal:** close out §1.2.2. The planned `scripts/generate-snippets.mts` never shipped — the work was absorbed into §3.0.3 (the playground SDK showcase, which did ship). Audit `docs/`, `apps/docs/`, and AGENTS.md for any reference to a live `/snippets/<framework>` URL and point it at the playground SDK pages (or drop it).
 
 **Estimated effort:** ~30 min.
 

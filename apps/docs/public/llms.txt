@@ -27,18 +27,19 @@ Content-Type: application/json
 }
 ```
 
-Response: `{ id, status, txId?, decision?, reason? }`. Poll `GET /v1/claim/:id` or subscribe to `WS /v1/stream` for confirmation.
+Response: `{ id, status, txId? }`. Poll `GET /v1/claim/:id` or subscribe to `WS /v1/stream` for confirmation. Errors return `{ error, code, message? }` with a stable SCREAMING_SNAKE_CASE `code`.
 
 ## Integration recipes
 
-- TS / Node / browser: [/snippets/typescript](./snippets/typescript)
-- React: [/snippets/react](./snippets/react)
-- Vue 3: [/snippets/vue](./snippets/vue)
-- Capacitor: [/snippets/capacitor](./snippets/capacitor)
-- React Native: [/snippets/react-native](./snippets/react-native)
-- Flutter: [/snippets/flutter](./snippets/flutter)
-- Go backend: [/snippets/go](./snippets/go)
+- TS / Node / browser: [Playground — TypeScript SDK](https://panoramicrum.github.io/nimiq-simple-faucet/frameworks/typescript)
+- React: [Playground — React SDK](https://panoramicrum.github.io/nimiq-simple-faucet/frameworks/react)
+- Vue 3: [Playground — Vue SDK](https://panoramicrum.github.io/nimiq-simple-faucet/frameworks/vue)
+- Capacitor: [Playground — Capacitor SDK](https://panoramicrum.github.io/nimiq-simple-faucet/frameworks/capacitor)
+- React Native: [Playground — React Native SDK](https://panoramicrum.github.io/nimiq-simple-faucet/frameworks/react-native)
+- Flutter: [Playground — Flutter SDK](https://panoramicrum.github.io/nimiq-simple-faucet/frameworks/flutter)
+- Go backend: [Playground — Go SDK](https://panoramicrum.github.io/nimiq-simple-faucet/frameworks/go)
+- Python backend: [Playground — Python SDK](https://panoramicrum.github.io/nimiq-simple-faucet/frameworks/python)
 
 ## Full reference
 
-Fetch `/openapi.json` for the authoritative schema or `/llms-full.txt` for an LLM-ready flat dump of docs, snippets and decisions.
+Fetch `/openapi.json` for the authoritative schema or `/llms-full.txt` for an LLM-ready flat dump of docs and decisions.
