@@ -121,19 +121,32 @@ jobs:
 
       - name: Publish npm packages (public @nimiq-faucet/*)
         env:
-          # Auth handled by Trusted Publishing (npm OIDC). The job-level
-          # `id-token: write` permission lets npm mint the exchange token
-          # automatically — no NPM_TOKEN required. Provenance attestation
-          # is produced for every published tarball.
-          #
-          # Trusted Publishers are configured per-package on npmjs.com:
-          #   Package > Settings > Trusted Publishers > GitHub Actions
-          #     Organization: PanoramicRum
-          #     Repository:   nimiq-simple-faucet
-          #     Workflow:     release.yml
+          # Provenance is signed via GitHub OIDC (job-level `id-token: write`).
+          # That part is independent of how publish is authenticated; provenance
+          # attestation lands on every tarball regardless of the publish-auth
+          # path.
           NPM_CONFIG_PROVENANCE: "true"
+          # Publish auth: granular access token (Bypass 2FA enabled, scope
+          # `@nimiq-faucet`, read-write). Stored as repo secret NPM_TOKEN.
+          # See memory `project_npm_publish_2fa_gotcha` — npm's package access
+          # page no longer offers "Don't require 2FA", so the prior pure-OIDC
+          # path (Trusted Publishers + `id-token: write`) no longer satisfies
+          # the package's 2FA gate. The granular token + Bypass-2FA flag is
+          # the path that the current "Require 2FA or granular token with
+          # bypass 2fa enabled" radio accepts. Rotate the token before
+          # expiry; the prior Trusted Publisher entries are still configured
+          # and harmless (they'd be the path used if "Don't require 2FA"
+          # ever returns to npm).
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           set -euo pipefail
+          # Wire the token into ~/.npmrc so `npm publish` (called under
+          # `pnpm changeset publish`) picks it up. Inline rather than via
+          # `setup-node`'s `registry-url` because this is a monorepo and
+          # we don't want a tracked .npmrc.
+          cat > "$HOME/.npmrc" <<EOF
+          //registry.npmjs.org/:_authToken=$NODE_AUTH_TOKEN
+          EOF
           # Consume pending changesets into version bumps + CHANGELOG.
           pnpm changeset version || true
           # Publish only packages under the @nimiq-faucet scope. Internal
