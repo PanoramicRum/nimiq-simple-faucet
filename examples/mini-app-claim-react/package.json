@@ -14,12 +14,12 @@
     "@nimiq/mini-app-sdk": "^0.1.0",
     "@nimiq-faucet/mini-app-claim-shared": "workspace:*",
     "@nimiq-faucet/sdk": "workspace:*",
-    "react": "^19.2.6",
-    "react-dom": "^19.2.6"
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7"
   },
   "devDependencies": {
     "@testing-library/react": "^16.0.1",
-    "@types/react": "^19.2.15",
+    "@types/react": "^19.2.16",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.0.4",
     "happy-dom": "^20.9.0",
