@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { calculateAutomaticReward, nimToLuna, resolvePayout } from './automatic.js';
+import {
+  calculateAutomaticReward,
+  nimToLuna,
+  resolvePayout,
+  resolveRewardSettings,
+} from './automatic.js';
 
 describe('nimToLuna', () => {
   it('converts NIM to luna (1 NIM = 100_000 luna)', () => {
@@ -70,5 +75,146 @@ describe('resolvePayout', () => {
       resolvePayout({ ...base, automaticRewardsEnabled: true, automaticRewardsBaselineNim: 0 })
         .amountLuna,
     ).toBe(0n);
+  });
+});
+
+describe('calculateAutomaticReward — low-balance scaling', () => {
+  // baseline 10 NIM = 1_000_000 luna; threshold 5 NIM = 500_000 luna.
+  const baseInput = { baselineNim: 10, lowBalanceThresholdNim: 5, lowBalanceReductionPercent: 25 };
+
+  it('reduces the reward by the flat percent when balance is below the threshold', () => {
+    const r = calculateAutomaticReward({ ...baseInput, balanceLuna: 400_000n });
+    expect(r.amount).toBe(750_000n);
+    expect(r.baselineAmount).toBe(1_000_000n);
+    expect(r.adjustments).toEqual([
+      {
+        kind: 'low-balance-scaling',
+        deltaLuna: -250_000n,
+        reason: 'wallet balance below 5 NIM; reward reduced 25%',
+      },
+    ]);
+  });
+
+  it('pays the full baseline when balance is at or above the threshold', () => {
+    expect(calculateAutomaticReward({ ...baseInput, balanceLuna: 600_000n }).amount).toBe(1_000_000n);
+    // exactly at threshold (not strictly below) → no scaling
+    const atThreshold = calculateAutomaticReward({ ...baseInput, balanceLuna: 500_000n });
+    expect(atThreshold.amount).toBe(1_000_000n);
+    expect(atThreshold.adjustments).toEqual([]);
+  });
+
+  it('does NOT scale when the balance is unknown (null/undefined) — RPC-failure safety', () => {
+    expect(calculateAutomaticReward({ ...baseInput, balanceLuna: null }).amount).toBe(1_000_000n);
+    expect(calculateAutomaticReward({ ...baseInput, balanceLuna: undefined }).amount).toBe(1_000_000n);
+    expect(calculateAutomaticReward({ ...baseInput }).adjustments).toEqual([]);
+  });
+
+  it('0% reduction is a no-op', () => {
+    const r = calculateAutomaticReward({
+      baselineNim: 10,
+      lowBalanceThresholdNim: 5,
+      lowBalanceReductionPercent: 0,
+      balanceLuna: 100_000n,
+    });
+    expect(r.amount).toBe(1_000_000n);
+    expect(r.adjustments).toEqual([]);
+  });
+
+  it('100% reduction scales to zero (caller refuses) and records the adjustment', () => {
+    const r = calculateAutomaticReward({
+      baselineNim: 10,
+      lowBalanceThresholdNim: 5,
+      lowBalanceReductionPercent: 100,
+      balanceLuna: 100_000n,
+    });
+    expect(r.amount).toBe(0n);
+    expect(r.adjustments).toHaveLength(1);
+    expect(r.adjustments[0]?.deltaLuna).toBe(-1_000_000n);
+  });
+
+  it('ignores an out-of-range reduction (defensive) — never exceeds the baseline', () => {
+    const over = calculateAutomaticReward({
+      baselineNim: 10,
+      lowBalanceThresholdNim: 5,
+      lowBalanceReductionPercent: 150,
+      balanceLuna: 100_000n,
+    });
+    expect(over.amount).toBe(1_000_000n);
+    expect(over.adjustments).toEqual([]);
+    const negative = calculateAutomaticReward({
+      baselineNim: 10,
+      lowBalanceThresholdNim: 5,
+      lowBalanceReductionPercent: -10,
+      balanceLuna: 100_000n,
+    });
+    expect(negative.amount).toBe(1_000_000n);
+  });
+
+  it('does not scale when the threshold is unset or zero', () => {
+    expect(
+      calculateAutomaticReward({ baselineNim: 10, lowBalanceReductionPercent: 25, balanceLuna: 1n })
+        .amount,
+    ).toBe(1_000_000n);
+    expect(
+      calculateAutomaticReward({
+        baselineNim: 10,
+        lowBalanceThresholdNim: 0,
+        lowBalanceReductionPercent: 25,
+        balanceLuna: 1n,
+      }).amount,
+    ).toBe(1_000_000n);
+  });
+
+  it('truncates the reduced payout DOWN (never over-pays) on fractional luna', () => {
+    // baseline 1.00001 NIM = 100_001 luna; 1% reduction → 99_000.99 → 99_000n
+    const r = calculateAutomaticReward({
+      baselineNim: 1.00001,
+      lowBalanceThresholdNim: 5,
+      lowBalanceReductionPercent: 1,
+      balanceLuna: 1n,
+    });
+    expect(r.baselineAmount).toBe(100_001n);
+    expect(r.amount).toBe(99_000n);
+    expect(r.amount).toBeLessThan(100_001n);
+  });
+});
+
+describe('resolveRewardSettings', () => {
+  const cfg = {
+    automaticRewardsEnabled: true,
+    automaticRewardsBaselineNim: 10,
+    lowBalanceThresholdNim: 20,
+    lowBalanceReductionPercent: 30,
+    claimAmountLuna: 100_000n,
+  };
+
+  it('lets a valid persisted override win over the env default', () => {
+    const s = resolveRewardSettings(cfg, {
+      lowBalanceThresholdNim: 5,
+      lowBalanceReductionPercent: 60,
+    });
+    expect(s.lowBalanceThresholdNim).toBe(5);
+    expect(s.lowBalanceReductionPercent).toBe(60);
+    // enabled + baseline stay env-only
+    expect(s.enabled).toBe(true);
+    expect(s.baselineNim).toBe(10);
+  });
+
+  it('falls back to the env default when an override is malformed / out of range', () => {
+    const s = resolveRewardSettings(cfg, {
+      lowBalanceThresholdNim: 'oops',
+      lowBalanceReductionPercent: 150,
+    });
+    expect(s.lowBalanceThresholdNim).toBe(20);
+    expect(s.lowBalanceReductionPercent).toBe(30);
+  });
+
+  it('returns undefined when neither override nor env default is set', () => {
+    const s = resolveRewardSettings(
+      { automaticRewardsEnabled: false, claimAmountLuna: 100_000n },
+      {},
+    );
+    expect(s.lowBalanceThresholdNim).toBeUndefined();
+    expect(s.lowBalanceReductionPercent).toBeUndefined();
   });
 });

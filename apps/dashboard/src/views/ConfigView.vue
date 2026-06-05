@@ -19,6 +19,8 @@ interface ConfigResponse {
     rateLimitPerIpPerDay: number;
     abuseDenyThreshold: number;
     abuseReviewThreshold: number;
+    lowBalanceThresholdNim: number | null;
+    lowBalanceReductionPercent: number | null;
     layers: LayerFlags;
   };
   overrides: Record<string, unknown>;
@@ -29,6 +31,8 @@ type PatchBody = {
   rateLimitPerIpPerDay?: number;
   abuseDenyThreshold?: number;
   abuseReviewThreshold?: number;
+  lowBalanceThresholdNim?: number;
+  lowBalanceReductionPercent?: number;
   layers?: Partial<LayerFlags>;
 };
 
@@ -43,6 +47,8 @@ const form = reactive({
   rateLimitPerIpPerDay: 50,
   abuseDenyThreshold: 0.8,
   abuseReviewThreshold: 0.5,
+  lowBalanceThresholdNim: 0,
+  lowBalanceReductionPercent: 0,
   layers: {
     turnstile: false,
     hcaptcha: false,
@@ -63,6 +69,8 @@ async function load(): Promise<void> {
     form.rateLimitPerIpPerDay = res.base.rateLimitPerIpPerDay;
     form.abuseDenyThreshold = res.base.abuseDenyThreshold;
     form.abuseReviewThreshold = res.base.abuseReviewThreshold;
+    form.lowBalanceThresholdNim = res.base.lowBalanceThresholdNim ?? 0;
+    form.lowBalanceReductionPercent = res.base.lowBalanceReductionPercent ?? 0;
     form.layers = { ...res.base.layers };
     overrides.value = res.overrides;
     error.value = null;
@@ -84,10 +92,12 @@ async function onSave(): Promise<void> {
       rateLimitPerIpPerDay: Number(form.rateLimitPerIpPerDay),
       abuseDenyThreshold: Number(form.abuseDenyThreshold),
       abuseReviewThreshold: Number(form.abuseReviewThreshold),
+      lowBalanceThresholdNim: Number(form.lowBalanceThresholdNim),
+      lowBalanceReductionPercent: Number(form.lowBalanceReductionPercent),
       layers: { ...form.layers },
     };
     const res = await api.patch<{ ok: true; persistedKeys: string[] }>('/admin/config', body);
-    status.value = `Saved: ${res.persistedKeys.join(', ')}. Layer toggles take effect immediately; other settings need a restart.`;
+    status.value = `Saved: ${res.persistedKeys.join(', ')}. Layer toggles and low-balance reward settings take effect immediately; other settings need a restart.`;
     await load();
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'failed';
@@ -110,9 +120,10 @@ onMounted(load);
       class="rounded-md border border-[color:var(--color-warning)]/30 bg-[color:var(--color-warning)]/10 p-3 text-sm"
       role="note"
     >
-      <strong>Abuse-layer toggles</strong> (fingerprint, on-chain, AI) take effect immediately on
-      Save. Other settings (claim amount, rate limits, thresholds) are persisted but require a
-      container restart to apply.
+      <strong>Abuse-layer toggles</strong> (fingerprint, on-chain, AI) and the
+      <strong>low-balance reward settings</strong> take effect immediately on Save. Other settings
+      (claim amount, rate limits, abuse thresholds) are persisted but require a container restart to
+      apply.
     </div>
 
     <p
@@ -169,6 +180,31 @@ onMounted(load);
             step="0.01"
             required
           />
+        </label>
+        <label class="flex flex-col gap-1 text-xs">
+          <span>Low-balance threshold (NIM)</span>
+          <input
+            v-model.number="form.lowBalanceThresholdNim"
+            class="input font-mono"
+            type="number"
+            min="0"
+            step="1"
+            required
+          />
+          <span class="muted">Reward scaling starts when the wallet drops below this. 0 disables it.</span>
+        </label>
+        <label class="flex flex-col gap-1 text-xs">
+          <span>Reward reduction below threshold (%)</span>
+          <input
+            v-model.number="form.lowBalanceReductionPercent"
+            class="input font-mono"
+            type="number"
+            min="0"
+            max="100"
+            step="1"
+            required
+          />
+          <span class="muted">Flat reduction applied while below the threshold. 100 pauses payouts.</span>
         </label>
       </div>
 

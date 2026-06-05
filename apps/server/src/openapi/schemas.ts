@@ -290,6 +290,10 @@ export const AdminConfigPatch = registry.register(
       rateLimitPerIpPerDay: z.number().int().min(1).max(10_000).optional(),
       abuseDenyThreshold: z.number().min(0).max(1).optional(),
       abuseReviewThreshold: z.number().min(0).max(1).optional(),
+      // Low-balance reward scaling — applied live (read per payout from
+      // runtime_config). Threshold in NIM; reduction is a flat percent.
+      lowBalanceThresholdNim: z.number().min(0).optional(),
+      lowBalanceReductionPercent: z.number().min(0).max(100).optional(),
       layers: z
         .object({
           turnstile: z.boolean().optional(),
@@ -314,6 +318,10 @@ export const AdminConfigResponse = registry.register(
       rateLimitPerIpPerDay: z.number().int(),
       abuseDenyThreshold: z.number(),
       abuseReviewThreshold: z.number(),
+      // Effective low-balance reward settings (override merged over env default);
+      // null when unset. Threshold in NIM, reduction as a flat percent.
+      lowBalanceThresholdNim: z.number().nullable(),
+      lowBalanceReductionPercent: z.number().nullable(),
       layers: z.record(z.string(), z.boolean()),
     }),
     overrides: z.record(z.string(), z.unknown()),

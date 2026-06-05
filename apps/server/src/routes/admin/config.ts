@@ -2,8 +2,10 @@
  * Admin config GET/PATCH.
  *
  * Layer toggles (fingerprint, onchain, AI) take effect immediately on PATCH —
- * the abuse pipeline is rebuilt in memory. Other overrides (claim amount, rate
- * limit thresholds) are persisted but require a restart to apply.
+ * the abuse pipeline is rebuilt in memory. The low-balance reward keys
+ * (lowBalanceThresholdNim, lowBalanceReductionPercent) also apply live: the
+ * claim handler reads them from `runtime_config` per payout. Other overrides
+ * (claim amount, rate-limit thresholds) are persisted but require a restart.
  */
 import type { FastifyInstance } from 'fastify';
 import { eq } from 'drizzle-orm';
@@ -14,25 +16,13 @@ import { writeAudit } from '../../auth/audit.js';
 import { requireAdminCsrf } from '../../auth/middleware.js';
 import { AdminConfigPatch as PatchBody } from '../../openapi/schemas.js';
 import { deriveAdminConfigBase } from '../../configView.js';
-
-async function readOverrides(ctx: AppContext): Promise<Record<string, unknown>> {
-  const rows = await ctx.db.select().from(runtimeConfig);
-  const out: Record<string, unknown> = {};
-  for (const r of rows) {
-    try {
-      out[r.key] = JSON.parse(r.valueJson);
-    } catch {
-      // skip malformed row
-    }
-  }
-  return out;
-}
+import { readRuntimeOverrides } from '../../runtimeConfig.js';
 
 export async function adminConfigRoutes(app: FastifyInstance, ctx: AppContext): Promise<void> {
-  app.get('/admin/config', async () => ({
-    base: deriveAdminConfigBase(ctx.config),
-    overrides: await readOverrides(ctx),
-  }));
+  app.get('/admin/config', async () => {
+    const overrides = await readRuntimeOverrides(ctx.db);
+    return { base: deriveAdminConfigBase(ctx.config, overrides), overrides };
+  });
 
   app.patch(
     '/admin/config',
@@ -58,7 +48,7 @@ export async function adminConfigRoutes(app: FastifyInstance, ctx: AppContext): 
       }
       // Rebuild the abuse pipeline with the new layer overrides so they
       // take effect immediately without a restart.
-      const allOverrides = await readOverrides(ctx);
+      const allOverrides = await readRuntimeOverrides(ctx.db);
       const layers = (allOverrides.layers ?? {}) as Record<string, boolean>;
       ctx.pipeline = buildPipeline(ctx.db, ctx.config, ctx.driver, {
         fingerprintEnabled: layers.fingerprint,

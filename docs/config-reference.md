@@ -11,7 +11,7 @@ Every `FAUCET_*` environment variable accepted by the server, with type, default
 - Runtime overrides via `PATCH /admin/config` (claim amount, rate limit, abuse thresholds, layer toggles) — see [`apps/server/src/routes/admin/config.ts`](../apps/server/src/routes/admin/config.ts) and the `AdminConfigPatch` schema in [`apps/server/src/openapi/schemas.ts`](../apps/server/src/openapi/schemas.ts).
 - The public derivation served at `GET /v1/config` — see [`apps/server/src/configView.ts`](../apps/server/src/configView.ts).
 
-## All variables (76)
+## All variables (78)
 
 | Env var | Type | Default | Constraints | Required | Description |
 |---|---|---|---|---|---|
@@ -32,6 +32,8 @@ Every `FAUCET_*` environment variable accepted by the server, with type, default
 | `FAUCET_MIN_BALANCE_LUNA` | bigint | — | — |  | Minimum wallet balance (in luna) the faucet must hold for `/readyz` to report healthy. Below this, `/readyz` returns 503 so Kubernetes stops routing traffic to a faucet that's about to run dry. Optional — when unset, balance is reported informationally and never fails the probe (preserves the original §1.0 behaviour). Recommended floor: ~10 × `claimAmountLuna` so the probe trips before the wallet actually empties. |
 | `FAUCET_AUTOMATIC_REWARDS_ENABLED` | boolean | `false` | — |  | Automatic reward mode (§ Phase 1). When true, the faucet derives every payout from `automaticRewardsBaselineNim` instead of the fixed `claimAmountLuna`, and any amount a developer app sends is ignored. The foundation for a future criteria-driven reward system (boosts, repeat-user reductions, low-balance scaling, whitelists). Default off. |
 | `FAUCET_AUTOMATIC_REWARDS_BASELINE_NIM` | number | — | — |  | Baseline automatic-mode payout, in NIM (1 NIM = 100_000 luna). Used for every valid claim when `automaticRewardsEnabled` is true. Intentionally NOT constrained to > 0 here: an invalid value (missing/zero/negative) is handled at request time as an opaque rejection plus a non-fatal boot warning, never a fatal config-parse error — so a misconfigured faucet still boots and does not leak its state to clients. |
+| `FAUCET_LOW_BALANCE_THRESHOLD_NIM` | number | — | min: 0 |  | Low-balance reward scaling threshold, in NIM. When automatic mode is on and the wallet balance drops below this, each reward is reduced by `lowBalanceReductionPercent`. This is the env DEFAULT; an admin can override it live from the dashboard (persisted in `runtime_config`, read per payout). Unset (or ≤ 0) disables low-balance scaling. |
+| `FAUCET_LOW_BALANCE_REDUCTION_PERCENT` | number | — | min: 0, max: 100 |  | Flat percent (0–100) by which rewards are reduced while the wallet balance is below `lowBalanceThresholdNim`. 100 pauses payouts (a reward of zero is refused opaquely). Env DEFAULT; admin-overridable live from the dashboard. |
 | `FAUCET_RATE_LIMIT_PER_MINUTE` | integer | `30` | min: 1 |  | — |
 | `FAUCET_RATE_LIMIT_PER_IP_PER_DAY` | integer | `5` | min: 1 |  | — |
 | `FAUCET_TURNSTILE_SITE_KEY` | string | — | — |  | — |
