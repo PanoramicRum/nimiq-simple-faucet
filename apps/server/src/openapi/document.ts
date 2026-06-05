@@ -260,7 +260,9 @@ function registerRoutes(): void {
     path: '/admin/config',
     tags: ['Admin'],
     summary: 'Persist runtime config overrides',
-    description: 'NOTE(M3): persisted but not yet hot-reloaded into live traffic.',
+    description:
+      'Persists runtime config overrides. Abuse-layer toggles and the low-balance reward keys ' +
+      '(lowBalanceThresholdNim, lowBalanceReductionPercent) apply live; other keys require a restart.',
     security: [{ adminSession: [] }],
     request: { body: { content: jsonContent(AdminConfigPatch) } },
     responses: { 200: { description: 'Persisted', content: jsonContent(OkResponse) } },

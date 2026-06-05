@@ -8,7 +8,7 @@
  */
 import type { ServerConfig } from './config.js';
 import { THEMES, isKnownTheme, DEFAULT_THEME } from './themes.js';
-import { resolvePayout } from './rewards/automatic.js';
+import { resolvePayout, resolveRewardSettings } from './rewards/automatic.js';
 
 /**
  * The amount (Luna) a successful claim actually pays right now, for display in
@@ -103,12 +103,21 @@ export function deriveUi(config: ServerConfig) {
   return ui;
 }
 
-export function deriveAdminConfigBase(config: ServerConfig) {
+export function deriveAdminConfigBase(
+  config: ServerConfig,
+  overrides: Record<string, unknown> = {},
+) {
+  // Effective low-balance settings = persisted admin override merged over the
+  // env default (override wins). Surfaced so the dashboard shows what's actually
+  // in force, not just the boot-time env value.
+  const reward = resolveRewardSettings(config, overrides);
   return {
     claimAmountLuna: effectivePayoutLuna(config).toString(),
     rateLimitPerIpPerDay: config.rateLimitPerIpPerDay,
     abuseDenyThreshold: config.aiDenyThreshold,
     abuseReviewThreshold: config.aiReviewThreshold,
+    lowBalanceThresholdNim: reward.lowBalanceThresholdNim ?? null,
+    lowBalanceReductionPercent: reward.lowBalanceReductionPercent ?? null,
     layers: deriveAbuseLayers(config),
   };
 }

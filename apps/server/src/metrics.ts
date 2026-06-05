@@ -30,6 +30,13 @@ export const driverReady = new Gauge({
   registers: [registry],
 });
 
+export const rewardAdjustmentsTotal = new Counter({
+  name: 'faucet_reward_adjustments_total',
+  help: 'Reward adjustments applied to paid automatic-mode claims, by kind (e.g. low-balance-scaling)',
+  labelNames: ['kind'] as const,
+  registers: [registry],
+});
+
 export const reconcilerFlips = new Counter({
   name: 'faucet_reconciler_flips_total',
   help: 'Claims reconciled from broadcast to a terminal state',

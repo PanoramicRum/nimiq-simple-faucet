@@ -49,6 +49,20 @@ export const ServerConfigSchema = z.object({
    * not leak its state to clients.
    */
   automaticRewardsBaselineNim: z.coerce.number().optional(),
+  /**
+   * Low-balance reward scaling threshold, in NIM. When automatic mode is on and
+   * the wallet balance drops below this, each reward is reduced by
+   * `lowBalanceReductionPercent`. This is the env DEFAULT; an admin can override
+   * it live from the dashboard (persisted in `runtime_config`, read per payout).
+   * Unset (or ≤ 0) disables low-balance scaling.
+   */
+  lowBalanceThresholdNim: z.coerce.number().min(0).optional(),
+  /**
+   * Flat percent (0–100) by which rewards are reduced while the wallet balance
+   * is below `lowBalanceThresholdNim`. 100 pauses payouts (a reward of zero is
+   * refused opaquely). Env DEFAULT; admin-overridable live from the dashboard.
+   */
+  lowBalanceReductionPercent: z.coerce.number().min(0).max(100).optional(),
   rateLimitPerMinute: z.coerce.number().int().min(1).default(30),
   rateLimitPerIpPerDay: z.coerce.number().int().min(1).default(5),
 
@@ -279,6 +293,8 @@ export const ENV_KEYS: Record<string, string> = {
   minBalanceLuna: 'FAUCET_MIN_BALANCE_LUNA',
   automaticRewardsEnabled: 'FAUCET_AUTOMATIC_REWARDS_ENABLED',
   automaticRewardsBaselineNim: 'FAUCET_AUTOMATIC_REWARDS_BASELINE_NIM',
+  lowBalanceThresholdNim: 'FAUCET_LOW_BALANCE_THRESHOLD_NIM',
+  lowBalanceReductionPercent: 'FAUCET_LOW_BALANCE_REDUCTION_PERCENT',
   rateLimitPerMinute: 'FAUCET_RATE_LIMIT_PER_MINUTE',
   rateLimitPerIpPerDay: 'FAUCET_RATE_LIMIT_PER_IP_PER_DAY',
   turnstileSiteKey: 'FAUCET_TURNSTILE_SITE_KEY',
