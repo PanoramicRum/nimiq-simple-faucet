@@ -8,6 +8,20 @@
  */
 import type { ServerConfig } from './config.js';
 import { THEMES, isKnownTheme, DEFAULT_THEME } from './themes.js';
+import { resolvePayout } from './rewards/automatic.js';
+
+/**
+ * The amount (Luna) a successful claim actually pays right now, for display in
+ * the public/admin config. In automatic mode with a valid baseline this is the
+ * baseline; otherwise the fixed `claimAmountLuna`. A misconfigured automatic
+ * baseline (resolves to 0n) falls back to `claimAmountLuna` so the public hint
+ * stays sensible — the misconfig is surfaced via a boot warning + server logs,
+ * not here.
+ */
+export function effectivePayoutLuna(config: ServerConfig): bigint {
+  const { amountLuna } = resolvePayout(config);
+  return amountLuna > 0n ? amountLuna : config.claimAmountLuna;
+}
 
 export function deriveAbuseLayers(config: ServerConfig) {
   return {
@@ -23,10 +37,11 @@ export function deriveAbuseLayers(config: ServerConfig) {
 }
 
 export function derivePublicConfig(config: ServerConfig) {
+  const payoutLuna = effectivePayoutLuna(config);
   return {
     network: config.network,
-    claimAmountLuna: config.claimAmountLuna.toString(),
-    claimAmountNim: (Number(config.claimAmountLuna) / 100_000).toString(),
+    claimAmountLuna: payoutLuna.toString(),
+    claimAmountNim: (Number(payoutLuna) / 100_000).toString(),
     abuseLayers: deriveAbuseLayers(config),
     captcha: config.turnstileSiteKey
       ? { provider: 'turnstile' as const, siteKey: config.turnstileSiteKey }
@@ -90,7 +105,7 @@ export function deriveUi(config: ServerConfig) {
 
 export function deriveAdminConfigBase(config: ServerConfig) {
   return {
-    claimAmountLuna: config.claimAmountLuna.toString(),
+    claimAmountLuna: effectivePayoutLuna(config).toString(),
     rateLimitPerIpPerDay: config.rateLimitPerIpPerDay,
     abuseDenyThreshold: config.aiDenyThreshold,
     abuseReviewThreshold: config.aiReviewThreshold,

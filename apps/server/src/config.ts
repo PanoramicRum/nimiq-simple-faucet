@@ -31,6 +31,24 @@ export const ServerConfigSchema = z.object({
    * before the wallet actually empties.
    */
   minBalanceLuna: z.coerce.bigint().optional(),
+
+  /**
+   * Automatic reward mode (§ Phase 1). When true, the faucet derives every
+   * payout from `automaticRewardsBaselineNim` instead of the fixed
+   * `claimAmountLuna`, and any amount a developer app sends is ignored. The
+   * foundation for a future criteria-driven reward system (boosts, repeat-user
+   * reductions, low-balance scaling, whitelists). Default off.
+   */
+  automaticRewardsEnabled: z.coerce.boolean().default(false),
+  /**
+   * Baseline automatic-mode payout, in NIM (1 NIM = 100_000 luna). Used for
+   * every valid claim when `automaticRewardsEnabled` is true. Intentionally NOT
+   * constrained to > 0 here: an invalid value (missing/zero/negative) is handled
+   * at request time as an opaque rejection plus a non-fatal boot warning, never
+   * a fatal config-parse error — so a misconfigured faucet still boots and does
+   * not leak its state to clients.
+   */
+  automaticRewardsBaselineNim: z.coerce.number().optional(),
   rateLimitPerMinute: z.coerce.number().int().min(1).default(30),
   rateLimitPerIpPerDay: z.coerce.number().int().min(1).default(5),
 
@@ -259,6 +277,8 @@ export const ENV_KEYS: Record<string, string> = {
   keyPassphrase: 'FAUCET_KEY_PASSPHRASE',
   claimAmountLuna: 'FAUCET_CLAIM_AMOUNT_LUNA',
   minBalanceLuna: 'FAUCET_MIN_BALANCE_LUNA',
+  automaticRewardsEnabled: 'FAUCET_AUTOMATIC_REWARDS_ENABLED',
+  automaticRewardsBaselineNim: 'FAUCET_AUTOMATIC_REWARDS_BASELINE_NIM',
   rateLimitPerMinute: 'FAUCET_RATE_LIMIT_PER_MINUTE',
   rateLimitPerIpPerDay: 'FAUCET_RATE_LIMIT_PER_IP_PER_DAY',
   turnstileSiteKey: 'FAUCET_TURNSTILE_SITE_KEY',

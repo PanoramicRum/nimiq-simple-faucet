@@ -21,6 +21,7 @@ import { applyHardening, buildRedactPaths } from './hardening.js';
 import type { AppContext } from './context.js';
 import { registry, driverReady, walletBalance } from './metrics.js';
 import { EventRing } from './events.js';
+import { nimToLuna } from './rewards/automatic.js';
 
 export interface BuildAppOptions {
   /** Replace the Nimiq driver (useful for tests). */
@@ -148,6 +149,18 @@ export async function buildApp(
         'session+TOTP auth (see SECURITY.md "Trust-boundary model" → admin auth) and ' +
         'set FAUCET_ADMIN_MCP_ALLOW_STATIC_TOKEN=false to silence this warning. The ' +
         'default will flip to false in an upcoming release.',
+    );
+  }
+
+  // Automatic reward mode is enabled but the baseline is missing/zero/negative.
+  // Don't crash — a misconfigured faucet must still boot and stay opaque to
+  // clients (claims are refused at request time via the same shape as an abuse
+  // denial). Surface a single, non-fatal boot WARN so operators notice.
+  if (config.automaticRewardsEnabled && nimToLuna(config.automaticRewardsBaselineNim) <= 0n) {
+    app.log.warn(
+      'FAUCET_AUTOMATIC_REWARDS_ENABLED=true but FAUCET_AUTOMATIC_REWARDS_BASELINE_NIM is ' +
+        'missing, zero, or negative. Automatic-mode claims will be refused until a positive ' +
+        'baseline (in NIM) is set.',
     );
   }
 
