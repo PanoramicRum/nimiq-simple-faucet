@@ -16,6 +16,7 @@ import { verifyIntegratorRequest, type IntegratorKey } from '../hmac.js';
 import { claimsTotal, claimDuration } from '../metrics.js';
 import { ClaimRequest as ClaimRequestSchema } from '../openapi/schemas.js';
 import { derivePublicConfig } from '../configView.js';
+import { resolvePayout } from '../rewards/automatic.js';
 
 // Extend the shared OpenAPI schema with the backwards-compat transform.
 const ClaimBody = ClaimRequestSchema.transform(({ powSolution, hashcashSolution, ...rest }) => ({
@@ -136,6 +137,14 @@ export async function claimRoutes(app: FastifyInstance, ctx: AppContext): Promis
       await padRejectDelay(requestStart, T_min);
       return reply.code(400).send({ error: 'invalid request', code: 'INVALID_REQUEST' });
     }
+
+    // Resolve the payout amount once. Automatic mode OFF (default) → the fixed
+    // operator-configured `claimAmountLuna` (today's behaviour, unchanged).
+    // Automatic mode ON → the configured baseline; any amount a developer app
+    // sends is already ignored (the request schema has no `amount` field).
+    // Every amount the handler records or sends flows through this single seam,
+    // so deny/challenge/error rows stay consistent with what would have paid.
+    const payout = resolvePayout(ctx.config);
 
     let integratorId: string | undefined;
     let hostContextVerified = false;
@@ -286,7 +295,7 @@ export async function claimRoutes(app: FastifyInstance, ctx: AppContext): Promis
       await ctx.db.insert(claims).values({
         id,
         address,
-        amountLuna: ctx.config.claimAmountLuna.toString(),
+        amountLuna: payout.amountLuna.toString(),
         status: 'rejected',
         ip: req.ip,
         userAgent: claimReq.userAgent ?? null,
@@ -314,7 +323,7 @@ export async function claimRoutes(app: FastifyInstance, ctx: AppContext): Promis
       await ctx.db.insert(claims).values({
         id,
         address,
-        amountLuna: ctx.config.claimAmountLuna.toString(),
+        amountLuna: payout.amountLuna.toString(),
         status: 'challenged',
         ip: req.ip,
         userAgent: claimReq.userAgent ?? null,
@@ -335,6 +344,62 @@ export async function claimRoutes(app: FastifyInstance, ctx: AppContext): Promis
       });
     }
 
+    // Automatic-mode payout guard. The pipeline has allowed this claim; now
+    // confirm the resolved amount is actually payable. A misconfigured baseline
+    // (missing/zero/negative) or an amount the wallet can't cover must NOT pay
+    // out — but it also must not reveal itself: log the real reason server-side
+    // and return the SAME opaque reject shape (+ timing pad) as an abuse denial,
+    // so a client can't probe the misconfiguration. Explicit mode keeps its
+    // existing behaviour (no claim-time amount/balance gate).
+    if (ctx.config.automaticRewardsEnabled) {
+      let refusal: string | null = null;
+      if (payout.amountLuna <= 0n) {
+        refusal = 'automatic_reward_baseline_invalid';
+        req.log.error(
+          { baselineNim: ctx.config.automaticRewardsBaselineNim },
+          'automatic reward baseline is missing/zero/negative; refusing payout',
+        );
+      } else {
+        // Best-effort balance check: skip on a transient getBalance() failure
+        // (the send try/catch below still catches a truly insufficient send),
+        // so an RPC blip never blocks an otherwise-valid payout.
+        let balance: bigint | null = null;
+        try {
+          balance = await ctx.driver.getBalance();
+        } catch {
+          balance = null;
+        }
+        if (balance !== null && payout.amountLuna > balance) {
+          refusal = 'automatic_reward_exceeds_balance';
+          req.log.error(
+            { amountLuna: payout.amountLuna.toString(), balance: balance.toString() },
+            'automatic reward exceeds available balance; refusing payout',
+          );
+        }
+      }
+      if (refusal) {
+        await decrementIpCounter(ctx.db, req.ip, now);
+        await ctx.db.insert(claims).values({
+          id,
+          address,
+          amountLuna: payout.amountLuna.toString(),
+          status: 'rejected',
+          ip: req.ip,
+          userAgent: claimReq.userAgent ?? null,
+          integratorId: integratorId ?? null,
+          abuseScore: Math.round(evaluation.score * 1000),
+          decision: 'allow',
+          signalsJson: JSON.stringify(evaluation.signals),
+          rejectionReason: refusal,
+          idempotencyKey: parsed.data.idempotencyKey ?? null,
+        });
+        claimsTotal.inc({ status: 'rejected', decision: 'allow' });
+        claimDuration.observe({ phase: 'total' }, (Date.now() - now) / 1000);
+        await padRejectDelay(requestStart, T_min);
+        return reply.code(403).send({ id, status: 'rejected' });
+      }
+    }
+
     // allow — lock per address to prevent duplicate txIds from concurrent
     // requests (the Nimiq node deduplicates identical mempool transactions,
     // so two sends with the same params return the same hash). See #50.
@@ -348,7 +413,7 @@ export async function claimRoutes(app: FastifyInstance, ctx: AppContext): Promis
     inflightClaims.add(address);
     let txId: string;
     try {
-      txId = await ctx.driver.send(address, ctx.config.claimAmountLuna);
+      txId = await ctx.driver.send(address, payout.amountLuna);
     } catch (err) {
       inflightClaims.delete(address);
       await decrementIpCounter(ctx.db, req.ip, now);
@@ -365,7 +430,7 @@ export async function claimRoutes(app: FastifyInstance, ctx: AppContext): Promis
       await ctx.db.insert(claims).values({
         id,
         address,
-        amountLuna: ctx.config.claimAmountLuna.toString(),
+        amountLuna: payout.amountLuna.toString(),
         status: 'timeout',
         ip: req.ip,
         userAgent: claimReq.userAgent ?? null,
@@ -402,6 +467,22 @@ export async function claimRoutes(app: FastifyInstance, ctx: AppContext): Promis
       idempotencyKey: parsed.data.idempotencyKey ?? null,
     });
     inflightClaims.delete(address);
+    // Automatic-mode payout: record the reward decision in the log for the audit
+    // trail. finalAmount is already persisted via the `amountLuna` column above
+    // (it equals the baseline in Phase 1).
+    // TODO(phase-2): persist rewardMode / baselineAmount / adjustments to a
+    // dedicated `rewardMetaJson` claims column once the adjustment engine lands.
+    if (payout.reward) {
+      req.log.info(
+        {
+          rewardMode: payout.reward.rewardMode,
+          baselineAmountLuna: payout.reward.baselineAmount.toString(),
+          adjustments: payout.reward.adjustments,
+          finalAmountLuna: payout.amountLuna.toString(),
+        },
+        'automatic reward payout',
+      );
+    }
     // IP counter was already incremented before the pipeline (see #52 fix above).
     claimsTotal.inc({ status: 'broadcast', decision: 'allow' });
     claimDuration.observe({ phase: 'total' }, (Date.now() - now) / 1000);

@@ -104,13 +104,15 @@ function describeZod(schema: z.ZodTypeAny): {
       const isInt = fmt === 'safeint' || fmt === 'int32' || fmt === 'int';
       typeLabel = isInt ? 'integer' : 'number';
       // Suppress Zod 4's implicit safeint cap (Number.MAX_SAFE_INTEGER) and
-      // its implicit min — these aren't real constraints the source author wrote.
+      // its implicit min — these aren't real constraints the source author
+      // wrote. Likewise an unconstrained `z.number()` reports ±Infinity bounds;
+      // those aren't author constraints either, so skip any non-finite bound.
       const SAFE_MAX = Number.MAX_SAFE_INTEGER;
       const SAFE_MIN = -SAFE_MAX;
-      if (current.minValue != null && current.minValue !== SAFE_MIN) {
+      if (current.minValue != null && current.minValue !== SAFE_MIN && Number.isFinite(current.minValue)) {
         constraints.push(`min: ${formatNumberRaw(current.minValue)}`);
       }
-      if (current.maxValue != null && current.maxValue !== SAFE_MAX) {
+      if (current.maxValue != null && current.maxValue !== SAFE_MAX && Number.isFinite(current.maxValue)) {
         constraints.push(`max: ${formatNumberRaw(current.maxValue)}`);
       }
       break;
