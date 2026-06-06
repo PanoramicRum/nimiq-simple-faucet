@@ -32,11 +32,21 @@ export function migrationStatements(dialect: Dialect): string[] {
       decision TEXT NOT NULL,
       signals_json TEXT NOT NULL DEFAULT '{}',
       rejection_reason TEXT,
-      idempotency_key TEXT
+      idempotency_key TEXT,
+      fingerprint_visitor_id TEXT,
+      host_uid TEXT
     )`,
     'CREATE INDEX IF NOT EXISTS idx_claims_created_at ON claims(created_at DESC)',
     'CREATE INDEX IF NOT EXISTS idx_claims_address ON claims(address)',
     'CREATE INDEX IF NOT EXISTS idx_claims_ip ON claims(ip)',
+    // First-time-boost detection dimensions (opt-in). Partial indexes keep them
+    // tiny — only claims that actually carried the signal are indexed.
+    `CREATE INDEX IF NOT EXISTS idx_claims_fp_visitor
+      ON claims(fingerprint_visitor_id)
+      WHERE fingerprint_visitor_id IS NOT NULL`,
+    `CREATE INDEX IF NOT EXISTS idx_claims_host_uid
+      ON claims(host_uid)
+      WHERE host_uid IS NOT NULL`,
     // #86: idempotency was previously keyed by `idempotency_key` alone,
     // letting callers across unrelated integrators collide on the same
     // string and read each other's claim status. Drop the global index

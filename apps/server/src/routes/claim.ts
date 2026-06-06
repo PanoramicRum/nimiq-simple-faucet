@@ -21,6 +21,7 @@ import {
   resolvePayout,
   resolveRewardSettings,
 } from '../rewards/automatic.js';
+import { isFirstTimeClaimant } from '../rewards/firstTime.js';
 import { readRuntimeOverrides } from '../runtimeConfig.js';
 
 // Extend the shared OpenAPI schema with the backwards-compat transform.
@@ -292,6 +293,13 @@ export async function claimRoutes(app: FastifyInstance, ctx: AppContext): Promis
       requestedAt: now,
     };
 
+    // Identity signals recorded on every claim row for first-time-boost
+    // detection. `hostUid` is recorded ONLY when the host context was
+    // HMAC-verified — a forgeable/unverified uid must never enter the table
+    // (it would let an attacker poison detection or grief a victim's boost).
+    const fingerprintVisitorId = parsed.data.fingerprint?.visitorId ?? null;
+    const hostUid = hostContextVerified ? (parsed.data.hostContext?.uid ?? null) : null;
+
     const evaluation = await ctx.pipeline.evaluate(claimReq);
     const id = nanoid();
 
@@ -380,10 +388,27 @@ export async function claimRoutes(app: FastifyInstance, ctx: AppContext): Promis
         balance = null;
       }
 
+      // First-time-boost detection. Only run the lookup when a boost is actually
+      // configured (zero-cost path otherwise). The current claim isn't inserted
+      // until after the send below, so it can't match itself.
+      let isFirstTime = false;
+      if ((settings.firstTimeBoostPercent ?? 0) > 0) {
+        isFirstTime = await isFirstTimeClaimant(ctx.db, {
+          ip: req.ip,
+          address,
+          fingerprintVisitorId,
+          hostUid,
+          useFingerprint: settings.firstTimeBoostUseFingerprint,
+          useUid: settings.firstTimeBoostUseUid,
+        });
+      }
+
       const reward = calculateAutomaticReward({
         baselineNim: settings.baselineNim,
         lowBalanceThresholdNim: settings.lowBalanceThresholdNim,
         lowBalanceReductionPercent: settings.lowBalanceReductionPercent,
+        firstTimeBoostPercent: settings.firstTimeBoostPercent,
+        isFirstTime,
         balanceLuna: balance,
       });
       finalPayout = { amountLuna: reward.amount, reward };
@@ -500,6 +525,10 @@ export async function claimRoutes(app: FastifyInstance, ctx: AppContext): Promis
       decision: 'allow',
       signalsJson: JSON.stringify(evaluation.signals),
       idempotencyKey: parsed.data.idempotencyKey ?? null,
+      // Recorded on the paid row so a later claim's first-time detection can
+      // match this identity. (Detection only reads decision='allow' + txId rows.)
+      fingerprintVisitorId,
+      hostUid,
     });
     inflightClaims.delete(address);
     // Automatic-mode payout: record the reward decision in the log for the audit

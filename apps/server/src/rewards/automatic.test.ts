@@ -179,23 +179,103 @@ describe('calculateAutomaticReward — low-balance scaling', () => {
   });
 });
 
+describe('calculateAutomaticReward — first-time boost', () => {
+  // baseline 10 NIM = 1_000_000 luna.
+  it('boosts a first-time claimant when the wallet is not low (no threshold configured)', () => {
+    const r = calculateAutomaticReward({ baselineNim: 10, firstTimeBoostPercent: 50, isFirstTime: true });
+    expect(r.amount).toBe(1_500_000n);
+    expect(r.adjustments).toEqual([
+      { kind: 'first-time-boost', deltaLuna: 500_000n, reason: 'first-time claimant; reward boosted 50%' },
+    ]);
+  });
+
+  it('boosts when first-time and balance is at/above the threshold', () => {
+    const r = calculateAutomaticReward({
+      baselineNim: 10,
+      firstTimeBoostPercent: 50,
+      isFirstTime: true,
+      lowBalanceThresholdNim: 20,
+      balanceLuna: 5_000_000n, // >= 20 NIM threshold
+    });
+    expect(r.amount).toBe(1_500_000n);
+  });
+
+  it('does not boost a returning claimant or when the boost is 0/undefined', () => {
+    expect(calculateAutomaticReward({ baselineNim: 10, firstTimeBoostPercent: 50, isFirstTime: false }).amount).toBe(1_000_000n);
+    expect(calculateAutomaticReward({ baselineNim: 10, firstTimeBoostPercent: 0, isFirstTime: true }).amount).toBe(1_000_000n);
+    expect(calculateAutomaticReward({ baselineNim: 10, isFirstTime: true }).amount).toBe(1_000_000n);
+  });
+
+  // Key decision: the boost is suppressed while the wallet is low; the
+  // low-balance pause is preserved even for first-time claimants.
+  it('suppresses the boost while the wallet is below the threshold (only reduction applies)', () => {
+    const r = calculateAutomaticReward({
+      baselineNim: 10,
+      firstTimeBoostPercent: 50,
+      isFirstTime: true,
+      lowBalanceThresholdNim: 20,
+      lowBalanceReductionPercent: 25,
+      balanceLuna: 1_000_000n, // < 20 NIM threshold
+    });
+    expect(r.amount).toBe(750_000n); // reduction only, NO boost
+    expect(r.adjustments.map((a) => a.kind)).toEqual(['low-balance-scaling']);
+  });
+
+  it('a 100% reduction still pauses payouts for a first-timer (boost cannot rescue it)', () => {
+    const r = calculateAutomaticReward({
+      baselineNim: 10,
+      firstTimeBoostPercent: 500,
+      isFirstTime: true,
+      lowBalanceThresholdNim: 20,
+      lowBalanceReductionPercent: 100,
+      balanceLuna: 1_000_000n,
+    });
+    expect(r.amount).toBe(0n);
+  });
+
+  it('suppresses the boost when a threshold is set but the balance is unknown', () => {
+    const r = calculateAutomaticReward({
+      baselineNim: 10,
+      firstTimeBoostPercent: 50,
+      isFirstTime: true,
+      lowBalanceThresholdNim: 20,
+      balanceLuna: null,
+    });
+    expect(r.amount).toBe(1_000_000n);
+  });
+
+  it('ignores an out-of-range boost (>500) defensively', () => {
+    const r = calculateAutomaticReward({ baselineNim: 10, firstTimeBoostPercent: 600, isFirstTime: true });
+    expect(r.amount).toBe(1_000_000n);
+    expect(r.adjustments).toEqual([]);
+  });
+});
+
 describe('resolveRewardSettings', () => {
   const cfg = {
     automaticRewardsEnabled: true,
     automaticRewardsBaselineNim: 10,
     lowBalanceThresholdNim: 20,
     lowBalanceReductionPercent: 30,
+    firstTimeBoostPercent: 40,
+    firstTimeBoostUseFingerprint: false,
+    firstTimeBoostUseUid: false,
     claimAmountLuna: 100_000n,
   };
 
-  it('lets a valid persisted override win over the env default', () => {
+  it('lets valid persisted overrides win over the env defaults', () => {
     const s = resolveRewardSettings(cfg, {
       lowBalanceThresholdNim: 5,
       lowBalanceReductionPercent: 60,
+      firstTimeBoostPercent: 75,
+      firstTimeBoostUseFingerprint: true,
+      firstTimeBoostUseUid: true,
     });
     expect(s.lowBalanceThresholdNim).toBe(5);
     expect(s.lowBalanceReductionPercent).toBe(60);
-    // enabled + baseline stay env-only
+    expect(s.firstTimeBoostPercent).toBe(75);
+    expect(s.firstTimeBoostUseFingerprint).toBe(true);
+    expect(s.firstTimeBoostUseUid).toBe(true);
     expect(s.enabled).toBe(true);
     expect(s.baselineNim).toBe(10);
   });
@@ -204,17 +284,23 @@ describe('resolveRewardSettings', () => {
     const s = resolveRewardSettings(cfg, {
       lowBalanceThresholdNim: 'oops',
       lowBalanceReductionPercent: 150,
+      firstTimeBoostPercent: 9999, // > 500
+      firstTimeBoostUseFingerprint: 'yes', // not a boolean
     });
     expect(s.lowBalanceThresholdNim).toBe(20);
     expect(s.lowBalanceReductionPercent).toBe(30);
+    expect(s.firstTimeBoostPercent).toBe(40);
+    expect(s.firstTimeBoostUseFingerprint).toBe(false);
   });
 
-  it('returns undefined when neither override nor env default is set', () => {
+  it('returns undefined/false when neither override nor env default is set', () => {
     const s = resolveRewardSettings(
       { automaticRewardsEnabled: false, claimAmountLuna: 100_000n },
       {},
     );
     expect(s.lowBalanceThresholdNim).toBeUndefined();
-    expect(s.lowBalanceReductionPercent).toBeUndefined();
+    expect(s.firstTimeBoostPercent).toBeUndefined();
+    expect(s.firstTimeBoostUseFingerprint).toBe(false);
+    expect(s.firstTimeBoostUseUid).toBe(false);
   });
 });

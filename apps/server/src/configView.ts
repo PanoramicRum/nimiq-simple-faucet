@@ -118,6 +118,9 @@ export function deriveAdminConfigBase(
     abuseReviewThreshold: config.aiReviewThreshold,
     lowBalanceThresholdNim: reward.lowBalanceThresholdNim ?? null,
     lowBalanceReductionPercent: reward.lowBalanceReductionPercent ?? null,
+    firstTimeBoostPercent: reward.firstTimeBoostPercent ?? null,
+    firstTimeBoostUseFingerprint: reward.firstTimeBoostUseFingerprint,
+    firstTimeBoostUseUid: reward.firstTimeBoostUseUid,
     layers: deriveAbuseLayers(config),
   };
 }

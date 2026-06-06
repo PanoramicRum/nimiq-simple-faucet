@@ -24,6 +24,10 @@ export const claims = pgTable('claims', {
   signalsJson: text('signals_json').notNull().default('{}'),
   rejectionReason: text('rejection_reason'),
   idempotencyKey: text('idempotency_key'),
+  // Identity signals for first-time-boost detection (nullable). `host_uid` is
+  // recorded only when the host context was HMAC-verified.
+  fingerprintVisitorId: text('fingerprint_visitor_id'),
+  hostUid: text('host_uid'),
 });
 
 export const blocklist = pgTable('blocklist', {
