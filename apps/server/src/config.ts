@@ -63,6 +63,26 @@ export const ServerConfigSchema = z.object({
    * refused opaquely). Env DEFAULT; admin-overridable live from the dashboard.
    */
   lowBalanceReductionPercent: z.coerce.number().min(0).max(100).optional(),
+
+  /**
+   * First-time reward boost percent (0–500), automatic mode only. A claimant who
+   * has never been paid before gets `baseline × (1 + percent/100)`. Suppressed
+   * while the wallet is below `lowBalanceThresholdNim`. Env DEFAULT; an admin can
+   * override it live from the dashboard. Unset/0 disables the boost.
+   */
+  firstTimeBoostPercent: z.coerce.number().min(0).max(500).optional(),
+  /**
+   * Include the device fingerprint `visitorId` as a first-time identity signal
+   * (a returning device is denied the boost even from a new IP/address). Env
+   * DEFAULT; admin-overridable live. Default off.
+   */
+  firstTimeBoostUseFingerprint: z.coerce.boolean().default(false),
+  /**
+   * Include the integrator `uid` as a first-time identity signal. Only counts for
+   * HMAC-verified host contexts — browser-only claims never match. Env DEFAULT;
+   * admin-overridable live. Default off.
+   */
+  firstTimeBoostUseUid: z.coerce.boolean().default(false),
   rateLimitPerMinute: z.coerce.number().int().min(1).default(30),
   rateLimitPerIpPerDay: z.coerce.number().int().min(1).default(5),
 
@@ -295,6 +315,9 @@ export const ENV_KEYS: Record<string, string> = {
   automaticRewardsBaselineNim: 'FAUCET_AUTOMATIC_REWARDS_BASELINE_NIM',
   lowBalanceThresholdNim: 'FAUCET_LOW_BALANCE_THRESHOLD_NIM',
   lowBalanceReductionPercent: 'FAUCET_LOW_BALANCE_REDUCTION_PERCENT',
+  firstTimeBoostPercent: 'FAUCET_FIRST_TIME_BOOST_PERCENT',
+  firstTimeBoostUseFingerprint: 'FAUCET_FIRST_TIME_BOOST_USE_FINGERPRINT',
+  firstTimeBoostUseUid: 'FAUCET_FIRST_TIME_BOOST_USE_UID',
   rateLimitPerMinute: 'FAUCET_RATE_LIMIT_PER_MINUTE',
   rateLimitPerIpPerDay: 'FAUCET_RATE_LIMIT_PER_IP_PER_DAY',
   turnstileSiteKey: 'FAUCET_TURNSTILE_SITE_KEY',

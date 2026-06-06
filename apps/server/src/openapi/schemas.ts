@@ -294,6 +294,11 @@ export const AdminConfigPatch = registry.register(
       // runtime_config). Threshold in NIM; reduction is a flat percent.
       lowBalanceThresholdNim: z.number().min(0).optional(),
       lowBalanceReductionPercent: z.number().min(0).max(100).optional(),
+      // First-time boost — applied live. Percent capped at 500 to bound a
+      // fat-finger fund drain; the two flags toggle the optional identity signals.
+      firstTimeBoostPercent: z.number().min(0).max(500).optional(),
+      firstTimeBoostUseFingerprint: z.boolean().optional(),
+      firstTimeBoostUseUid: z.boolean().optional(),
       layers: z
         .object({
           turnstile: z.boolean().optional(),
@@ -322,6 +327,10 @@ export const AdminConfigResponse = registry.register(
       // null when unset. Threshold in NIM, reduction as a flat percent.
       lowBalanceThresholdNim: z.number().nullable(),
       lowBalanceReductionPercent: z.number().nullable(),
+      // Effective first-time boost settings. Percent null when unset.
+      firstTimeBoostPercent: z.number().nullable(),
+      firstTimeBoostUseFingerprint: z.boolean(),
+      firstTimeBoostUseUid: z.boolean(),
       layers: z.record(z.string(), z.boolean()),
     }),
     overrides: z.record(z.string(), z.unknown()),

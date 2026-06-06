@@ -21,6 +21,9 @@ interface ConfigResponse {
     abuseReviewThreshold: number;
     lowBalanceThresholdNim: number | null;
     lowBalanceReductionPercent: number | null;
+    firstTimeBoostPercent: number | null;
+    firstTimeBoostUseFingerprint: boolean;
+    firstTimeBoostUseUid: boolean;
     layers: LayerFlags;
   };
   overrides: Record<string, unknown>;
@@ -33,6 +36,9 @@ type PatchBody = {
   abuseReviewThreshold?: number;
   lowBalanceThresholdNim?: number;
   lowBalanceReductionPercent?: number;
+  firstTimeBoostPercent?: number;
+  firstTimeBoostUseFingerprint?: boolean;
+  firstTimeBoostUseUid?: boolean;
   layers?: Partial<LayerFlags>;
 };
 
@@ -49,6 +55,9 @@ const form = reactive({
   abuseReviewThreshold: 0.5,
   lowBalanceThresholdNim: 0,
   lowBalanceReductionPercent: 0,
+  firstTimeBoostPercent: 0,
+  firstTimeBoostUseFingerprint: false,
+  firstTimeBoostUseUid: false,
   layers: {
     turnstile: false,
     hcaptcha: false,
@@ -71,6 +80,9 @@ async function load(): Promise<void> {
     form.abuseReviewThreshold = res.base.abuseReviewThreshold;
     form.lowBalanceThresholdNim = res.base.lowBalanceThresholdNim ?? 0;
     form.lowBalanceReductionPercent = res.base.lowBalanceReductionPercent ?? 0;
+    form.firstTimeBoostPercent = res.base.firstTimeBoostPercent ?? 0;
+    form.firstTimeBoostUseFingerprint = res.base.firstTimeBoostUseFingerprint;
+    form.firstTimeBoostUseUid = res.base.firstTimeBoostUseUid;
     form.layers = { ...res.base.layers };
     overrides.value = res.overrides;
     error.value = null;
@@ -94,6 +106,9 @@ async function onSave(): Promise<void> {
       abuseReviewThreshold: Number(form.abuseReviewThreshold),
       lowBalanceThresholdNim: Number(form.lowBalanceThresholdNim),
       lowBalanceReductionPercent: Number(form.lowBalanceReductionPercent),
+      firstTimeBoostPercent: Number(form.firstTimeBoostPercent),
+      firstTimeBoostUseFingerprint: form.firstTimeBoostUseFingerprint,
+      firstTimeBoostUseUid: form.firstTimeBoostUseUid,
       layers: { ...form.layers },
     };
     const res = await api.patch<{ ok: true; persistedKeys: string[] }>('/admin/config', body);
@@ -206,7 +221,40 @@ onMounted(load);
           />
           <span class="muted">Flat reduction applied while below the threshold. 100 pauses payouts.</span>
         </label>
+        <label class="flex flex-col gap-1 text-xs">
+          <span>First-time boost (%)</span>
+          <input
+            v-model.number="form.firstTimeBoostPercent"
+            class="input font-mono"
+            type="number"
+            min="0"
+            max="500"
+            step="1"
+            required
+          />
+          <span class="muted">Extra reward for a never-paid claimant. Suppressed while the wallet is low. 0 disables it.</span>
+        </label>
       </div>
+
+      <fieldset class="flex flex-col gap-2">
+        <legend class="text-xs font-semibold">First-time identity signals</legend>
+        <p class="muted text-xs">
+          IP and address always define a first-time user; enable extra signals to make the boost
+          harder to farm (a returning user on any enabled signal gets no boost).
+        </p>
+        <label class="flex items-center gap-2 text-sm">
+          <input v-model="form.firstTimeBoostUseFingerprint" type="checkbox" />
+          <span>Use device fingerprint (visitorId)</span>
+        </label>
+        <label class="flex items-center gap-2 text-sm">
+          <input v-model="form.firstTimeBoostUseUid" type="checkbox" />
+          <span>Use user id (uid)</span>
+        </label>
+        <span class="muted text-xs">
+          The user-id signal only counts for verified-integrator (HMAC-signed) claims; browser-only
+          claims never match it.
+        </span>
+      </fieldset>
 
       <fieldset class="flex flex-wrap gap-3">
         <legend class="text-xs font-semibold">Abuse layers</legend>

@@ -64,10 +64,15 @@ function runMigrations(db: any, dialect: 'sqlite' | 'pg'): void {
     }
     // v1.7.0: idempotency key column migration (ALTER TABLE).
     try { exec('ALTER TABLE claims ADD COLUMN idempotency_key TEXT'); } catch { /* already exists */ }
+    // First-time-boost identity columns (nullable).
+    try { exec('ALTER TABLE claims ADD COLUMN fingerprint_visitor_id TEXT'); } catch { /* already exists */ }
+    try { exec('ALTER TABLE claims ADD COLUMN host_uid TEXT'); } catch { /* already exists */ }
   }
   if (dialect === 'pg') {
     // Postgres supports IF NOT EXISTS on ALTER TABLE.
     try { exec('ALTER TABLE claims ADD COLUMN IF NOT EXISTS idempotency_key TEXT'); } catch { /* */ }
+    try { exec('ALTER TABLE claims ADD COLUMN IF NOT EXISTS fingerprint_visitor_id TEXT'); } catch { /* */ }
+    try { exec('ALTER TABLE claims ADD COLUMN IF NOT EXISTS host_uid TEXT'); } catch { /* */ }
   }
 
   // Shared CREATE TABLE + CREATE INDEX statements.

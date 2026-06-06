@@ -11,7 +11,7 @@ Every `FAUCET_*` environment variable accepted by the server, with type, default
 - Runtime overrides via `PATCH /admin/config` (claim amount, rate limit, abuse thresholds, layer toggles) — see [`apps/server/src/routes/admin/config.ts`](../apps/server/src/routes/admin/config.ts) and the `AdminConfigPatch` schema in [`apps/server/src/openapi/schemas.ts`](../apps/server/src/openapi/schemas.ts).
 - The public derivation served at `GET /v1/config` — see [`apps/server/src/configView.ts`](../apps/server/src/configView.ts).
 
-## All variables (78)
+## All variables (81)
 
 | Env var | Type | Default | Constraints | Required | Description |
 |---|---|---|---|---|---|
@@ -34,6 +34,9 @@ Every `FAUCET_*` environment variable accepted by the server, with type, default
 | `FAUCET_AUTOMATIC_REWARDS_BASELINE_NIM` | number | — | — |  | Baseline automatic-mode payout, in NIM (1 NIM = 100_000 luna). Used for every valid claim when `automaticRewardsEnabled` is true. Intentionally NOT constrained to > 0 here: an invalid value (missing/zero/negative) is handled at request time as an opaque rejection plus a non-fatal boot warning, never a fatal config-parse error — so a misconfigured faucet still boots and does not leak its state to clients. |
 | `FAUCET_LOW_BALANCE_THRESHOLD_NIM` | number | — | min: 0 |  | Low-balance reward scaling threshold, in NIM. When automatic mode is on and the wallet balance drops below this, each reward is reduced by `lowBalanceReductionPercent`. This is the env DEFAULT; an admin can override it live from the dashboard (persisted in `runtime_config`, read per payout). Unset (or ≤ 0) disables low-balance scaling. |
 | `FAUCET_LOW_BALANCE_REDUCTION_PERCENT` | number | — | min: 0, max: 100 |  | Flat percent (0–100) by which rewards are reduced while the wallet balance is below `lowBalanceThresholdNim`. 100 pauses payouts (a reward of zero is refused opaquely). Env DEFAULT; admin-overridable live from the dashboard. |
+| `FAUCET_FIRST_TIME_BOOST_PERCENT` | number | — | min: 0, max: 500 |  | First-time reward boost percent (0–500), automatic mode only. A claimant who has never been paid before gets `baseline × (1 + percent/100)`. Suppressed while the wallet is below `lowBalanceThresholdNim`. Env DEFAULT; an admin can override it live from the dashboard. Unset/0 disables the boost. |
+| `FAUCET_FIRST_TIME_BOOST_USE_FINGERPRINT` | boolean | `false` | — |  | Include the device fingerprint `visitorId` as a first-time identity signal (a returning device is denied the boost even from a new IP/address). Env DEFAULT; admin-overridable live. Default off. |
+| `FAUCET_FIRST_TIME_BOOST_USE_UID` | boolean | `false` | — |  | Include the integrator `uid` as a first-time identity signal. Only counts for HMAC-verified host contexts — browser-only claims never match. Env DEFAULT; admin-overridable live. Default off. |
 | `FAUCET_RATE_LIMIT_PER_MINUTE` | integer | `30` | min: 1 |  | — |
 | `FAUCET_RATE_LIMIT_PER_IP_PER_DAY` | integer | `5` | min: 1 |  | — |
 | `FAUCET_TURNSTILE_SITE_KEY` | string | — | — |  | — |

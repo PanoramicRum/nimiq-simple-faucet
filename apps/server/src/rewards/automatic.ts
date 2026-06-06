@@ -42,6 +42,8 @@ export interface RewardResult {
 const LUNA_PER_NIM = 100_000;
 /** Percent → basis points (×100), so a fractional percent stays exact in bigint math. */
 const BASIS_POINTS = 10_000n;
+/** Defensive ceiling on the first-time boost (also enforced by Zod + the admin API). */
+const MAX_FIRST_TIME_BOOST_PERCENT = 500;
 
 /**
  * Convert an operator-supplied NIM amount to Luna (bigint).
@@ -64,55 +66,86 @@ export interface RewardInput {
   lowBalanceThresholdNim?: number | undefined;
   /** Flat reduction percent (0–100) applied below the threshold. */
   lowBalanceReductionPercent?: number | undefined;
+  /** Whether this claimant qualifies for the first-time boost (caller decides). */
+  isFirstTime?: boolean | undefined;
+  /** First-time boost percent (0–500); applies only when not in a low-balance state. */
+  firstTimeBoostPercent?: number | undefined;
   /**
    * Current wallet balance in Luna, or `null`/`undefined` when unknown. When
    * unknown, low-balance scaling is skipped (never reduce on a stale/failed
-   * balance read — that would silently halve every payout during an RPC blip).
+   * balance read — that would silently halve every payout during an RPC blip),
+   * and the first-time boost is suppressed (we can't confirm the wallet is healthy).
    */
   balanceLuna?: bigint | null | undefined;
 }
 
 /**
- * Compute the automatic reward. Pure and total — never throws.
+ * Compute the automatic reward. Pure and total — never throws. The final amount
+ * is the baseline plus the sum of every applied adjustment delta, floored at 0.
  *
- * Low-balance scaling fires only when ALL hold: a positive baseline, a positive
- * threshold, a reduction in `(0, 100]`, a known balance, and `balance <
- * threshold`. The reduction uses basis-point bigint math (truncates *down*, so
- * it never over-pays). A reduction outside `(0, 100]` is ignored defensively, so
- * a bad config can never produce `amount > baseline`.
- *
- * A 100% reduction yields `amount: 0n`; the caller refuses such a claim opaquely
- * (pausing payouts while the wallet is critically low) rather than sending 0.
+ * Two rules, mutually exclusive by balance state:
+ *  - **Low-balance scaling** (negative) fires when a positive threshold is set,
+ *    the balance is known, and `balance < threshold`. Basis-point bigint math
+ *    truncates *down* (never over-pays); a reduction outside `(0, 100]` is
+ *    ignored. A 100% reduction yields `amount: 0n` (caller refuses → pause).
+ *  - **First-time boost** (positive) fires when `isFirstTime`, a boost in
+ *    `(0, 500]` is set, and the wallet is known to be at/above the threshold
+ *    (or no threshold is configured). It is **suppressed while the wallet is low
+ *    or its balance is unknown** — a low faucet must not hand out extra.
  */
 export function calculateAutomaticReward(input: RewardInput): RewardResult {
   const baseline = nimToLuna(input.baselineNim);
   const adjustments: RewardAdjustment[] = [];
-  let amount = baseline;
 
   const thresholdLuna = nimToLuna(input.lowBalanceThresholdNim);
-  const reduction = input.lowBalanceReductionPercent;
-  const reductionValid =
-    reduction !== undefined && Number.isFinite(reduction) && reduction > 0 && reduction <= 100;
+  const balanceKnown = input.balanceLuna !== undefined && input.balanceLuna !== null;
+  // "Low-balance state" = a threshold is configured and we're confident the
+  // wallet is below it. When a threshold is set but the balance can't be read,
+  // we treat the state as uncertain: skip the reduction AND suppress the boost.
+  const lowBalanceConfigured = thresholdLuna > 0n;
+  const walletIsLow = lowBalanceConfigured && balanceKnown && (input.balanceLuna as bigint) < thresholdLuna;
+  const lowBalanceUncertain = lowBalanceConfigured && !balanceKnown;
 
-  if (
-    baseline > 0n &&
-    thresholdLuna > 0n &&
-    reductionValid &&
-    input.balanceLuna !== undefined &&
-    input.balanceLuna !== null &&
-    input.balanceLuna < thresholdLuna
-  ) {
-    const reductionBp = BigInt(Math.round((reduction as number) * 100));
-    const reduced = (baseline * (BASIS_POINTS - reductionBp)) / BASIS_POINTS;
-    if (reduced !== baseline) {
-      adjustments.push({
-        kind: 'low-balance-scaling',
-        deltaLuna: reduced - baseline,
-        reason: `wallet balance below ${input.lowBalanceThresholdNim} NIM; reward reduced ${reduction}%`,
-      });
-      amount = reduced;
+  // Low-balance reduction (negative delta) — only while the wallet is low.
+  if (baseline > 0n && walletIsLow) {
+    const reduction = input.lowBalanceReductionPercent;
+    const reductionValid =
+      reduction !== undefined && Number.isFinite(reduction) && reduction > 0 && reduction <= 100;
+    if (reductionValid) {
+      const reductionBp = BigInt(Math.round(reduction * 100));
+      const reduced = (baseline * (BASIS_POINTS - reductionBp)) / BASIS_POINTS;
+      if (reduced !== baseline) {
+        adjustments.push({
+          kind: 'low-balance-scaling',
+          deltaLuna: reduced - baseline,
+          reason: `wallet balance below ${input.lowBalanceThresholdNim} NIM; reward reduced ${reduction}%`,
+        });
+      }
     }
   }
+
+  // First-time boost (positive delta) — only when the wallet is confidently NOT
+  // low (mutually exclusive with the reduction above).
+  if (baseline > 0n && input.isFirstTime && !walletIsLow && !lowBalanceUncertain) {
+    const boost = input.firstTimeBoostPercent;
+    const boostValid =
+      boost !== undefined && Number.isFinite(boost) && boost > 0 && boost <= MAX_FIRST_TIME_BOOST_PERCENT;
+    if (boostValid) {
+      const boostBp = BigInt(Math.round(boost * 100));
+      const boosted = (baseline * (BASIS_POINTS + boostBp)) / BASIS_POINTS;
+      if (boosted !== baseline) {
+        adjustments.push({
+          kind: 'first-time-boost',
+          deltaLuna: boosted - baseline,
+          reason: `first-time claimant; reward boosted ${boost}%`,
+        });
+      }
+    }
+  }
+
+  let amount = baseline;
+  for (const adj of adjustments) amount += adj.deltaLuna;
+  if (amount < 0n) amount = 0n;
 
   return { amount, rewardMode: 'automatic', baselineAmount: baseline, adjustments };
 }
@@ -123,6 +156,9 @@ export interface PayoutConfig {
   automaticRewardsBaselineNim?: number | undefined;
   lowBalanceThresholdNim?: number | undefined;
   lowBalanceReductionPercent?: number | undefined;
+  firstTimeBoostPercent?: number | undefined;
+  firstTimeBoostUseFingerprint?: boolean | undefined;
+  firstTimeBoostUseUid?: boolean | undefined;
   claimAmountLuna: bigint;
 }
 
@@ -153,6 +189,9 @@ export interface EffectiveRewardSettings {
   baselineNim?: number | undefined;
   lowBalanceThresholdNim?: number | undefined;
   lowBalanceReductionPercent?: number | undefined;
+  firstTimeBoostPercent?: number | undefined;
+  firstTimeBoostUseFingerprint: boolean;
+  firstTimeBoostUseUid: boolean;
 }
 
 function pickInRange(
@@ -168,11 +207,15 @@ function pickInRange(
   return envDefault;
 }
 
+function pickBool(override: unknown, envDefault: boolean): boolean {
+  return typeof override === 'boolean' ? override : envDefault;
+}
+
 /**
  * Merge persisted runtime overrides over env-derived config to produce the
- * effective reward settings used at claim time. Only the two low-balance keys
- * are read live (override-wins); a malformed/out-of-range `runtime_config` row
- * falls back to the env default so it can never widen behaviour unexpectedly.
+ * effective reward settings used at claim time. The low-balance + first-time
+ * keys are read live (override-wins); a malformed/out-of-range `runtime_config`
+ * row falls back to the env default so it can never widen behaviour unexpectedly.
  * `enabled` and `baselineNim` stay env-only.
  */
 export function resolveRewardSettings(
@@ -193,6 +236,20 @@ export function resolveRewardSettings(
       config.lowBalanceReductionPercent,
       0,
       100,
+    ),
+    firstTimeBoostPercent: pickInRange(
+      overrides.firstTimeBoostPercent,
+      config.firstTimeBoostPercent,
+      0,
+      MAX_FIRST_TIME_BOOST_PERCENT,
+    ),
+    firstTimeBoostUseFingerprint: pickBool(
+      overrides.firstTimeBoostUseFingerprint,
+      config.firstTimeBoostUseFingerprint ?? false,
+    ),
+    firstTimeBoostUseUid: pickBool(
+      overrides.firstTimeBoostUseUid,
+      config.firstTimeBoostUseUid ?? false,
     ),
   };
 }

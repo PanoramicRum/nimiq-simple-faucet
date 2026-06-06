@@ -261,8 +261,9 @@ function registerRoutes(): void {
     tags: ['Admin'],
     summary: 'Persist runtime config overrides',
     description:
-      'Persists runtime config overrides. Abuse-layer toggles and the low-balance reward keys ' +
-      '(lowBalanceThresholdNim, lowBalanceReductionPercent) apply live; other keys require a restart.',
+      'Persists runtime config overrides. Abuse-layer toggles and the reward keys ' +
+      '(lowBalanceThresholdNim, lowBalanceReductionPercent, firstTimeBoostPercent, ' +
+      'firstTimeBoostUseFingerprint, firstTimeBoostUseUid) apply live; other keys require a restart.',
     security: [{ adminSession: [] }],
     request: { body: { content: jsonContent(AdminConfigPatch) } },
     responses: { 200: { description: 'Persisted', content: jsonContent(OkResponse) } },
