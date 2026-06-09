@@ -71,6 +71,13 @@ export interface RewardInput {
   /** First-time boost percent (0–500); applies only when not in a low-balance state. */
   firstTimeBoostPercent?: number | undefined;
   /**
+   * Effective repeat-user reduction percent (0–100), already resolved by the
+   * handler from claim counts + tiers (largest triggered tier wins). A negative
+   * adjustment applied **regardless of balance state**; mutually exclusive with
+   * the first-time boost (a repeat reduction suppresses the boost).
+   */
+  repeatReductionPercent?: number | undefined;
+  /**
    * Current wallet balance in Luna, or `null`/`undefined` when unknown. When
    * unknown, low-balance scaling is skipped (never reduce on a stale/failed
    * balance read — that would silently halve every payout during an RPC blip),
@@ -83,15 +90,21 @@ export interface RewardInput {
  * Compute the automatic reward. Pure and total — never throws. The final amount
  * is the baseline plus the sum of every applied adjustment delta, floored at 0.
  *
- * Two rules, mutually exclusive by balance state:
+ * Three rules:
  *  - **Low-balance scaling** (negative) fires when a positive threshold is set,
  *    the balance is known, and `balance < threshold`. Basis-point bigint math
  *    truncates *down* (never over-pays); a reduction outside `(0, 100]` is
  *    ignored. A 100% reduction yields `amount: 0n` (caller refuses → pause).
+ *  - **Repeat-user reduction** (negative) fires when a valid
+ *    `repeatReductionPercent` in `(0, 100]` is supplied. It is **independent of
+ *    balance state** and **stacks additively** with low-balance scaling — both
+ *    deltas are measured against the baseline and summed (so a combined ≥ 100%
+ *    floors to `0n` → caller refuses).
  *  - **First-time boost** (positive) fires when `isFirstTime`, a boost in
  *    `(0, 500]` is set, and the wallet is known to be at/above the threshold
  *    (or no threshold is configured). It is **suppressed while the wallet is low
- *    or its balance is unknown** — a low faucet must not hand out extra.
+ *    or its balance is unknown** — a low faucet must not hand out extra — and
+ *    **suppressed whenever a repeat reduction fires** (boost ⊥ repeat).
  */
 export function calculateAutomaticReward(input: RewardInput): RewardResult {
   const baseline = nimToLuna(input.baselineNim);
@@ -105,6 +118,15 @@ export function calculateAutomaticReward(input: RewardInput): RewardResult {
   const lowBalanceConfigured = thresholdLuna > 0n;
   const walletIsLow = lowBalanceConfigured && balanceKnown && (input.balanceLuna as bigint) < thresholdLuna;
   const lowBalanceUncertain = lowBalanceConfigured && !balanceKnown;
+
+  // Repeat-user reduction is active when a valid percent is supplied. Computed
+  // up front so it can both push its adjustment and suppress the first-time boost.
+  const repeatReduction = input.repeatReductionPercent;
+  const repeatReductionActive =
+    repeatReduction !== undefined &&
+    Number.isFinite(repeatReduction) &&
+    repeatReduction > 0 &&
+    repeatReduction <= 100;
 
   // Low-balance reduction (negative delta) — only while the wallet is low.
   if (baseline > 0n && walletIsLow) {
@@ -124,9 +146,32 @@ export function calculateAutomaticReward(input: RewardInput): RewardResult {
     }
   }
 
+  // Repeat-user reduction (negative delta) — independent of balance state.
+  // Measured against the baseline (like low-balance scaling), so the two
+  // reductions stack additively in the accumulator below.
+  if (baseline > 0n && repeatReductionActive) {
+    // repeatReductionActive aliases `repeatReduction !== undefined && …`, so TS
+    // narrows repeatReduction to number here — no cast needed.
+    const reductionBp = BigInt(Math.round(repeatReduction * 100));
+    const reduced = (baseline * (BASIS_POINTS - reductionBp)) / BASIS_POINTS;
+    if (reduced !== baseline) {
+      adjustments.push({
+        kind: 'repeat-user-reduction',
+        deltaLuna: reduced - baseline,
+        reason: `repeat claimant; reward reduced ${repeatReduction}%`,
+      });
+    }
+  }
+
   // First-time boost (positive delta) — only when the wallet is confidently NOT
-  // low (mutually exclusive with the reduction above).
-  if (baseline > 0n && input.isFirstTime && !walletIsLow && !lowBalanceUncertain) {
+  // low and no repeat reduction is in effect (boost ⊥ repeat).
+  if (
+    baseline > 0n &&
+    input.isFirstTime &&
+    !walletIsLow &&
+    !lowBalanceUncertain &&
+    !repeatReductionActive
+  ) {
     const boost = input.firstTimeBoostPercent;
     const boostValid =
       boost !== undefined && Number.isFinite(boost) && boost > 0 && boost <= MAX_FIRST_TIME_BOOST_PERCENT;
@@ -159,6 +204,15 @@ export interface PayoutConfig {
   firstTimeBoostPercent?: number | undefined;
   firstTimeBoostUseFingerprint?: boolean | undefined;
   firstTimeBoostUseUid?: boolean | undefined;
+  repeatReductionDailyThreshold?: number | undefined;
+  repeatReductionDailyPercent?: number | undefined;
+  repeatReductionWeeklyThreshold?: number | undefined;
+  repeatReductionWeeklyPercent?: number | undefined;
+  repeatReductionMonthlyThreshold?: number | undefined;
+  repeatReductionMonthlyPercent?: number | undefined;
+  repeatReductionUseAddress?: boolean | undefined;
+  repeatReductionUseIp?: boolean | undefined;
+  repeatReductionUseFingerprint?: boolean | undefined;
   claimAmountLuna: bigint;
 }
 
@@ -192,6 +246,15 @@ export interface EffectiveRewardSettings {
   firstTimeBoostPercent?: number | undefined;
   firstTimeBoostUseFingerprint: boolean;
   firstTimeBoostUseUid: boolean;
+  repeatReductionDailyThreshold?: number | undefined;
+  repeatReductionDailyPercent?: number | undefined;
+  repeatReductionWeeklyThreshold?: number | undefined;
+  repeatReductionWeeklyPercent?: number | undefined;
+  repeatReductionMonthlyThreshold?: number | undefined;
+  repeatReductionMonthlyPercent?: number | undefined;
+  repeatReductionUseAddress: boolean;
+  repeatReductionUseIp: boolean;
+  repeatReductionUseFingerprint: boolean;
 }
 
 function pickInRange(
@@ -213,10 +276,10 @@ function pickBool(override: unknown, envDefault: boolean): boolean {
 
 /**
  * Merge persisted runtime overrides over env-derived config to produce the
- * effective reward settings used at claim time. The low-balance + first-time
- * keys are read live (override-wins); a malformed/out-of-range `runtime_config`
- * row falls back to the env default so it can never widen behaviour unexpectedly.
- * `enabled` and `baselineNim` stay env-only.
+ * effective reward settings used at claim time. The low-balance, first-time, and
+ * repeat-user-reduction keys are read live (override-wins); a malformed/out-of-range
+ * `runtime_config` row falls back to the env default so it can never widen
+ * behaviour unexpectedly. `enabled` and `baselineNim` stay env-only.
  */
 export function resolveRewardSettings(
   config: PayoutConfig,
@@ -250,6 +313,54 @@ export function resolveRewardSettings(
     firstTimeBoostUseUid: pickBool(
       overrides.firstTimeBoostUseUid,
       config.firstTimeBoostUseUid ?? false,
+    ),
+    repeatReductionDailyThreshold: pickInRange(
+      overrides.repeatReductionDailyThreshold,
+      config.repeatReductionDailyThreshold,
+      0,
+      Number.MAX_SAFE_INTEGER,
+    ),
+    repeatReductionDailyPercent: pickInRange(
+      overrides.repeatReductionDailyPercent,
+      config.repeatReductionDailyPercent,
+      0,
+      100,
+    ),
+    repeatReductionWeeklyThreshold: pickInRange(
+      overrides.repeatReductionWeeklyThreshold,
+      config.repeatReductionWeeklyThreshold,
+      0,
+      Number.MAX_SAFE_INTEGER,
+    ),
+    repeatReductionWeeklyPercent: pickInRange(
+      overrides.repeatReductionWeeklyPercent,
+      config.repeatReductionWeeklyPercent,
+      0,
+      100,
+    ),
+    repeatReductionMonthlyThreshold: pickInRange(
+      overrides.repeatReductionMonthlyThreshold,
+      config.repeatReductionMonthlyThreshold,
+      0,
+      Number.MAX_SAFE_INTEGER,
+    ),
+    repeatReductionMonthlyPercent: pickInRange(
+      overrides.repeatReductionMonthlyPercent,
+      config.repeatReductionMonthlyPercent,
+      0,
+      100,
+    ),
+    repeatReductionUseAddress: pickBool(
+      overrides.repeatReductionUseAddress,
+      config.repeatReductionUseAddress ?? true,
+    ),
+    repeatReductionUseIp: pickBool(
+      overrides.repeatReductionUseIp,
+      config.repeatReductionUseIp ?? false,
+    ),
+    repeatReductionUseFingerprint: pickBool(
+      overrides.repeatReductionUseFingerprint,
+      config.repeatReductionUseFingerprint ?? false,
     ),
   };
 }

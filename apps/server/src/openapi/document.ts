@@ -263,7 +263,8 @@ function registerRoutes(): void {
     description:
       'Persists runtime config overrides. Abuse-layer toggles and the reward keys ' +
       '(lowBalanceThresholdNim, lowBalanceReductionPercent, firstTimeBoostPercent, ' +
-      'firstTimeBoostUseFingerprint, firstTimeBoostUseUid) apply live; other keys require a restart.',
+      'firstTimeBoostUseFingerprint, firstTimeBoostUseUid, and the repeatReduction* ' +
+      'tier/identity keys) apply live; other keys require a restart.',
     security: [{ adminSession: [] }],
     request: { body: { content: jsonContent(AdminConfigPatch) } },
     responses: { 200: { description: 'Persisted', content: jsonContent(OkResponse) } },

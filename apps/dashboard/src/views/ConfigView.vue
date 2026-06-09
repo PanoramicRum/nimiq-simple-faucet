@@ -24,6 +24,15 @@ interface ConfigResponse {
     firstTimeBoostPercent: number | null;
     firstTimeBoostUseFingerprint: boolean;
     firstTimeBoostUseUid: boolean;
+    repeatReductionDailyThreshold: number | null;
+    repeatReductionDailyPercent: number | null;
+    repeatReductionWeeklyThreshold: number | null;
+    repeatReductionWeeklyPercent: number | null;
+    repeatReductionMonthlyThreshold: number | null;
+    repeatReductionMonthlyPercent: number | null;
+    repeatReductionUseAddress: boolean;
+    repeatReductionUseIp: boolean;
+    repeatReductionUseFingerprint: boolean;
     layers: LayerFlags;
   };
   overrides: Record<string, unknown>;
@@ -39,6 +48,15 @@ type PatchBody = {
   firstTimeBoostPercent?: number;
   firstTimeBoostUseFingerprint?: boolean;
   firstTimeBoostUseUid?: boolean;
+  repeatReductionDailyThreshold?: number;
+  repeatReductionDailyPercent?: number;
+  repeatReductionWeeklyThreshold?: number;
+  repeatReductionWeeklyPercent?: number;
+  repeatReductionMonthlyThreshold?: number;
+  repeatReductionMonthlyPercent?: number;
+  repeatReductionUseAddress?: boolean;
+  repeatReductionUseIp?: boolean;
+  repeatReductionUseFingerprint?: boolean;
   layers?: Partial<LayerFlags>;
 };
 
@@ -58,6 +76,15 @@ const form = reactive({
   firstTimeBoostPercent: 0,
   firstTimeBoostUseFingerprint: false,
   firstTimeBoostUseUid: false,
+  repeatReductionDailyThreshold: 0,
+  repeatReductionDailyPercent: 0,
+  repeatReductionWeeklyThreshold: 0,
+  repeatReductionWeeklyPercent: 0,
+  repeatReductionMonthlyThreshold: 0,
+  repeatReductionMonthlyPercent: 0,
+  repeatReductionUseAddress: true,
+  repeatReductionUseIp: false,
+  repeatReductionUseFingerprint: false,
   layers: {
     turnstile: false,
     hcaptcha: false,
@@ -83,6 +110,15 @@ async function load(): Promise<void> {
     form.firstTimeBoostPercent = res.base.firstTimeBoostPercent ?? 0;
     form.firstTimeBoostUseFingerprint = res.base.firstTimeBoostUseFingerprint;
     form.firstTimeBoostUseUid = res.base.firstTimeBoostUseUid;
+    form.repeatReductionDailyThreshold = res.base.repeatReductionDailyThreshold ?? 0;
+    form.repeatReductionDailyPercent = res.base.repeatReductionDailyPercent ?? 0;
+    form.repeatReductionWeeklyThreshold = res.base.repeatReductionWeeklyThreshold ?? 0;
+    form.repeatReductionWeeklyPercent = res.base.repeatReductionWeeklyPercent ?? 0;
+    form.repeatReductionMonthlyThreshold = res.base.repeatReductionMonthlyThreshold ?? 0;
+    form.repeatReductionMonthlyPercent = res.base.repeatReductionMonthlyPercent ?? 0;
+    form.repeatReductionUseAddress = res.base.repeatReductionUseAddress;
+    form.repeatReductionUseIp = res.base.repeatReductionUseIp;
+    form.repeatReductionUseFingerprint = res.base.repeatReductionUseFingerprint;
     form.layers = { ...res.base.layers };
     overrides.value = res.overrides;
     error.value = null;
@@ -109,10 +145,19 @@ async function onSave(): Promise<void> {
       firstTimeBoostPercent: Number(form.firstTimeBoostPercent),
       firstTimeBoostUseFingerprint: form.firstTimeBoostUseFingerprint,
       firstTimeBoostUseUid: form.firstTimeBoostUseUid,
+      repeatReductionDailyThreshold: Number(form.repeatReductionDailyThreshold),
+      repeatReductionDailyPercent: Number(form.repeatReductionDailyPercent),
+      repeatReductionWeeklyThreshold: Number(form.repeatReductionWeeklyThreshold),
+      repeatReductionWeeklyPercent: Number(form.repeatReductionWeeklyPercent),
+      repeatReductionMonthlyThreshold: Number(form.repeatReductionMonthlyThreshold),
+      repeatReductionMonthlyPercent: Number(form.repeatReductionMonthlyPercent),
+      repeatReductionUseAddress: form.repeatReductionUseAddress,
+      repeatReductionUseIp: form.repeatReductionUseIp,
+      repeatReductionUseFingerprint: form.repeatReductionUseFingerprint,
       layers: { ...form.layers },
     };
     const res = await api.patch<{ ok: true; persistedKeys: string[] }>('/admin/config', body);
-    status.value = `Saved: ${res.persistedKeys.join(', ')}. Layer toggles and low-balance reward settings take effect immediately; other settings need a restart.`;
+    status.value = `Saved: ${res.persistedKeys.join(', ')}. Layer toggles and reward settings (low-balance, first-time boost, repeat-user reduction) take effect immediately; other settings need a restart.`;
     await load();
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'failed';
@@ -136,9 +181,9 @@ onMounted(load);
       role="note"
     >
       <strong>Abuse-layer toggles</strong> (fingerprint, on-chain, AI) and the
-      <strong>low-balance reward settings</strong> take effect immediately on Save. Other settings
-      (claim amount, rate limits, abuse thresholds) are persisted but require a container restart to
-      apply.
+      <strong>reward settings</strong> (low-balance scaling, first-time boost, repeat-user reduction)
+      take effect immediately on Save. Other settings (claim amount, rate limits, abuse thresholds)
+      are persisted but require a container restart to apply.
     </div>
 
     <p
@@ -254,6 +299,102 @@ onMounted(load);
           The user-id signal only counts for verified-integrator (HMAC-signed) claims; browser-only
           claims never match it.
         </span>
+      </fieldset>
+
+      <fieldset class="flex flex-col gap-2">
+        <legend class="text-xs font-semibold">Repeat-user reduction</legend>
+        <p class="muted text-xs">
+          Reduce the reward for claimants who have already been paid many times in a rolling window.
+          When several tiers trigger, the largest reduction wins. A threshold or percent of 0 disables
+          that tier. Applies immediately on Save.
+        </p>
+        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <label class="flex flex-col gap-1 text-xs">
+            <span>Daily: paid claims in last 24h to trigger</span>
+            <input
+              v-model.number="form.repeatReductionDailyThreshold"
+              class="input font-mono"
+              type="number"
+              min="0"
+              step="1"
+              required
+            />
+          </label>
+          <label class="flex flex-col gap-1 text-xs">
+            <span>Daily reduction (%)</span>
+            <input
+              v-model.number="form.repeatReductionDailyPercent"
+              class="input font-mono"
+              type="number"
+              min="0"
+              max="100"
+              step="1"
+              required
+            />
+          </label>
+          <label class="flex flex-col gap-1 text-xs">
+            <span>Weekly: paid claims in last 7d to trigger</span>
+            <input
+              v-model.number="form.repeatReductionWeeklyThreshold"
+              class="input font-mono"
+              type="number"
+              min="0"
+              step="1"
+              required
+            />
+          </label>
+          <label class="flex flex-col gap-1 text-xs">
+            <span>Weekly reduction (%)</span>
+            <input
+              v-model.number="form.repeatReductionWeeklyPercent"
+              class="input font-mono"
+              type="number"
+              min="0"
+              max="100"
+              step="1"
+              required
+            />
+          </label>
+          <label class="flex flex-col gap-1 text-xs">
+            <span>Monthly: paid claims in last 30d to trigger</span>
+            <input
+              v-model.number="form.repeatReductionMonthlyThreshold"
+              class="input font-mono"
+              type="number"
+              min="0"
+              step="1"
+              required
+            />
+          </label>
+          <label class="flex flex-col gap-1 text-xs">
+            <span>Monthly reduction (%)</span>
+            <input
+              v-model.number="form.repeatReductionMonthlyPercent"
+              class="input font-mono"
+              type="number"
+              min="0"
+              max="100"
+              step="1"
+              required
+            />
+          </label>
+        </div>
+        <p class="muted text-xs">
+          Identity signals (multi-select): a prior paid claim counts toward the total if it matches on
+          any enabled signal. More signals = stricter. No signal selected disables the rule.
+        </p>
+        <label class="flex items-center gap-2 text-sm">
+          <input v-model="form.repeatReductionUseAddress" type="checkbox" />
+          <span>Use NIM address</span>
+        </label>
+        <label class="flex items-center gap-2 text-sm">
+          <input v-model="form.repeatReductionUseIp" type="checkbox" />
+          <span>Use IP</span>
+        </label>
+        <label class="flex items-center gap-2 text-sm">
+          <input v-model="form.repeatReductionUseFingerprint" type="checkbox" />
+          <span>Use device fingerprint (visitorId)</span>
+        </label>
       </fieldset>
 
       <fieldset class="flex flex-wrap gap-3">

@@ -22,6 +22,11 @@ import {
   resolveRewardSettings,
 } from '../rewards/automatic.js';
 import { isFirstTimeClaimant } from '../rewards/firstTime.js';
+import {
+  countRepeatClaims,
+  effectiveRepeatReductionPercent,
+  isRepeatTierConfigured,
+} from '../rewards/repeatUser.js';
 import { readRuntimeOverrides } from '../runtimeConfig.js';
 
 // Extend the shared OpenAPI schema with the backwards-compat transform.
@@ -403,12 +408,61 @@ export async function claimRoutes(app: FastifyInstance, ctx: AppContext): Promis
         });
       }
 
+      // Repeat-user reduction. Only run the windowed count when at least one
+      // tier is configured AND at least one identity dimension is enabled
+      // (zero-cost path otherwise — no DB hit). Only the windows whose tier is
+      // configured are queried.
+      //
+      // Best-effort, not a hard limit: the count is read here but the row that
+      // raises it isn't inserted until after the send below, and `inflightClaims`
+      // serializes only on `address`. So concurrent same-IP / same-fingerprint
+      // claims to *different* addresses can each read a stale (pre-burst) count
+      // and pay full, momentarily defeating the IP/fingerprint tiers under a
+      // burst. That's acceptable for a soft anti-farming measure: the atomic
+      // per-IP daily cap (incrementIpCounter, before the pipeline) and the
+      // per-minute rate limit bound the overpayment per IP per window. (The
+      // address dimension is unaffected — same-address bursts lose the
+      // inflight race and 429.)
+      let repeatReductionPercent = 0;
+      const repeatDimEnabled =
+        settings.repeatReductionUseAddress ||
+        settings.repeatReductionUseIp ||
+        settings.repeatReductionUseFingerprint;
+      const needDay = isRepeatTierConfigured(
+        settings.repeatReductionDailyThreshold,
+        settings.repeatReductionDailyPercent,
+      );
+      const needWeek = isRepeatTierConfigured(
+        settings.repeatReductionWeeklyThreshold,
+        settings.repeatReductionWeeklyPercent,
+      );
+      const needMonth = isRepeatTierConfigured(
+        settings.repeatReductionMonthlyThreshold,
+        settings.repeatReductionMonthlyPercent,
+      );
+      if (repeatDimEnabled && (needDay || needWeek || needMonth)) {
+        const counts = await countRepeatClaims(ctx.db, {
+          address,
+          ip: req.ip,
+          fingerprintVisitorId,
+          useAddress: settings.repeatReductionUseAddress,
+          useIp: settings.repeatReductionUseIp,
+          useFingerprint: settings.repeatReductionUseFingerprint,
+          now,
+          needDay,
+          needWeek,
+          needMonth,
+        });
+        repeatReductionPercent = effectiveRepeatReductionPercent(counts, settings);
+      }
+
       const reward = calculateAutomaticReward({
         baselineNim: settings.baselineNim,
         lowBalanceThresholdNim: settings.lowBalanceThresholdNim,
         lowBalanceReductionPercent: settings.lowBalanceReductionPercent,
         firstTimeBoostPercent: settings.firstTimeBoostPercent,
         isFirstTime,
+        repeatReductionPercent,
         balanceLuna: balance,
       });
       finalPayout = { amountLuna: reward.amount, reward };
@@ -425,9 +479,10 @@ export async function claimRoutes(app: FastifyInstance, ctx: AppContext): Promis
         req.log.error(
           {
             baselineAmountLuna: reward.baselineAmount.toString(),
-            reductionPercent: settings.lowBalanceReductionPercent,
+            lowBalanceReductionPercent: settings.lowBalanceReductionPercent,
+            repeatReductionPercent,
           },
-          'automatic reward scaled to zero by low-balance reduction; refusing payout',
+          'automatic reward scaled to zero by reductions; refusing payout',
         );
       } else if (balance !== null && reward.amount > balance) {
         refusal = 'automatic_reward_exceeds_balance';

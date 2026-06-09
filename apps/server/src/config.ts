@@ -83,6 +83,35 @@ export const ServerConfigSchema = z.object({
    * admin-overridable live. Default off.
    */
   firstTimeBoostUseUid: z.coerce.boolean().default(false),
+
+  /**
+   * Repeat-user reduction (§ Phase 4), automatic mode only. A claimant whose
+   * recent **paid** claim count meets a tier's threshold has the reward reduced
+   * by that tier's percent; when several tiers trigger, the largest percent wins.
+   * Three rolling windows — daily (24h), weekly (7d), monthly (30d) — each a
+   * count threshold + a reduction percent. Stacks additively with low-balance
+   * scaling and applies regardless of balance state; suppresses the first-time
+   * boost. Env DEFAULTS; an admin can override every value live from the
+   * dashboard. A threshold of 0 (or percent of 0) disables that tier.
+   */
+  repeatReductionDailyThreshold: z.coerce.number().int().min(0).optional(),
+  repeatReductionDailyPercent: z.coerce.number().min(0).max(100).optional(),
+  repeatReductionWeeklyThreshold: z.coerce.number().int().min(0).optional(),
+  repeatReductionWeeklyPercent: z.coerce.number().min(0).max(100).optional(),
+  repeatReductionMonthlyThreshold: z.coerce.number().int().min(0).optional(),
+  repeatReductionMonthlyPercent: z.coerce.number().min(0).max(100).optional(),
+  /**
+   * Repeat-user identity dimensions (multi-select). A prior paid claim counts
+   * toward the total if it matches on ANY enabled dimension (OR/union). More
+   * dimensions = stricter. No dimension enabled disables the rule entirely.
+   * Env DEFAULTS; admin-overridable live. Address on by default; IP + fingerprint off.
+   * NOTE: like every `z.coerce.boolean()` env flag, any non-empty value coerces to
+   * true, so the env can only WIDEN the default-on address dimension to true —
+   * disabling it requires an admin override (dashboard / JSON), not `=false` here.
+   */
+  repeatReductionUseAddress: z.coerce.boolean().default(true),
+  repeatReductionUseIp: z.coerce.boolean().default(false),
+  repeatReductionUseFingerprint: z.coerce.boolean().default(false),
   rateLimitPerMinute: z.coerce.number().int().min(1).default(30),
   rateLimitPerIpPerDay: z.coerce.number().int().min(1).default(5),
 
@@ -318,6 +347,15 @@ export const ENV_KEYS: Record<string, string> = {
   firstTimeBoostPercent: 'FAUCET_FIRST_TIME_BOOST_PERCENT',
   firstTimeBoostUseFingerprint: 'FAUCET_FIRST_TIME_BOOST_USE_FINGERPRINT',
   firstTimeBoostUseUid: 'FAUCET_FIRST_TIME_BOOST_USE_UID',
+  repeatReductionDailyThreshold: 'FAUCET_REPEAT_REDUCTION_DAILY_THRESHOLD',
+  repeatReductionDailyPercent: 'FAUCET_REPEAT_REDUCTION_DAILY_PERCENT',
+  repeatReductionWeeklyThreshold: 'FAUCET_REPEAT_REDUCTION_WEEKLY_THRESHOLD',
+  repeatReductionWeeklyPercent: 'FAUCET_REPEAT_REDUCTION_WEEKLY_PERCENT',
+  repeatReductionMonthlyThreshold: 'FAUCET_REPEAT_REDUCTION_MONTHLY_THRESHOLD',
+  repeatReductionMonthlyPercent: 'FAUCET_REPEAT_REDUCTION_MONTHLY_PERCENT',
+  repeatReductionUseAddress: 'FAUCET_REPEAT_REDUCTION_USE_ADDRESS',
+  repeatReductionUseIp: 'FAUCET_REPEAT_REDUCTION_USE_IP',
+  repeatReductionUseFingerprint: 'FAUCET_REPEAT_REDUCTION_USE_FINGERPRINT',
   rateLimitPerMinute: 'FAUCET_RATE_LIMIT_PER_MINUTE',
   rateLimitPerIpPerDay: 'FAUCET_RATE_LIMIT_PER_IP_PER_DAY',
   turnstileSiteKey: 'FAUCET_TURNSTILE_SITE_KEY',
