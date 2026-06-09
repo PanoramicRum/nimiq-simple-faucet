@@ -121,6 +121,15 @@ export function deriveAdminConfigBase(
     firstTimeBoostPercent: reward.firstTimeBoostPercent ?? null,
     firstTimeBoostUseFingerprint: reward.firstTimeBoostUseFingerprint,
     firstTimeBoostUseUid: reward.firstTimeBoostUseUid,
+    repeatReductionDailyThreshold: reward.repeatReductionDailyThreshold ?? null,
+    repeatReductionDailyPercent: reward.repeatReductionDailyPercent ?? null,
+    repeatReductionWeeklyThreshold: reward.repeatReductionWeeklyThreshold ?? null,
+    repeatReductionWeeklyPercent: reward.repeatReductionWeeklyPercent ?? null,
+    repeatReductionMonthlyThreshold: reward.repeatReductionMonthlyThreshold ?? null,
+    repeatReductionMonthlyPercent: reward.repeatReductionMonthlyPercent ?? null,
+    repeatReductionUseAddress: reward.repeatReductionUseAddress,
+    repeatReductionUseIp: reward.repeatReductionUseIp,
+    repeatReductionUseFingerprint: reward.repeatReductionUseFingerprint,
     layers: deriveAbuseLayers(config),
   };
 }

@@ -39,6 +39,16 @@ export function migrationStatements(dialect: Dialect): string[] {
     'CREATE INDEX IF NOT EXISTS idx_claims_created_at ON claims(created_at DESC)',
     'CREATE INDEX IF NOT EXISTS idx_claims_address ON claims(address)',
     'CREATE INDEX IF NOT EXISTS idx_claims_ip ON claims(ip)',
+    // Repeat-user reduction: windowed count of paid claims by identity. In the
+    // single-dimension case (the default, address-only) the composite gives an
+    // O(log n + k) seek into `(identity, created_at >= since)` instead of a
+    // per-identity full scan. When two+ dimensions are OR-unioned, the planner
+    // does an OR-by-union — each branch uses its own composite. The fingerprint
+    // dimension (default-off) is intentionally backed only by the partial
+    // single-column idx_claims_fp_visitor (below), so its branch probes by
+    // visitorId then filters created_at per row — no created_at composite there.
+    'CREATE INDEX IF NOT EXISTS idx_claims_address_created_at ON claims(address, created_at)',
+    'CREATE INDEX IF NOT EXISTS idx_claims_ip_created_at ON claims(ip, created_at)',
     // First-time-boost detection dimensions (opt-in). Partial indexes keep them
     // tiny — only claims that actually carried the signal are indexed.
     `CREATE INDEX IF NOT EXISTS idx_claims_fp_visitor

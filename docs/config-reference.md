@@ -11,7 +11,7 @@ Every `FAUCET_*` environment variable accepted by the server, with type, default
 - Runtime overrides via `PATCH /admin/config` (claim amount, rate limit, abuse thresholds, layer toggles) — see [`apps/server/src/routes/admin/config.ts`](../apps/server/src/routes/admin/config.ts) and the `AdminConfigPatch` schema in [`apps/server/src/openapi/schemas.ts`](../apps/server/src/openapi/schemas.ts).
 - The public derivation served at `GET /v1/config` — see [`apps/server/src/configView.ts`](../apps/server/src/configView.ts).
 
-## All variables (81)
+## All variables (90)
 
 | Env var | Type | Default | Constraints | Required | Description |
 |---|---|---|---|---|---|
@@ -37,6 +37,15 @@ Every `FAUCET_*` environment variable accepted by the server, with type, default
 | `FAUCET_FIRST_TIME_BOOST_PERCENT` | number | — | min: 0, max: 500 |  | First-time reward boost percent (0–500), automatic mode only. A claimant who has never been paid before gets `baseline × (1 + percent/100)`. Suppressed while the wallet is below `lowBalanceThresholdNim`. Env DEFAULT; an admin can override it live from the dashboard. Unset/0 disables the boost. |
 | `FAUCET_FIRST_TIME_BOOST_USE_FINGERPRINT` | boolean | `false` | — |  | Include the device fingerprint `visitorId` as a first-time identity signal (a returning device is denied the boost even from a new IP/address). Env DEFAULT; admin-overridable live. Default off. |
 | `FAUCET_FIRST_TIME_BOOST_USE_UID` | boolean | `false` | — |  | Include the integrator `uid` as a first-time identity signal. Only counts for HMAC-verified host contexts — browser-only claims never match. Env DEFAULT; admin-overridable live. Default off. |
+| `FAUCET_REPEAT_REDUCTION_DAILY_THRESHOLD` | integer | — | min: 0 |  | Repeat-user reduction (§ Phase 4), automatic mode only. A claimant whose recent **paid** claim count meets a tier's threshold has the reward reduced by that tier's percent; when several tiers trigger, the largest percent wins. Three rolling windows — daily (24h), weekly (7d), monthly (30d) — each a count threshold + a reduction percent. Stacks additively with low-balance scaling and applies regardless of balance state; suppresses the first-time boost. Env DEFAULTS; an admin can override every value live from the dashboard. A threshold of 0 (or percent of 0) disables that tier. |
+| `FAUCET_REPEAT_REDUCTION_DAILY_PERCENT` | number | — | min: 0, max: 100 |  | — |
+| `FAUCET_REPEAT_REDUCTION_WEEKLY_THRESHOLD` | integer | — | min: 0 |  | — |
+| `FAUCET_REPEAT_REDUCTION_WEEKLY_PERCENT` | number | — | min: 0, max: 100 |  | — |
+| `FAUCET_REPEAT_REDUCTION_MONTHLY_THRESHOLD` | integer | — | min: 0 |  | — |
+| `FAUCET_REPEAT_REDUCTION_MONTHLY_PERCENT` | number | — | min: 0, max: 100 |  | — |
+| `FAUCET_REPEAT_REDUCTION_USE_ADDRESS` | boolean | `true` | — |  | Repeat-user identity dimensions (multi-select). A prior paid claim counts toward the total if it matches on ANY enabled dimension (OR/union). More dimensions = stricter. No dimension enabled disables the rule entirely. Env DEFAULTS; admin-overridable live. Address on by default; IP + fingerprint off. NOTE: like every `z.coerce.boolean()` env flag, any non-empty value coerces to true, so the env can only WIDEN the default-on address dimension to true — disabling it requires an admin override (dashboard / JSON), not `=false` here. |
+| `FAUCET_REPEAT_REDUCTION_USE_IP` | boolean | `false` | — |  | — |
+| `FAUCET_REPEAT_REDUCTION_USE_FINGERPRINT` | boolean | `false` | — |  | — |
 | `FAUCET_RATE_LIMIT_PER_MINUTE` | integer | `30` | min: 1 |  | — |
 | `FAUCET_RATE_LIMIT_PER_IP_PER_DAY` | integer | `5` | min: 1 |  | — |
 | `FAUCET_TURNSTILE_SITE_KEY` | string | — | — |  | — |

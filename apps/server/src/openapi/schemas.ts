@@ -299,6 +299,17 @@ export const AdminConfigPatch = registry.register(
       firstTimeBoostPercent: z.number().min(0).max(500).optional(),
       firstTimeBoostUseFingerprint: z.boolean().optional(),
       firstTimeBoostUseUid: z.boolean().optional(),
+      // Repeat-user reduction — applied live. Three tiers (count threshold +
+      // reduction percent); identity is a multi-select over address/IP/fingerprint.
+      repeatReductionDailyThreshold: z.number().int().min(0).optional(),
+      repeatReductionDailyPercent: z.number().min(0).max(100).optional(),
+      repeatReductionWeeklyThreshold: z.number().int().min(0).optional(),
+      repeatReductionWeeklyPercent: z.number().min(0).max(100).optional(),
+      repeatReductionMonthlyThreshold: z.number().int().min(0).optional(),
+      repeatReductionMonthlyPercent: z.number().min(0).max(100).optional(),
+      repeatReductionUseAddress: z.boolean().optional(),
+      repeatReductionUseIp: z.boolean().optional(),
+      repeatReductionUseFingerprint: z.boolean().optional(),
       layers: z
         .object({
           turnstile: z.boolean().optional(),
@@ -331,6 +342,16 @@ export const AdminConfigResponse = registry.register(
       firstTimeBoostPercent: z.number().nullable(),
       firstTimeBoostUseFingerprint: z.boolean(),
       firstTimeBoostUseUid: z.boolean(),
+      // Effective repeat-user reduction settings. Tier numbers null when unset.
+      repeatReductionDailyThreshold: z.number().nullable(),
+      repeatReductionDailyPercent: z.number().nullable(),
+      repeatReductionWeeklyThreshold: z.number().nullable(),
+      repeatReductionWeeklyPercent: z.number().nullable(),
+      repeatReductionMonthlyThreshold: z.number().nullable(),
+      repeatReductionMonthlyPercent: z.number().nullable(),
+      repeatReductionUseAddress: z.boolean(),
+      repeatReductionUseIp: z.boolean(),
+      repeatReductionUseFingerprint: z.boolean(),
       layers: z.record(z.string(), z.boolean()),
     }),
     overrides: z.record(z.string(), z.unknown()),

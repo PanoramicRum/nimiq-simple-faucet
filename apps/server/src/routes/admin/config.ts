@@ -2,9 +2,9 @@
  * Admin config GET/PATCH.
  *
  * Layer toggles (fingerprint, onchain, AI) take effect immediately on PATCH —
- * the abuse pipeline is rebuilt in memory. The low-balance reward keys
- * (lowBalanceThresholdNim, lowBalanceReductionPercent) also apply live: the
- * claim handler reads them from `runtime_config` per payout. Other overrides
+ * the abuse pipeline is rebuilt in memory. The reward keys (low-balance scaling,
+ * first-time boost, and repeat-user reduction tiers/identity) also apply live:
+ * the claim handler reads them from `runtime_config` per payout. Other overrides
  * (claim amount, rate-limit thresholds) are persisted but require a restart.
  */
 import type { FastifyInstance } from 'fastify';

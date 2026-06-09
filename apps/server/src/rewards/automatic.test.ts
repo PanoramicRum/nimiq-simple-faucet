@@ -251,6 +251,71 @@ describe('calculateAutomaticReward — first-time boost', () => {
   });
 });
 
+describe('calculateAutomaticReward — repeat-user reduction', () => {
+  // baseline 10 NIM = 1_000_000 luna.
+  it('reduces by the flat percent independent of balance state', () => {
+    const r = calculateAutomaticReward({ baselineNim: 10, repeatReductionPercent: 40 });
+    expect(r.amount).toBe(600_000n);
+    expect(r.adjustments).toEqual([
+      {
+        kind: 'repeat-user-reduction',
+        deltaLuna: -400_000n,
+        reason: 'repeat claimant; reward reduced 40%',
+      },
+    ]);
+  });
+
+  it('applies even when the balance is unknown (unlike low-balance scaling)', () => {
+    expect(
+      calculateAutomaticReward({ baselineNim: 10, repeatReductionPercent: 40, balanceLuna: null }).amount,
+    ).toBe(600_000n);
+  });
+
+  it('stacks additively with low-balance scaling (baseline − low% − repeat%)', () => {
+    const r = calculateAutomaticReward({
+      baselineNim: 10,
+      lowBalanceThresholdNim: 20,
+      lowBalanceReductionPercent: 25,
+      repeatReductionPercent: 40,
+      balanceLuna: 1_000_000n, // < 20 NIM threshold → low-balance active
+    });
+    // 1_000_000 − 250_000 (low) − 400_000 (repeat) = 350_000
+    expect(r.amount).toBe(350_000n);
+    expect(r.adjustments.map((a) => a.kind)).toEqual([
+      'low-balance-scaling',
+      'repeat-user-reduction',
+    ]);
+  });
+
+  it('a combined reduction ≥ 100% floors to 0n (caller refuses)', () => {
+    const r = calculateAutomaticReward({
+      baselineNim: 10,
+      lowBalanceThresholdNim: 20,
+      lowBalanceReductionPercent: 60,
+      repeatReductionPercent: 60,
+      balanceLuna: 1_000_000n,
+    });
+    expect(r.amount).toBe(0n);
+  });
+
+  it('ignores an out-of-range or zero repeat percent (defensive)', () => {
+    expect(calculateAutomaticReward({ baselineNim: 10, repeatReductionPercent: 0 }).amount).toBe(1_000_000n);
+    expect(calculateAutomaticReward({ baselineNim: 10, repeatReductionPercent: 150 }).amount).toBe(1_000_000n);
+    expect(calculateAutomaticReward({ baselineNim: 10, repeatReductionPercent: -5 }).adjustments).toEqual([]);
+  });
+
+  it('suppresses the first-time boost whenever a repeat reduction fires (boost ⊥ repeat)', () => {
+    const r = calculateAutomaticReward({
+      baselineNim: 10,
+      firstTimeBoostPercent: 50,
+      isFirstTime: true,
+      repeatReductionPercent: 40,
+    });
+    expect(r.amount).toBe(600_000n); // reduction only, no boost
+    expect(r.adjustments.map((a) => a.kind)).toEqual(['repeat-user-reduction']);
+  });
+});
+
 describe('resolveRewardSettings', () => {
   const cfg = {
     automaticRewardsEnabled: true,
@@ -302,5 +367,45 @@ describe('resolveRewardSettings', () => {
     expect(s.firstTimeBoostPercent).toBeUndefined();
     expect(s.firstTimeBoostUseFingerprint).toBe(false);
     expect(s.firstTimeBoostUseUid).toBe(false);
+    // Repeat-reduction tiers default undefined; address defaults on, others off.
+    expect(s.repeatReductionDailyThreshold).toBeUndefined();
+    expect(s.repeatReductionDailyPercent).toBeUndefined();
+    expect(s.repeatReductionWeeklyThreshold).toBeUndefined();
+    expect(s.repeatReductionWeeklyPercent).toBeUndefined();
+    expect(s.repeatReductionMonthlyThreshold).toBeUndefined();
+    expect(s.repeatReductionMonthlyPercent).toBeUndefined();
+    expect(s.repeatReductionUseAddress).toBe(true);
+    expect(s.repeatReductionUseIp).toBe(false);
+    expect(s.repeatReductionUseFingerprint).toBe(false);
+  });
+
+  it('resolves the repeat-reduction tiers + toggles (override wins; out-of-range falls back)', () => {
+    const s = resolveRewardSettings(
+      {
+        ...cfg,
+        repeatReductionDailyThreshold: 3,
+        repeatReductionDailyPercent: 30,
+        repeatReductionMonthlyThreshold: 20,
+        repeatReductionMonthlyPercent: 70,
+      },
+      {
+        repeatReductionDailyPercent: 55, // valid override wins
+        repeatReductionWeeklyThreshold: 10, // override (no env default)
+        repeatReductionWeeklyPercent: 200, // out of range → env default (undefined)
+        repeatReductionMonthlyThreshold: 25, // override wins
+        repeatReductionMonthlyPercent: 150, // out of range → env default (70)
+        repeatReductionUseIp: true,
+        repeatReductionUseFingerprint: true,
+      },
+    );
+    expect(s.repeatReductionDailyThreshold).toBe(3); // env default kept (no override)
+    expect(s.repeatReductionDailyPercent).toBe(55); // override wins
+    expect(s.repeatReductionWeeklyThreshold).toBe(10);
+    expect(s.repeatReductionWeeklyPercent).toBeUndefined(); // out of range → fallback
+    expect(s.repeatReductionMonthlyThreshold).toBe(25); // override wins
+    expect(s.repeatReductionMonthlyPercent).toBe(70); // out of range → env default
+    expect(s.repeatReductionUseAddress).toBe(true); // default on
+    expect(s.repeatReductionUseIp).toBe(true); // override
+    expect(s.repeatReductionUseFingerprint).toBe(true); // override
   });
 });
