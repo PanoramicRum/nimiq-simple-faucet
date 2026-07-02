@@ -22,7 +22,7 @@
   },
   "dependencies": {
     "@faucet/core": "workspace:*",
-    "@nimiq/core": "^2.5.1"
+    "@nimiq/core": "^2.7.1"
   },
   "devDependencies": {
     "typescript": "^6.0.3",
