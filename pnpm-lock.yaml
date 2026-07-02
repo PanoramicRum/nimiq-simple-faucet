@@ -242,8 +242,8 @@ importers:
         specifier: ^5.0.0
         version: 5.8.5
       fastify-type-provider-zod:
-        specifier: ^4.0.2
-        version: 4.0.2(fastify@5.8.5)(zod@4.4.3)
+        specifier: ^7.0.0
+        version: 7.0.0(@fastify/swagger@9.7.0)(fastify@5.8.5)(openapi-types@12.1.3)(zod@4.4.3)
       ioredis:
         specifier: ^5.11.0
         version: 5.11.0
@@ -2313,6 +2313,9 @@ packages:
   '@fastify/static@9.1.3':
     resolution: {integrity: sha512-aXrYtsiryLhRxRNaxNqsn7FUISeb7rB9q4eHUPIot5aeQBLNahnz1m6thzm7JWC1poSGXS9XrX8DvuMivp2hkQ==}
 
+  '@fastify/swagger@9.7.0':
+    resolution: {integrity: sha512-Vp1SC1GC2Hrkd3faFILv86BzUNyFz5N4/xdExqtCgkGASOzn/x+eMe4qXIGq7cdT6wif/P/oa6r1Ruqx19paZA==}
+
   '@fastify/websocket@11.2.0':
     resolution: {integrity: sha512-3HrDPbAG1CzUCqnslgJxppvzaAZffieOVbLp1DAy1huCSynUWPifSvfdEDUR8HlJLp3sp1A36uOM2tJogADS8w==}
 
@@ -2479,9 +2482,11 @@ packages:
 
   '@ip-location-db/dbip-asn-mmdb@2.3.2026050119':
     resolution: {integrity: sha512-bhJ6T91GHuvx5tAu09HRqr93XcO4pcsDO2iXFb121EQ4U4wNjyP/jDsyrQqB5m8fgsclQ0gcGA8vC98Jlpe8cw==}
+    deprecated: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
 
   '@ip-location-db/dbip-country-mmdb@2.3.2026050119':
     resolution: {integrity: sha512-SoQlDR2hS9R9e0l99Klls6pHLg7Y/I3y7NYqAC5CP/iTXMQlBU1YVM/510ulZg3Lwiz1woh3wiX7zauIfrV3Ag==}
+    deprecated: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
 
   '@isaacs/ttlcache@1.4.1':
     resolution: {integrity: sha512-RQgQ4uQ+pLbqXfOmieB91ejmLwvSgv9nLx6sT6sD83s7umBypgg+OIBOBbEUiJXrfpnp9j0mRhYYdzp9uqq3lA==}
@@ -4352,14 +4357,19 @@ packages:
   fast-uri@3.1.2:
     resolution: {integrity: sha512-rVjf7ArG3LTk+FS6Yw81V1DLuZl1bRbNrev6Tmd/9RaroeeRRJhAt7jg/6YFxbvAQXUCavSoZhPPj6oOx+5KjQ==}
 
+  fast-uri@4.1.0:
+    resolution: {integrity: sha512-ZodJ2cRiLVWGi9IgPb3mbgSqM4CD3LexCHkuv0FfBXHJI1ADfucTD06m6clO2Cy5RZYsw/SiCVl/dyrFI/SYWA==}
+
   fastify-plugin@5.1.0:
     resolution: {integrity: sha512-FAIDA8eovSt5qcDgcBvDuX/v0Cjz0ohGhENZ/wpc3y+oZCY2afZ9Baqql3g/lC+OHRnciQol4ww7tuthOb9idw==}
 
-  fastify-type-provider-zod@4.0.2:
-    resolution: {integrity: sha512-FDRzSL3ZuoZ+4YDevR1YOinmDKkxOdy3QB9dDR845sK+bQvDroPKhHAXLEAOObDxL7SMA0OZN/A4osrNBTdDTQ==}
+  fastify-type-provider-zod@7.0.0:
+    resolution: {integrity: sha512-yUEKMyy+kml+4fzUU9GxVtYVKmPKNFo8OVd2N/RH2I/7JZiKvOqF1BUj3f/JJU3DDQDM7pMv2bf/Y8COPaxUWg==}
     peerDependencies:
-      fastify: ^5.0.0
-      zod: ^3.14.2
+      '@fastify/swagger': '>=9.5.1'
+      fastify: ^5.5.0
+      openapi-types: ^12.1.3
+      zod: '>=4.1.5'
 
   fastify@5.8.5:
     resolution: {integrity: sha512-Yqptv59pQzPgQUSIm87hMqHJmdkb1+GPxdE6vW6FRyVE9G86mt7rOghitiU4JHRaTyDUk9pfeKmDeu70lAwM4Q==}
@@ -4747,6 +4757,10 @@ packages:
 
   json-schema-ref-resolver@3.0.0:
     resolution: {integrity: sha512-hOrZIVL5jyYFjzk7+y7n5JDzGlU8rfWDuYyHwGa2WA8/pcmMHezp2xsVwxrebD/Q9t8Nc5DboieySDpCp4WG4A==}
+
+  json-schema-resolver@3.0.0:
+    resolution: {integrity: sha512-HqMnbz0tz2DaEJ3ntsqtx3ezzZyDE7G56A/pPY/NGmrPu76UzsWquOpHFRAf5beTNXoH2LU5cQePVvRli1nchA==}
+    engines: {node: '>=20'}
 
   json-schema-traverse@1.0.0:
     resolution: {integrity: sha512-NM8/P9n3XjXhIZn1lLhkFaACTOURQXjWhV4BA/RnOv8xvgqtqpAX9IO4mRQxSx1Rlo4tqzeqb0sOlruaOy3dug==}
@@ -5354,6 +5368,9 @@ packages:
   open@8.4.2:
     resolution: {integrity: sha512-7x81NCL719oNbsq/3mh+hVrAWmFuEYUqrq/Iw3kUzH8ReypT9QQ0BLoJS7/G9k6N81XjW4qHWtjWwe/9eLy1EQ==}
     engines: {node: '>=12'}
+
+  openapi-types@12.1.3:
+    resolution: {integrity: sha512-N4YtSYJqghVu4iek2ZUvcN/0aqH1kRDuNqzcycDxhOUpg7GdvLa2F3DgS6yBNhInhv2r/6I0Flkn7CqL8+nIcw==}
 
   openapi3-ts@4.5.0:
     resolution: {integrity: sha512-jaL+HgTq2Gj5jRcfdutgRGLosCy/hT8sQf6VOy+P+g36cZOjI1iukdPnijC+4CmeRzg/jEllJUboEic2FhxhtQ==}
@@ -8309,6 +8326,16 @@ snapshots:
       fastq: 1.20.1
       glob: 13.0.6
 
+  '@fastify/swagger@9.7.0':
+    dependencies:
+      fastify-plugin: 5.1.0
+      json-schema-resolver: 3.0.0
+      openapi-types: 12.1.3
+      rfdc: 1.4.1
+      yaml: 2.9.0
+    transitivePeerDependencies:
+      - supports-color
+
   '@fastify/websocket@11.2.0(bufferutil@4.1.0)(utf-8-validate@5.0.10)':
     dependencies:
       duplexify: 4.1.3
@@ -10397,14 +10424,17 @@ snapshots:
 
   fast-uri@3.1.2: {}
 
+  fast-uri@4.1.0: {}
+
   fastify-plugin@5.1.0: {}
 
-  fastify-type-provider-zod@4.0.2(fastify@5.8.5)(zod@4.4.3):
+  fastify-type-provider-zod@7.0.0(@fastify/swagger@9.7.0)(fastify@5.8.5)(openapi-types@12.1.3)(zod@4.4.3):
     dependencies:
       '@fastify/error': 4.2.0
+      '@fastify/swagger': 9.7.0
       fastify: 5.8.5
+      openapi-types: 12.1.3
       zod: 4.4.3
-      zod-to-json-schema: 3.25.2(zod@4.4.3)
 
   fastify@5.8.5:
     dependencies:
@@ -10825,6 +10855,14 @@ snapshots:
   json-schema-ref-resolver@3.0.0:
     dependencies:
       dequal: 2.0.3
+
+  json-schema-resolver@3.0.0:
+    dependencies:
+      debug: 4.4.3
+      fast-uri: 4.1.0
+      rfdc: 1.4.1
+    transitivePeerDependencies:
+      - supports-color
 
   json-schema-traverse@1.0.0: {}
 
@@ -11709,6 +11747,8 @@ snapshots:
       define-lazy-prop: 2.0.0
       is-docker: 2.2.1
       is-wsl: 2.2.0
+
+  openapi-types@12.1.3: {}
 
   openapi3-ts@4.5.0:
     dependencies:
