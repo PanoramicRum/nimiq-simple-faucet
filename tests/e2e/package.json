@@ -7,11 +7,11 @@
     "test": "playwright test --config=../../playwright.config.ts"
   },
   "devDependencies": {
-    "@axe-core/playwright": "^4.11.3",
+    "@axe-core/playwright": "^4.12.1",
     "@faucet/abuse-hashcash": "workspace:*",
     "@faucet/core": "workspace:*",
     "@otplib/preset-default": "^12.0.1",
-    "@playwright/test": "^1.60.0",
+    "@playwright/test": "^1.61.1",
     "@types/node": "^25.9.1",
     "fastify": "^5.0.0",
     "typescript": "^6.0.3"
