@@ -24,10 +24,10 @@
   },
   "dependencies": {
     "@faucet/core": "workspace:*",
-    "@ip-location-db/dbip-asn-mmdb": "^2.3.2026050119",
-    "@ip-location-db/dbip-country-mmdb": "^2.3.2026050119",
+    "@ip-location-db/dbip-asn-mmdb": "^2.3.2026060407",
+    "@ip-location-db/dbip-country-mmdb": "^2.3.2026060120",
     "maxmind": "^5.0.6",
-    "undici": "^8.3.0"
+    "undici": "^8.7.0"
   },
   "devDependencies": {
     "@types/node": "^25.9.1",
