@@ -69,3 +69,17 @@ allowBuilds:
   utf-8-validate: true
   sharp: true
   es5-ext: false
+
+minimumReleaseAgeExclude:
+  - vue-tsc@3.3.8
+  - '@vue/language-core@3.3.8'
+  - turbo@2.10.6
+  - '@turbo/darwin-64@2.10.6'
+  - '@turbo/darwin-arm64@2.10.6'
+  - '@turbo/linux-64@2.10.6'
+  - '@turbo/linux-arm64@2.10.6'
+  - '@turbo/windows-64@2.10.6'
+  - '@turbo/windows-arm64@2.10.6'
+  - happy-dom@20.11.1
+  - postcss@8.5.22
+  - '@vitejs/plugin-react@6.0.4'
