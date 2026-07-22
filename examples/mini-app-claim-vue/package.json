@@ -17,11 +17,11 @@
     "vue": "^3.5.35"
   },
   "devDependencies": {
-    "@vitejs/plugin-vue": "^6.0.7",
-    "happy-dom": "^20.9.0",
+    "@vitejs/plugin-vue": "^6.0.8",
+    "happy-dom": "^20.11.1",
     "typescript": "^6.0.3",
     "vite": "^8.0.14",
-    "vitest": "^4.1.7",
-    "vue-tsc": "^3.3.2"
+    "vitest": "^4.1.10",
+    "vue-tsc": "^3.3.8"
   }
 }
