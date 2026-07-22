@@ -70,7 +70,28 @@ allowBuilds:
   sharp: true
   es5-ext: false
 
+# Mirror of the root minimumReleaseAgeExclude block (same-day releases
+# from the #279 dev group + the expo 57 coordinated bump); the lockfile
+# embeds publish timestamps, so the frozen install in the deps stage
+# rejects these without the exclusions. Ages out 2026-07-23.
 minimumReleaseAgeExclude:
+  - '@expo/cli@57.0.10'
+  - '@expo/config-plugins@57.0.6'
+  - '@expo/config@57.0.6'
+  - '@expo/fingerprint@0.20.6'
+  - '@expo/image-utils@0.11.4'
+  - '@expo/metro-config@57.0.7'
+  - '@expo/prebuild-config@57.0.9'
+  - '@expo/require-utils@57.0.4'
+  - '@expo/router-server@57.0.4'
+  - babel-preset-expo@57.0.4
+  - expo-asset@57.0.7
+  - expo-constants@57.0.7
+  - expo-modules-autolinking@57.0.9
+  - expo-modules-core@57.0.7
+  - expo-modules-jsi@57.0.4
+  - expo@57.0.8
+  - '@expo/metro-runtime@57.0.7'
   - vue-tsc@3.3.8
   - '@vue/language-core@3.3.8'
   - turbo@2.10.6
