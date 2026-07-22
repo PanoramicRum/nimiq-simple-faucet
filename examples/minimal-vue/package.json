@@ -1,6 +1,6 @@
 {
   "name": "@nimiq-faucet/example-minimal-vue",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "private": true,
   "type": "module",
   "description": "The smallest possible Vue 3 + Vite faucet integration — copy this directory, set VITE_FAUCET_URL, done.",

@@ -1,6 +1,6 @@
 {
   "name": "@nimiq-faucet/example-react-native",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "private": true,
   "main": "index.ts",
   "description": "Expo app demonstrating the @nimiq-faucet/react-native SDK — claim NIM from a self-hosted faucet, with the device fingerprint auto-injected on dev builds.",
