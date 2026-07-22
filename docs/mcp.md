@@ -24,12 +24,14 @@ If no admin auth is presented (or it fails), public tools still work but admin t
 
 ## Tools
 
-There are **9 tools**: 3 public, 6 admin-scoped.
+There are **12 tools**: 3 public, 9 admin-scoped.
 
 > **Schema sources.** Input schemas for tools that overlap REST endpoints are derived from the canonical Zod sources in [apps/server/src/openapi/schemas.ts](../apps/server/src/openapi/schemas.ts) so they cannot drift. Specifically:
 > - `faucet.send` → `to` picked from `AdminSendRequest`; `amountLuna` kept stricter (decimal-integer string only — JSON-number precision is not enough for large Luna values)
 > - `faucet.block_address` → full shape derived from `BlocklistCreateRequest`
 > - `faucet.unblock_address` → `kind` + `value` picked from `BlocklistCreateRequest`
+> - `faucet.reward_whitelist_add` → full shape derived from `RewardWhitelistCreateRequest`
+> - `faucet.reward_whitelist_remove` → `kind` + `value` picked from `RewardWhitelistCreateRequest`
 >
 > The remaining tools either have no REST overlap (`faucet.stats`, `faucet.balance`, `faucet.status`, `faucet.explain_decision`) or have intentionally different constraints (`faucet.recent_claims` and `faucet.list_blocks` accept larger limits than the admin-UI pagination endpoints).
 
@@ -114,6 +116,37 @@ Enumerate blocklist entries, newest first.
 ```ts
 input:  { limit?: number (1..1000, default 100) }
 output: Array<{ id, kind, value, reason, expiresAt, createdAt }>
+```
+
+#### `faucet.reward_whitelist_add`
+
+Add a reward-whitelist entry (§2.4.5): an allow-listed address — or integrator `uid`, matched only for HMAC-verified claims — receives a bonus percent (or an exact payout) in automatic reward mode. Values are canonicalized on insert. Duplicate `(kind, value)` returns an error payload instead of inserting.
+
+```ts
+input:  { kind: 'address' | 'uid',
+          value: string,
+          bonusPercent?: number /* 0..500; omit to use the global default */,
+          exactAmountNim?: number /* wins over any percent */,
+          reason?: string }
+output: { id: string, kind, value } | { error: 'entry already exists', kind, value }
+```
+
+#### `faucet.reward_whitelist_remove`
+
+Remove reward-whitelist entries matching `(kind, value)`.
+
+```ts
+input:  { kind: 'address' | 'uid', value: string }
+output: { removed: { kind, value } }
+```
+
+#### `faucet.reward_whitelist_list`
+
+Enumerate reward-whitelist entries, newest first.
+
+```ts
+input:  { limit?: number (1..1000, default 100) }
+output: Array<{ id, kind, value, bonusPercent, exactAmountNim, reason, createdAt }>
 ```
 
 #### `faucet.explain_decision`

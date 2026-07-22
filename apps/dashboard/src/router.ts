@@ -37,6 +37,11 @@ const routes: RouteRecordRaw[] = [
     component: () => import('./views/AbuseView.vue'),
   },
   {
+    path: '/admin/reward-whitelist',
+    name: 'reward-whitelist',
+    component: () => import('./views/RewardWhitelistView.vue'),
+  },
+  {
     path: '/admin/account',
     name: 'account',
     component: () => import('./views/AccountView.vue'),

@@ -12,6 +12,7 @@
 export {
   claims,
   blocklist,
+  rewardWhitelist,
   ipCounters,
   nonces,
   fingerprintLinks,

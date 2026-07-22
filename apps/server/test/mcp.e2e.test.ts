@@ -78,10 +78,10 @@ describe('MCP (/mcp)', () => {
     }
   });
 
-  it('exposes 9 tools total (3 public, 6 admin)', () => {
-    expect(ALL_TOOLS).toHaveLength(9);
+  it('exposes 12 tools total (3 public, 9 admin)', () => {
+    expect(ALL_TOOLS).toHaveLength(12);
     expect(PUBLIC_TOOLS.size).toBe(3);
-    expect(ADMIN_TOOLS.size).toBe(6);
+    expect(ADMIN_TOOLS.size).toBe(9);
   });
 
   /**
@@ -95,7 +95,7 @@ describe('MCP (/mcp)', () => {
    * End-to-end transport coverage will come from the admin UI integration
    * harness in a follow-up milestone.
    */
-  it('buildMcpServer registers all 9 tools on a real McpServer instance', () => {
+  it('buildMcpServer registers all 12 tools on a real McpServer instance', () => {
     const server = buildMcpServer(ctx, {
       getAdminPrincipal: () => null,
     });

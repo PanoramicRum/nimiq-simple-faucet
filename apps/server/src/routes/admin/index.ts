@@ -13,6 +13,7 @@ import { adminAuthRoutes } from './auth.js';
 import { adminOverviewRoutes } from './overview.js';
 import { adminClaimsRoutes } from './claims.js';
 import { adminBlocklistRoutes } from './blocklist.js';
+import { adminRewardWhitelistRoutes } from './rewardWhitelist.js';
 import { adminIntegratorsRoutes } from './integrators.js';
 import { adminConfigRoutes } from './config.js';
 import { adminAccountRoutes } from './account.js';
@@ -39,6 +40,7 @@ export async function adminRoutes(app: FastifyInstance, ctx: AppContext): Promis
     '/admin/overview',
     '/admin/claims',
     '/admin/blocklist',
+    '/admin/reward-whitelist',
     '/admin/integrators',
     '/admin/config',
     '/admin/account',
@@ -70,6 +72,7 @@ export async function adminRoutes(app: FastifyInstance, ctx: AppContext): Promis
   await adminOverviewRoutes(app, ctx);
   await adminClaimsRoutes(app, ctx);
   await adminBlocklistRoutes(app, ctx);
+  await adminRewardWhitelistRoutes(app, ctx);
   await adminIntegratorsRoutes(app, ctx);
   await adminConfigRoutes(app, ctx);
   await adminAccountRoutes(app, ctx);

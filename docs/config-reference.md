@@ -11,7 +11,7 @@ Every `FAUCET_*` environment variable accepted by the server, with type, default
 - Runtime overrides via `PATCH /admin/config` (claim amount, rate limit, abuse thresholds, layer toggles) — see [`apps/server/src/routes/admin/config.ts`](../apps/server/src/routes/admin/config.ts) and the `AdminConfigPatch` schema in [`apps/server/src/openapi/schemas.ts`](../apps/server/src/openapi/schemas.ts).
 - The public derivation served at `GET /v1/config` — see [`apps/server/src/configView.ts`](../apps/server/src/configView.ts).
 
-## All variables (90)
+## All variables (92)
 
 | Env var | Type | Default | Constraints | Required | Description |
 |---|---|---|---|---|---|
@@ -46,6 +46,8 @@ Every `FAUCET_*` environment variable accepted by the server, with type, default
 | `FAUCET_REPEAT_REDUCTION_USE_ADDRESS` | boolean | `true` | — |  | Repeat-user identity dimensions (multi-select). A prior paid claim counts toward the total if it matches on ANY enabled dimension (OR/union). More dimensions = stricter. No dimension enabled disables the rule entirely. Env DEFAULTS; admin-overridable live. Address on by default; IP + fingerprint off. NOTE: like every `z.coerce.boolean()` env flag, any non-empty value coerces to true, so the env can only WIDEN the default-on address dimension to true — disabling it requires an admin override (dashboard / JSON), not `=false` here. |
 | `FAUCET_REPEAT_REDUCTION_USE_IP` | boolean | `false` | — |  | — |
 | `FAUCET_REPEAT_REDUCTION_USE_FINGERPRINT` | boolean | `false` | — |  | — |
+| `FAUCET_WHITELIST_REWARDS_ENABLED` | boolean | `false` | — |  | Whitelist bonus (§2.4.5), automatic mode only. When true, each claim also checks the operator-managed reward whitelist (admin dashboard → Reward whitelist, or `POST /admin/reward-whitelist`): an allow-listed address — or integrator uid, counted only for HMAC-verified host contexts — gets a percent bonus, or an exact payout when the entry sets one. A whitelist grant suppresses the first-time boost and the repeat-user reduction; the percent form still takes low-balance scaling, the exact form does not. Acts as the kill switch: off skips the per-claim lookup entirely without clearing the list. Env DEFAULT; admin-overridable live. Default off. |
+| `FAUCET_WHITELIST_BONUS_PERCENT` | number | — | min: 0, max: 500 |  | Global whitelist bonus percent (0–500) for entries that don't set their own `bonusPercent`. A listed identity gets `baseline × (1 + percent/100)`. Env DEFAULT; admin-overridable live. Unset/0 grants nothing to entries without per-entry values (their listing then has no effect). |
 | `FAUCET_RATE_LIMIT_PER_MINUTE` | integer | `30` | min: 1 |  | — |
 | `FAUCET_RATE_LIMIT_PER_IP_PER_DAY` | integer | `5` | min: 1 |  | — |
 | `FAUCET_TURNSTILE_SITE_KEY` | string | — | — |  | — |

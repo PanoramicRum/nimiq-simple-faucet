@@ -22,6 +22,7 @@ import {
   resolveRewardSettings,
 } from '../rewards/automatic.js';
 import { isFirstTimeClaimant } from '../rewards/firstTime.js';
+import { findWhitelistMatch, type WhitelistMatch } from '../rewards/whitelist.js';
 import {
   countRepeatClaims,
   effectiveRepeatReductionPercent,
@@ -456,6 +457,14 @@ export async function claimRoutes(app: FastifyInstance, ctx: AppContext): Promis
         repeatReductionPercent = effectiveRepeatReductionPercent(counts, settings);
       }
 
+      // Whitelist bonus (§2.4.5). Only hit the list when the rule is enabled
+      // (zero-cost path otherwise). `hostUid` is the HMAC-gated variable — an
+      // unverified uid never reaches the lookup.
+      let whitelist: WhitelistMatch | null = null;
+      if (settings.whitelistRewardsEnabled) {
+        whitelist = await findWhitelistMatch(ctx.db, { address, hostUid });
+      }
+
       const reward = calculateAutomaticReward({
         baselineNim: settings.baselineNim,
         lowBalanceThresholdNim: settings.lowBalanceThresholdNim,
@@ -463,6 +472,8 @@ export async function claimRoutes(app: FastifyInstance, ctx: AppContext): Promis
         firstTimeBoostPercent: settings.firstTimeBoostPercent,
         isFirstTime,
         repeatReductionPercent,
+        whitelist,
+        whitelistBonusPercent: settings.whitelistBonusPercent,
         balanceLuna: balance,
       });
       finalPayout = { amountLuna: reward.amount, reward };

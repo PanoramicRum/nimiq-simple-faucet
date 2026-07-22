@@ -130,6 +130,8 @@ export function deriveAdminConfigBase(
     repeatReductionUseAddress: reward.repeatReductionUseAddress,
     repeatReductionUseIp: reward.repeatReductionUseIp,
     repeatReductionUseFingerprint: reward.repeatReductionUseFingerprint,
+    whitelistRewardsEnabled: reward.whitelistRewardsEnabled,
+    whitelistBonusPercent: reward.whitelistBonusPercent ?? null,
     layers: deriveAbuseLayers(config),
   };
 }

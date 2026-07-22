@@ -33,6 +33,8 @@ interface ConfigResponse {
     repeatReductionUseAddress: boolean;
     repeatReductionUseIp: boolean;
     repeatReductionUseFingerprint: boolean;
+    whitelistRewardsEnabled: boolean;
+    whitelistBonusPercent: number | null;
     layers: LayerFlags;
   };
   overrides: Record<string, unknown>;
@@ -57,6 +59,8 @@ type PatchBody = {
   repeatReductionUseAddress?: boolean;
   repeatReductionUseIp?: boolean;
   repeatReductionUseFingerprint?: boolean;
+  whitelistRewardsEnabled?: boolean;
+  whitelistBonusPercent?: number;
   layers?: Partial<LayerFlags>;
 };
 
@@ -85,6 +89,8 @@ const form = reactive({
   repeatReductionUseAddress: true,
   repeatReductionUseIp: false,
   repeatReductionUseFingerprint: false,
+  whitelistRewardsEnabled: false,
+  whitelistBonusPercent: 0,
   layers: {
     turnstile: false,
     hcaptcha: false,
@@ -119,6 +125,8 @@ async function load(): Promise<void> {
     form.repeatReductionUseAddress = res.base.repeatReductionUseAddress;
     form.repeatReductionUseIp = res.base.repeatReductionUseIp;
     form.repeatReductionUseFingerprint = res.base.repeatReductionUseFingerprint;
+    form.whitelistRewardsEnabled = res.base.whitelistRewardsEnabled;
+    form.whitelistBonusPercent = res.base.whitelistBonusPercent ?? 0;
     form.layers = { ...res.base.layers };
     overrides.value = res.overrides;
     error.value = null;
@@ -154,10 +162,12 @@ async function onSave(): Promise<void> {
       repeatReductionUseAddress: form.repeatReductionUseAddress,
       repeatReductionUseIp: form.repeatReductionUseIp,
       repeatReductionUseFingerprint: form.repeatReductionUseFingerprint,
+      whitelistRewardsEnabled: form.whitelistRewardsEnabled,
+      whitelistBonusPercent: Number(form.whitelistBonusPercent),
       layers: { ...form.layers },
     };
     const res = await api.patch<{ ok: true; persistedKeys: string[] }>('/admin/config', body);
-    status.value = `Saved: ${res.persistedKeys.join(', ')}. Layer toggles and reward settings (low-balance, first-time boost, repeat-user reduction) take effect immediately; other settings need a restart.`;
+    status.value = `Saved: ${res.persistedKeys.join(', ')}. Layer toggles and reward settings (low-balance, first-time boost, repeat-user reduction, whitelist bonus) take effect immediately; other settings need a restart.`;
     await load();
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'failed';
@@ -394,6 +404,34 @@ onMounted(load);
         <label class="flex items-center gap-2 text-sm">
           <input v-model="form.repeatReductionUseFingerprint" type="checkbox" />
           <span>Use device fingerprint (visitorId)</span>
+        </label>
+      </fieldset>
+
+      <fieldset class="flex flex-col gap-2">
+        <legend class="text-xs font-semibold">Whitelist bonus</legend>
+        <p class="muted text-xs">
+          Allow-listed addresses (and verified-integrator uids) get a bonus percent — or an exact
+          payout when their entry sets one. Manage the list on the
+          <RouterLink class="underline" to="/admin/reward-whitelist">Reward whitelist</RouterLink>
+          page. A whitelist grant replaces the first-time boost and the repeat-user reduction.
+          Applies immediately on Save.
+        </p>
+        <label class="flex items-center gap-2 text-sm">
+          <input v-model="form.whitelistRewardsEnabled" type="checkbox" />
+          <span>Enable whitelist bonuses</span>
+        </label>
+        <label class="flex flex-col gap-1 text-xs sm:max-w-xs">
+          <span>Default bonus (%)</span>
+          <input
+            v-model.number="form.whitelistBonusPercent"
+            class="input font-mono"
+            type="number"
+            min="0"
+            max="500"
+            step="1"
+            required
+          />
+          <span class="muted">Used for entries without their own percent or exact amount. 0 grants those entries nothing.</span>
         </label>
       </fieldset>
 

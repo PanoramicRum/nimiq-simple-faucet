@@ -244,6 +244,37 @@ export const BlocklistCreateRequest = registry.register(
   }),
 );
 
+// Reward whitelist (§2.4.5) — operator-listed identities that receive a bonus
+// (or exact payout) in automatic reward mode. `uid` entries only ever match
+// HMAC-verified host contexts. Both per-entry numbers are optional: an entry
+// with neither falls back to the global `whitelistBonusPercent` setting;
+// `exactAmountNim` takes precedence over any percent.
+export const RewardWhitelistEntry = registry.register(
+  'RewardWhitelistEntry',
+  z.object({
+    id: z.string(),
+    kind: z.enum(['address', 'uid']),
+    value: z.string(),
+    bonusPercent: z.number().nullable(),
+    exactAmountNim: z.number().nullable(),
+    reason: z.string().nullable(),
+    createdAt: z.union([z.string(), z.number()]),
+  }),
+);
+
+export const RewardWhitelistCreateRequest = registry.register(
+  'RewardWhitelistCreateRequest',
+  z.object({
+    kind: z.enum(['address', 'uid']),
+    value: z.string().min(1).max(128),
+    // Percent capped at 500 like the other bonus percents (fat-finger bound);
+    // exact amount is a positive NIM value.
+    bonusPercent: z.number().min(0).max(500).optional(),
+    exactAmountNim: z.number().positive().max(1_000_000).optional(),
+    reason: z.string().max(256).optional(),
+  }),
+);
+
 export const IntegratorRecord = registry.register(
   'IntegratorRecord',
   z.object({
@@ -310,6 +341,11 @@ export const AdminConfigPatch = registry.register(
       repeatReductionUseAddress: z.boolean().optional(),
       repeatReductionUseIp: z.boolean().optional(),
       repeatReductionUseFingerprint: z.boolean().optional(),
+      // Whitelist bonus (§2.4.5) — applied live. The toggle gates the per-claim
+      // list lookup; the percent is the global default for entries without
+      // their own. Entries themselves are managed at /admin/reward-whitelist.
+      whitelistRewardsEnabled: z.boolean().optional(),
+      whitelistBonusPercent: z.number().min(0).max(500).optional(),
       layers: z
         .object({
           turnstile: z.boolean().optional(),
@@ -352,6 +388,9 @@ export const AdminConfigResponse = registry.register(
       repeatReductionUseAddress: z.boolean(),
       repeatReductionUseIp: z.boolean(),
       repeatReductionUseFingerprint: z.boolean(),
+      // Effective whitelist-bonus settings. Percent null when unset.
+      whitelistRewardsEnabled: z.boolean(),
+      whitelistBonusPercent: z.number().nullable(),
       layers: z.record(z.string(), z.boolean()),
     }),
     overrides: z.record(z.string(), z.unknown()),

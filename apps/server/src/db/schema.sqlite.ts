@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { integer, primaryKey, sqliteTable, text } from 'drizzle-orm/sqlite-core';
+import { integer, primaryKey, real, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 
 export const claims = sqliteTable('claims', {
   id: text('id').primaryKey(),
@@ -33,6 +33,23 @@ export const blocklist = sqliteTable('blocklist', {
     .notNull()
     .default(sql`(unixepoch() * 1000)`),
   expiresAt: integer('expires_at', { mode: 'timestamp_ms' }),
+});
+
+// Reward whitelist (§2.4.5): operator-listed identities that receive a bonus
+// (or an exact payout) in automatic reward mode. `value` is canonicalized via
+// normalizeBlocklistValue on every write path. Per-entry overrides are
+// nullable — an entry with neither falls back to the global
+// `whitelistBonusPercent`; `exact_amount_nim` takes precedence over percents.
+export const rewardWhitelist = sqliteTable('reward_whitelist', {
+  id: text('id').primaryKey(),
+  kind: text('kind').notNull(), // address | uid
+  value: text('value').notNull(),
+  bonusPercent: real('bonus_percent'),
+  exactAmountNim: real('exact_amount_nim'),
+  reason: text('reason'),
+  createdAt: integer('created_at', { mode: 'timestamp_ms' })
+    .notNull()
+    .default(sql`(unixepoch() * 1000)`),
 });
 
 export const ipCounters = sqliteTable('ip_counters', {
