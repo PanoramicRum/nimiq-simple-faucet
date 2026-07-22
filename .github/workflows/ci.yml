@@ -66,7 +66,10 @@ jobs:
       - run: pnpm build
       - run: pnpm typecheck
       - run: pnpm lint
-      - run: pnpm test --if-present
+      # pnpm 11 forwards unknown flags to the script (turbo rejects
+      # `--if-present`); the root `test` script always exists, so the
+      # guard was vestigial anyway.
+      - run: pnpm test
 
       # Install Playwright browsers + run the e2e suite as part of CI.
       - name: Install Playwright browsers
