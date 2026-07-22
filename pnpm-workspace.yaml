@@ -164,16 +164,23 @@ allowBuilds:
   sharp: true # next.js image optimization (nextjs-claim-page example); prebuilt @img/* cover most platforms, script is the fallback
   es5-ext: false # postinstall only prints a message (via websocket@1.0.35); nothing to build — keep blocked
 
+# Exact-version exclusions from the `minimumReleaseAge` (1 day) gate.
+# These versions came in via the dependabot dev-deps group (#279), whose
+# updater resolves without pnpm's release-age policy; the regenerated
+# lockfile embeds their publish timestamps, so frozen installs (CI +
+# Docker deps stage) reject them without these entries. All published
+# 2026-07-22 — the whole block ages out and is deletable 2026-07-23.
+# MIRRORED in deploy/docker/pnpm-workspace.docker.yaml — keep in sync.
 minimumReleaseAgeExclude:
+  - vue-tsc@3.3.8
+  - '@vue/language-core@3.3.8'
+  - turbo@2.10.6
   - '@turbo/darwin-64@2.10.6'
   - '@turbo/darwin-arm64@2.10.6'
   - '@turbo/linux-64@2.10.6'
   - '@turbo/linux-arm64@2.10.6'
   - '@turbo/windows-64@2.10.6'
   - '@turbo/windows-arm64@2.10.6'
-  - '@vitejs/plugin-react@6.0.4'
-  - '@vue/language-core@3.3.8'
   - happy-dom@20.11.1
   - postcss@8.5.22
-  - turbo@2.10.6
-  - vue-tsc@3.3.8
+  - '@vitejs/plugin-react@6.0.4'
