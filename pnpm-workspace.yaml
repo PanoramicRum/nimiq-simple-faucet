@@ -11,3 +11,155 @@ packages:
   - "examples/mini-app-claim-vue"
   - "examples/mini-app-claim-react"
   - "tests/*"
+
+# ---------------------------------------------------------------------------
+# pnpm settings — moved here from `package.json#pnpm` in the pnpm 11
+# migration (pnpm >= 11 no longer reads that block).
+#
+# Keep `overrides`, `auditConfig.ignoreGhsas`, and `allowBuilds` in sync with
+# deploy/docker/pnpm-workspace.docker.yaml — that file REPLACES this one
+# inside the Docker image build, and a missing override there breaks the
+# frozen-lockfile install in the deps stage.
+#
+# `minimumReleaseAge` is deliberately left at the pnpm 11 default (1 day):
+# it matches the repo's supply-chain posture and frozen-lockfile CI installs
+# are unaffected.
+# ---------------------------------------------------------------------------
+
+# Security override floors. Transitive bumps go through these overrides
+# rather than audit ignores, so the lockfile stays the source of truth.
+overrides:
+  # Raised 2026-07-22: >=4.12.21 -> >=4.12.25 for CVE-2026-54290 (HIGH,
+  # CORS middleware reflects arbitrary Origin with credentials enabled;
+  # flagged by Trivy on the shipped image). Same
+  # @modelcontextprotocol/sdk / @hono/node-server transitive chain as the
+  # earlier hono floors — full advisory history in the audit notes below.
+  "hono@<4.12.25": ">=4.12.25"
+  # Added 2026-07-22: CVE-2026-12151 / CVE-2026-9675 (WebSocket DoS),
+  # fixed in 8.5.0. undici is a DIRECT dep (^8.3.0) of apps/server and
+  # the driver/abuse packages; their manifests move to ^8.7 via the
+  # weekly dependabot group — this floor guarantees the fix regardless.
+  "undici@<8.5.0": ">=8.5.0"
+  # Raised 2026-07-22: >=3.1.2 -> ~3.1.4 (GHSA-v2hh-gcrm-f6hx +
+  # GHSA-4c8g-83qw-93j6, host confusion via literal/failed-IDN parsing).
+  # Tilde target on purpose: an open ">=3.1.4" resolves to fast-uri 4.x,
+  # a major jump under fastify/ajv's declared ^3 — stay on the 3.x line.
+  "fast-uri@<3.1.4": "~3.1.4"
+  "ip-address@<10.1.1": ">=10.1.1"
+  "postcss@<8.5.10": ">=8.5.10"
+  "happy-dom@<20.8.9": ">=20.8.9"
+  "elliptic@<6.6.1": ">=6.6.1"
+  "axios@<1.16.0": ">=1.16.0"
+  "underscore@<1.13.8": ">=1.13.8"
+  "bn.js@<4.12.3": ">=4.12.3"
+  # Raised 2026-07-22: >=5.0.6 -> >=5.0.7 (GHSA-3jxr-9vmj-r5cp,
+  # exponential-time expansion DoS).
+  "brace-expansion@<5.0.7": ">=5.0.7"
+  "ws@<8.20.1": ">=8.20.1"
+  "qs@<=6.15.1": ">=6.15.2"
+  # ---- Added 2026-07-22 (first working `pnpm audit` after the 410 gap;
+  # see audit note 5 below for the batch rationale) ----
+  # vite 8.x line: GHSA-fx2h-pf6j-xcff fs.deny bypass + GHSA-v6wh-96g9-6wx3
+  # launch-editor NTLM disclosure; clean patch within 8.0.x. The vite 5.x
+  # line (vitepress/vitest toolchain) cannot take this floor — see the
+  # ignoreGhsas entries + note 5.
+  "vite@>=8.0.0 <8.0.16": ">=8.0.16"
+  # js-yaml GHSA-52cp-r559-cp3m (high) + GHSA-h67p-54hq-rp68 (moderate),
+  # merge-key quadratic/exponential CPU. Per-major tilde floors — v4
+  # removed the v3 API (safeLoad), so consumers must stay on their line
+  # (3.15.0 / 4.3.0 are the upstream backport releases).
+  "js-yaml@3": "~3.15.0"
+  "js-yaml@4": "~4.3.0"
+  # shell-quote GHSA-395f-4hp3-45gv quadratic-complexity DoS.
+  "shell-quote@<1.8.5": ">=1.8.5"
+  # sharp GHSA-f88m-g3jw-g9cj inherited libvips CVEs. Only reached as
+  # next's optionalDependency (nextjs-claim-page example); examples-build
+  # CI validates the bump.
+  "sharp@<0.35.0": ">=0.35.0"
+  # @hono/node-server GHSA-frvp-7c67-39w9 serveStatic path traversal,
+  # patched only in 2.x — forced major on the @modelcontextprotocol/sdk
+  # transitive; MCP unit + e2e suites cover the affected surface.
+  "@hono/node-server@<2.0.5": ">=2.0.5"
+
+# Audit policy notes (ported verbatim from package.json#pnpm.auditConfig,
+# where they lived as "//1".."//4" comment keys):
+#
+# 1. GHSA-67mh-4wv8-2f99 (esbuild) and GHSA-4w7w-66w2-5vf9 (vite) are
+#    dev-server vulnerabilities — neither esbuild's `serve` nor vite's
+#    optimized-deps endpoint is reachable in production builds (vitepress
+#    runs the static-output path; vitest is a test-only dev dep). Bumping
+#    past the fixed versions forces esbuild >=0.25, which breaks vitest
+#    2.1.x's SSR runtime. Revisit once we upgrade vitest to a major that
+#    ships against esbuild 0.25+.
+# 2. Re-evaluate quarterly: if a new esbuild/vite advisory crosses into
+#    runtime reachability, drop the ignore and accept the vitest churn.
+# 3. Everything else pnpm audit would otherwise flag is patched via the
+#    `overrides` above rather than ignored: hono >=4.12.21
+#    (GHSA-9vqf-7f2p-gf9v bodyLimit bypass, GHSA-69xw-7hcm-h432 hono/jsx
+#    tag-name HTML injection, GHSA-qp7p-654g-cw7p hono/jsx CSS injection,
+#    GHSA-p77w-8qqv-26rm cache Vary leakage), fast-uri >=3.1.2
+#    (GHSA-q3j6-qgpj-74h6 path traversal, GHSA-v39h-62p7-jpjc host
+#    confusion), ip-address >=10.1.1 (GHSA-v2v4-37r5-5v8g Address6 XSS).
+#    All reach the tree only via @modelcontextprotocol/sdk@1.29.0 /
+#    Fastify transitives and all take a clean patch bump without resolver
+#    churn. Adding 2026-05-29: brace-expansion >=5.0.6 (GHSA-jxxr-4gwj-5jf2
+#    numeric-range DoS), ws >=8.20.1 (GHSA-58qx-3vcg-4xpx uninit-memory
+#    disclosure), qs >=6.15.2 (GHSA-q8mj-m7cp-5q26 stringify DoS). All
+#    three reach via @fastify/* + @modelcontextprotocol/sdk@1.29.0 + Expo
+#    CLI; clean patch bumps in all cases. Bumped 2026-06-05: hono
+#    >=4.12.18 -> >=4.12.21 to patch 4 newly-published advisories —
+#    GHSA-xrhx-7g5j-rcj5 (IP-restriction middleware bypass for
+#    non-canonical IPv6), GHSA-3hrh-pfw6-9m5x (cookie helper Set-Cookie
+#    injection via unsanitised sameSite/priority), GHSA-f577-qrjj-4474
+#    (JWT middleware accepts any Authorization scheme, not only Bearer),
+#    GHSA-2gcr-mfcq-wcc3 (app.mount() undecoded-path prefix stripping
+#    mis-routes percent-encoded paths); same @modelcontextprotocol/sdk /
+#    @hono/node-server transitive, resolved to hono@4.12.23 with no
+#    resolver churn (floor since raised to >=4.12.25, see overrides). The
+#    uuid ignore is back (see 4.) via a different chain —
+#    examples/react-native-claim-app > xcode@3.0.1.
+# 4. GHSA-w5hq-g745-h8pq (uuid <11.1.1, missing buffer bounds check in
+#    v3/v5/v6 when `buf` is provided) is reachable only via
+#    examples/react-native-claim-app > expo > @expo/cli >
+#    @expo/config-plugins > xcode@3.0.1 > uuid@7.0.3 — strictly dev-only
+#    Expo prebuild tooling. xcode uses uuid.v1() and never passes the
+#    `buf` parameter the advisory requires for exploitation. Re-evaluate
+#    if xcode is dropped or if a higher-severity uuid CVE crosses into
+#    runtime reach. Bumping past 11.1.1 would force xcode@3.0.1 onto
+#    uuid@11 (4 major-version jump) and likely break the Expo example app.
+# 5. 2026-07-22 batch — first working `pnpm audit` run after ~6 weeks of
+#    the legacy npm audit endpoint 410ing (fixed by the pnpm 11
+#    migration). Everything that takes a clean floor got one in
+#    `overrides` above (fast-uri 3.1.4, brace-expansion 5.0.7, js-yaml
+#    3.15/4.3, shell-quote 1.8.5, sharp 0.35, vite 8.0.16,
+#    @hono/node-server 2.0.5, plus the hono 4.12.25 / undici 8.5.0 CVE
+#    floors that also clear Trivy). Two new ignores, SAME class as note 1
+#    (dev-server-only, unpatchable without breaking the pinned
+#    vitepress/vitest toolchain): GHSA-fx2h-pf6j-xcff (vite
+#    `server.fs.deny` bypass, Windows alternate paths only) and
+#    GHSA-v6wh-96g9-6wx3 (launch-editor NTLMv2 hash disclosure via UNC
+#    path, Windows dev machines only) — both reach the tree solely via
+#    the vite@5.4.x line under vitepress 1.x (apps/docs, apps/playground)
+#    and vitest 2.1.x, whose only "patched" path is vite >=6.4.3, a major
+#    that neither toolchain accepts (cf. the esbuild pin in note 1). The
+#    vite@8.x line used by the apps/examples IS floored to >=8.0.16, so
+#    the ignore does not mask an unpatched runtime path. Same
+#    quarterly-re-evaluation rule as note 2.
+auditConfig:
+  ignoreGhsas:
+    - GHSA-67mh-4wv8-2f99 # esbuild dev-server (note 1 above)
+    - GHSA-4w7w-66w2-5vf9 # vite optimized-deps dev endpoint (note 1 above)
+    - GHSA-w5hq-g745-h8pq # uuid via xcode@3.0.1, Expo prebuild dev-only (note 4 above)
+    - GHSA-fx2h-pf6j-xcff # vite 5.x fs.deny bypass, Windows-only dev server; 8.x line floored (note 5 above)
+    - GHSA-v6wh-96g9-6wx3 # launch-editor NTLM via vite 5.x dev server, Windows-only; 8.x line floored (note 5 above)
+
+# pnpm 11: dependency build scripts are opt-in. These packages need their
+# install/postinstall scripts (native bindings / binary fetch); everything
+# else in the tree installs script-free.
+allowBuilds:
+  better-sqlite3: true # native .node binding — server DB
+  esbuild: true # platform binary fetch — vite/vitest toolchain
+  bufferutil: true # optional ws native accelerator (multi-arch builds)
+  utf-8-validate: true # optional ws native accelerator (multi-arch builds)
+  sharp: true # next.js image optimization (nextjs-claim-page example); prebuilt @img/* cover most platforms, script is the fallback
+  es5-ext: false # postinstall only prints a message (via websocket@1.0.35); nothing to build — keep blocked

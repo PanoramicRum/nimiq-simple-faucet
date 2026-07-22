@@ -57,7 +57,7 @@ jobs:
 
       # Audit finding #027 / issue #107: fail the build on any unpatched
       # CVE at moderate severity or above. Transitive bumps go through
-      # `pnpm.overrides` in the root package.json so the lockfile stays
+      # `overrides` in the root pnpm-workspace.yaml so the lockfile stays
       # the source of truth. Run before lint/test so a CVE failure can't
       # be hidden behind unrelated test flakes.
       - name: pnpm audit (moderate+)
