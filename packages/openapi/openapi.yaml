@@ -572,6 +572,48 @@ components:
           type: number
           minimum: 0
           maximum: 1
+        lowBalanceThresholdNim:
+          type: number
+          minimum: 0
+        lowBalanceReductionPercent:
+          type: number
+          minimum: 0
+          maximum: 100
+        firstTimeBoostPercent:
+          type: number
+          minimum: 0
+          maximum: 500
+        firstTimeBoostUseFingerprint:
+          type: boolean
+        firstTimeBoostUseUid:
+          type: boolean
+        repeatReductionDailyThreshold:
+          type: integer
+          minimum: 0
+        repeatReductionDailyPercent:
+          type: number
+          minimum: 0
+          maximum: 100
+        repeatReductionWeeklyThreshold:
+          type: integer
+          minimum: 0
+        repeatReductionWeeklyPercent:
+          type: number
+          minimum: 0
+          maximum: 100
+        repeatReductionMonthlyThreshold:
+          type: integer
+          minimum: 0
+        repeatReductionMonthlyPercent:
+          type: number
+          minimum: 0
+          maximum: 100
+        repeatReductionUseAddress:
+          type: boolean
+        repeatReductionUseIp:
+          type: boolean
+        repeatReductionUseFingerprint:
+          type: boolean
         layers:
           type: object
           properties:
@@ -606,6 +648,52 @@ components:
               type: number
             abuseReviewThreshold:
               type: number
+            lowBalanceThresholdNim:
+              type:
+                - number
+                - "null"
+            lowBalanceReductionPercent:
+              type:
+                - number
+                - "null"
+            firstTimeBoostPercent:
+              type:
+                - number
+                - "null"
+            firstTimeBoostUseFingerprint:
+              type: boolean
+            firstTimeBoostUseUid:
+              type: boolean
+            repeatReductionDailyThreshold:
+              type:
+                - number
+                - "null"
+            repeatReductionDailyPercent:
+              type:
+                - number
+                - "null"
+            repeatReductionWeeklyThreshold:
+              type:
+                - number
+                - "null"
+            repeatReductionWeeklyPercent:
+              type:
+                - number
+                - "null"
+            repeatReductionMonthlyThreshold:
+              type:
+                - number
+                - "null"
+            repeatReductionMonthlyPercent:
+              type:
+                - number
+                - "null"
+            repeatReductionUseAddress:
+              type: boolean
+            repeatReductionUseIp:
+              type: boolean
+            repeatReductionUseFingerprint:
+              type: boolean
             layers:
               type: object
               additionalProperties:
@@ -615,6 +703,20 @@ components:
             - rateLimitPerIpPerDay
             - abuseDenyThreshold
             - abuseReviewThreshold
+            - lowBalanceThresholdNim
+            - lowBalanceReductionPercent
+            - firstTimeBoostPercent
+            - firstTimeBoostUseFingerprint
+            - firstTimeBoostUseUid
+            - repeatReductionDailyThreshold
+            - repeatReductionDailyPercent
+            - repeatReductionWeeklyThreshold
+            - repeatReductionWeeklyPercent
+            - repeatReductionMonthlyThreshold
+            - repeatReductionMonthlyPercent
+            - repeatReductionUseAddress
+            - repeatReductionUseIp
+            - repeatReductionUseFingerprint
             - layers
         overrides:
           type: object
@@ -1135,7 +1237,11 @@ paths:
       tags:
         - Admin
       summary: Persist runtime config overrides
-      description: "NOTE(M3): persisted but not yet hot-reloaded into live traffic."
+      description: Persists runtime config overrides. Abuse-layer toggles and the
+        reward keys (lowBalanceThresholdNim, lowBalanceReductionPercent,
+        firstTimeBoostPercent, firstTimeBoostUseFingerprint,
+        firstTimeBoostUseUid, and the repeatReduction* tier/identity keys) apply
+        live; other keys require a restart.
       security:
         - adminSession: []
       requestBody:
