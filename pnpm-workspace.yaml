@@ -163,3 +163,17 @@ allowBuilds:
   utf-8-validate: true # optional ws native accelerator (multi-arch builds)
   sharp: true # next.js image optimization (nextjs-claim-page example); prebuilt @img/* cover most platforms, script is the fallback
   es5-ext: false # postinstall only prints a message (via websocket@1.0.35); nothing to build — keep blocked
+
+minimumReleaseAgeExclude:
+  - '@turbo/darwin-64@2.10.6'
+  - '@turbo/darwin-arm64@2.10.6'
+  - '@turbo/linux-64@2.10.6'
+  - '@turbo/linux-arm64@2.10.6'
+  - '@turbo/windows-64@2.10.6'
+  - '@turbo/windows-arm64@2.10.6'
+  - '@vitejs/plugin-react@6.0.4'
+  - '@vue/language-core@3.3.8'
+  - happy-dom@20.11.1
+  - postcss@8.5.22
+  - turbo@2.10.6
+  - vue-tsc@3.3.8
