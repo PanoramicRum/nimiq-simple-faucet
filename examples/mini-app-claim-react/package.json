@@ -1,6 +1,6 @@
 {
   "name": "@nimiq-faucet/example-mini-app-react",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "private": true,
   "type": "module",
   "description": "React 19 Nimiq Pay Mini App that claims NIM from a self-hosted nimiq-simple-faucet.",

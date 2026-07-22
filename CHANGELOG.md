@@ -6,6 +6,88 @@ This project uses [changesets](https://github.com/changesets/changesets) for
 versioning. Run `pnpm changeset` to add entries, then `pnpm changeset version`
 (invoked by the release workflow) to regenerate this file.
 
+## 2.4.0 (2026-07-22)
+
+### Added
+- **§2.4 Automatic reward mode** — criteria-driven payout amounts:
+  a baseline plus additive `adjustments[]`, computed per claim by
+  [apps/server/src/rewards/automatic.ts](apps/server/src/rewards/automatic.ts).
+  Enable with `FAUCET_AUTOMATIC_REWARDS_ENABLED` +
+  `FAUCET_AUTOMATIC_REWARDS_BASELINE_NIM`; every knob below is also
+  live-editable from the admin dashboard (`runtime_config`). (#249)
+  - **Low-balance scaling** — reduces rewards by
+    `FAUCET_LOW_BALANCE_REDUCTION_PERCENT` while the wallet balance is
+    under `FAUCET_LOW_BALANCE_THRESHOLD_NIM`. (#252)
+  - **First-time claimant boost** — `FAUCET_FIRST_TIME_BOOST_PERCENT`
+    extra for first-time claimants, identity-gated (IP + address
+    always; fingerprint via `FAUCET_FIRST_TIME_BOOST_USE_FINGERPRINT`
+    is deny-only; integrator `uid` via
+    `FAUCET_FIRST_TIME_BOOST_USE_UID` only counts when the host
+    context is HMAC-verified). (#253)
+  - **Repeat-user reduction** — tiered percentage reductions once a
+    claimant's paid-claim count crosses
+    `FAUCET_REPEAT_REDUCTION_{DAILY,WEEKLY,MONTHLY}_THRESHOLD` in
+    24h/7d/30d rolling windows; the largest triggered tier wins.
+    Identity dimensions toggle via
+    `FAUCET_REPEAT_REDUCTION_USE_{ADDRESS,IP,FINGERPRINT}`. (#254)
+
+### Security
+- **CI security gates restored** — `pnpm audit` had failed on every
+  run since npm retired its legacy audit endpoint (HTTP 410); the
+  pnpm 9 → 11 migration moves it to the bulk advisories endpoint and
+  the gate is enforcing again. (#277)
+- **hono floor raised to >=4.12.25** — CVE-2026-54290 (HIGH: CORS
+  middleware reflects arbitrary `Origin` with credentials enabled);
+  was also failing the Trivy image scan. (#277)
+- **undici floor >=8.5.0** (resolves 8.8.0) — CVE-2026-12151 /
+  CVE-2026-9675 (WebSocket DoS); the other Trivy image-scan failure.
+  (#277)
+- Batch of override floors from the first working audit run after the
+  6-week gap: fast-uri ~3.1.4, brace-expansion >=5.0.7, js-yaml
+  ~3.15.0 / ~4.3.0, shell-quote >=1.8.5, sharp >=0.35.0,
+  vite (8.x line) >=8.0.16, @hono/node-server >=2.0.5 (major, MCP
+  transitive — covered by the MCP unit/e2e suites). Two documented
+  dev-server-only ignores for the vite 5.x toolchain line. (#277)
+- hono override floor >=4.12.21 for 4 advisories (bodyLimit bypass,
+  hono/jsx injections, cache Vary leakage) — shipped to main in June,
+  first released here. (#250)
+
+### Changed
+- **pnpm 9.15.5 → 11.15.1** — `overrides`/`auditConfig` moved from
+  `package.json#pnpm` to `pnpm-workspace.yaml` (+ the Docker mirror),
+  dependency build scripts are explicitly allow-listed
+  (`allowBuilds`), `pnpm deploy --legacy` in the image build, and
+  `minimumReleaseAge` (1 day) now gates fresh resolutions. (#277)
+- **Dependency refresh** after six blocked weeks: fastify 5.10,
+  @fastify/{cookie 11.1.2, cors 11.3.0, helmet 13.1.0, websocket
+  11.3.0, rate-limit 11.1.0 (major)}, ioredis 5.11.1, pg 8.22.0,
+  **@nimiq/core 2.7.1**, next 16.2.11, vue 3.5.40, react 19.2.8,
+  @capacitor/core 8.4.2, dev-deps group (vite 8.1.5, vitest, turbo,
+  playwright, tailwind…), @types/node 26. (#271, #279, #282, #269)
+- **Coordinated expo 55 → 57** in the React Native example
+  (react-native 0.86.0 in lockstep), replacing the un-mergeable
+  per-package bumps. (#283)
+- **Removed unused `fastify-type-provider-zod`** — never adopted;
+  the OpenAPI schemas deliberately mirror route shapes instead. (#278)
+- Docker base image digest refreshed (node:22-bookworm-slim). (#257)
+- CI action bumps: checkout v7, codeql-action 4.36.2, login-action
+  4.3.0, setup-qemu 4.2.0, gh-release 3.0.1. (#263, #258, #265, #266,
+  #264)
+
+### Docs
+- ROADMAP catch-up: §2.3 backlog fully marked shipped; new §2.4
+  documents the reward-mode stream and opens §2.4.5 (whitelist/bonus
+  factor) + §2.4.6 (reward metadata persistence). The faucet-map
+  split handoff (audits/HANDOFF-network-map-repo.md) is now
+  committed. (#281)
+- docs/config-reference.md regenerated — 90 `FAUCET_*` vars. (#249–#254)
+
+### Notes for operators
+- Reward mode is **off by default** (`FAUCET_AUTOMATIC_REWARDS_ENABLED`
+  defaults false); existing static-amount behavior is unchanged.
+- The Flutter SDK version catches up from 2.3.0 to 2.4.0 in this
+  cycle (it missed the 2.3.1 republish).
+
 ## 2.3.1 (2026-05-30)
 
 ### Added

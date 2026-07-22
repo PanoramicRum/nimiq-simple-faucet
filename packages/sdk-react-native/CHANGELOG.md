@@ -1,5 +1,24 @@
 # @nimiq-faucet/react-native
 
+## 2.4.0
+
+### Minor Changes
+
+- Automatic reward mode (server phases 1–4): baseline payout
+  (`FAUCET_AUTOMATIC_REWARDS_ENABLED` / `FAUCET_AUTOMATIC_REWARDS_BASELINE_NIM`,
+  #249), low-balance reward scaling (#252), identity-gated first-time
+  claimant boost (#253), and identity-gated repeat-user reward reduction
+  (#254) — all live-configurable from the admin dashboard. SDK republish
+  keeps npm versions in lockstep with the Docker image / Helm chart; no
+  SDK API changes. Security: hono floor >=4.12.25 (CVE-2026-54290),
+  undici >=8.5.0 (CVE-2026-12151 / CVE-2026-9675), and the pnpm 11
+  migration restores the CI audit gate via npm's bulk advisory endpoint.
+
+### Patch Changes
+
+- Updated dependencies
+  - @nimiq-faucet/sdk@2.4.0
+
 ## 2.3.1
 
 ### Patch Changes

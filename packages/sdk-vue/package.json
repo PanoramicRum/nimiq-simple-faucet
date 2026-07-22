@@ -1,6 +1,6 @@
 {
   "name": "@nimiq-faucet/vue",
-  "version": "2.3.1",
+  "version": "2.4.0",
   "description": "Vue 3 composables for the Nimiq Simple Faucet, built on @nimiq-faucet/sdk.",
   "license": "MIT",
   "author": "Nimiq <richy@nimiq.com>",
