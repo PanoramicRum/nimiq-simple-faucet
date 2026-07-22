@@ -24,3 +24,48 @@ packages:
   - "packages/abuse-onchain-nimiq"
   - "packages/abuse-ai"
   - "packages/sdk-ts"
+
+# ---------------------------------------------------------------------------
+# MIRROR of the pnpm settings in the root /pnpm-workspace.yaml — keep the
+# three maps below byte-identical with the root file (rationale prose lives
+# there). This file replaces the root one inside the image build, and the
+# frozen-lockfile install in the deps stage fails on any override mismatch;
+# a missing allowBuilds entry ships an image without the better-sqlite3
+# binding.
+# ---------------------------------------------------------------------------
+overrides:
+  "hono@<4.12.25": ">=4.12.25"
+  "undici@<8.5.0": ">=8.5.0"
+  "fast-uri@<3.1.4": "~3.1.4"
+  "ip-address@<10.1.1": ">=10.1.1"
+  "postcss@<8.5.10": ">=8.5.10"
+  "happy-dom@<20.8.9": ">=20.8.9"
+  "elliptic@<6.6.1": ">=6.6.1"
+  "axios@<1.16.0": ">=1.16.0"
+  "underscore@<1.13.8": ">=1.13.8"
+  "bn.js@<4.12.3": ">=4.12.3"
+  "brace-expansion@<5.0.7": ">=5.0.7"
+  "ws@<8.20.1": ">=8.20.1"
+  "qs@<=6.15.1": ">=6.15.2"
+  "vite@>=8.0.0 <8.0.16": ">=8.0.16"
+  "js-yaml@3": "~3.15.0"
+  "js-yaml@4": "~4.3.0"
+  "shell-quote@<1.8.5": ">=1.8.5"
+  "sharp@<0.35.0": ">=0.35.0"
+  "@hono/node-server@<2.0.5": ">=2.0.5"
+
+auditConfig:
+  ignoreGhsas:
+    - GHSA-67mh-4wv8-2f99
+    - GHSA-4w7w-66w2-5vf9
+    - GHSA-w5hq-g745-h8pq
+    - GHSA-fx2h-pf6j-xcff
+    - GHSA-v6wh-96g9-6wx3
+
+allowBuilds:
+  better-sqlite3: true
+  esbuild: true
+  bufferutil: true
+  utf-8-validate: true
+  sharp: true
+  es5-ext: false

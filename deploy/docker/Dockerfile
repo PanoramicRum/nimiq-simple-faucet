@@ -66,7 +66,10 @@ FROM build AS prune
 # `--ignore-scripts + pnpm rebuild better-sqlite3` did not write the
 # binding to the deploy tree layout that `bindings` searches, so we
 # take the straightforward path instead.
-RUN pnpm --filter=@faucet/server deploy --prod /deployed-server
+# `--legacy` keeps the pre-pnpm-11 deploy layout (pnpm 11 otherwise
+# requires injectWorkspacePackages; the legacy tree is what `bindings`
+# and our COPY paths below are built around).
+RUN pnpm --filter=@faucet/server deploy --legacy --prod /deployed-server
 
 FROM base AS runtime
 ENV NODE_ENV=production
