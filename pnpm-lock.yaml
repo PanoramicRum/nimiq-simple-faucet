@@ -248,9 +248,6 @@ importers:
       fastify:
         specifier: ^5.0.0
         version: 5.8.5
-      fastify-type-provider-zod:
-        specifier: ^4.0.2
-        version: 4.0.2(fastify@5.8.5)(zod@4.4.3)
       ioredis:
         specifier: ^5.11.0
         version: 5.11.0(supports-color@8.1.1)
@@ -4418,12 +4415,6 @@ packages:
 
   fastify-plugin@5.1.0:
     resolution: {integrity: sha512-FAIDA8eovSt5qcDgcBvDuX/v0Cjz0ohGhENZ/wpc3y+oZCY2afZ9Baqql3g/lC+OHRnciQol4ww7tuthOb9idw==}
-
-  fastify-type-provider-zod@4.0.2:
-    resolution: {integrity: sha512-FDRzSL3ZuoZ+4YDevR1YOinmDKkxOdy3QB9dDR845sK+bQvDroPKhHAXLEAOObDxL7SMA0OZN/A4osrNBTdDTQ==}
-    peerDependencies:
-      fastify: ^5.0.0
-      zod: ^3.14.2
 
   fastify@5.8.5:
     resolution: {integrity: sha512-Yqptv59pQzPgQUSIm87hMqHJmdkb1+GPxdE6vW6FRyVE9G86mt7rOghitiU4JHRaTyDUk9pfeKmDeu70lAwM4Q==}
@@ -10514,13 +10505,6 @@ snapshots:
   fast-uri@3.1.4: {}
 
   fastify-plugin@5.1.0: {}
-
-  fastify-type-provider-zod@4.0.2(fastify@5.8.5)(zod@4.4.3):
-    dependencies:
-      '@fastify/error': 4.2.0
-      fastify: 5.8.5
-      zod: 4.4.3
-      zod-to-json-schema: 3.25.2(zod@4.4.3)
 
   fastify@5.8.5:
     dependencies:
