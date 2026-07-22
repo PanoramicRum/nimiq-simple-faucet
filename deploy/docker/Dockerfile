@@ -10,7 +10,7 @@
 # could fetch a different image than the one CI tested. Dependabot's
 # `docker` ecosystem will bump both digest and the trailing tag comment
 # together (see .github/dependabot.yml).
-FROM node:22-bookworm-slim@sha256:7af03b14a13c8cdd38e45058fd957bf00a72bbe17feac43b1c15a689c029c732 AS base
+FROM node:22-bookworm-slim@sha256:6c74791e557ce11fc957704f6d4fe134a7bc8d6f5ca4403205b2966bd488f6b3 AS base
 ENV PNPM_HOME=/pnpm
 ENV PATH="${PNPM_HOME}:${PATH}"
 RUN corepack enable
