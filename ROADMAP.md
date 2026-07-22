@@ -254,6 +254,8 @@ we go the shared-wallet route).
 
 ### 1.2.3 README badges
 
+**Status:** ✅ shipped in v1.3.0 (see the §1.0.5 status note).
+
 **Goal:** signal project health at a glance.
 
 **Scope:**
@@ -395,6 +397,8 @@ scoring bonus.
 
 ### 1.5.1 React Native native-mobile example
 
+**Status:** ✅ shipped in v2.3.0 (#214) — `examples/react-native-claim-app/`.
+
 **Goal:** fill the gap where the integration doc currently says "see AGENTS.md for a recipe".
 
 **Scope:**
@@ -405,6 +409,8 @@ scoring bonus.
 **Estimated effort:** half day.
 
 ### 1.5.2 Python SDK
+
+**Status:** ✅ shipped — `packages/sdk-python/` (PyPI).
 
 **Goal:** cover Django/Flask/FastAPI integrators.
 
@@ -529,7 +535,9 @@ cadence) → §2.3.3 (cross-SDK contract tests) → §2.3.4 + §2.3.5
 
 ### 2.3.1 SDK feature-parity sweep
 
-**Status:** → next up.
+**Status:** ✅ shipped in v2.3.0 (#209) — `idempotencyKey` across all
+SDKs, status enums aligned, Flutter `HostContext.verifiedIdentities`
+added.
 
 **Goal:** every SDK exposes every shipped server capability. Today
 `idempotencyKey` (a v1.7.0 server feature, accepted on `POST /v1/claim`
@@ -570,6 +578,10 @@ CHANGELOG-vs-latest-tag drift (deferred to a follow-up).
 
 ### 2.3.3 Cross-SDK contract test harness
 
+**Status:** ✅ shipped in v2.3.0 (#210) — landed as
+`apps/server/test/sdk-contract.e2e.test.ts` + `helpers/sdkContractFixture.ts`
+rather than the proposed `packages/sdk-contract-tests/`.
+
 **Goal:** CI enforces SDK behavioural parity instead of relying on
 manual sync. Graduates the "Contract tests for every SDK" bullet under
 *Beyond 1.x — QA* into a scheduled item.
@@ -586,6 +598,9 @@ manual sync. Graduates the "Contract tests for every SDK" bullet under
 
 ### 2.3.4 Minimal copy-paste starter per framework
 
+**Status:** ✅ shipped in v2.3.0 (#211, #212) — `examples/minimal-react/`
+and `examples/minimal-vue/`.
+
 **Goal:** a developer can `cp -r` a working faucet integration in
 ~50 lines, separate from the feature-complete examples. Today the only
 "complete" React example (`examples/nextjs-claim-page/`) is feature-rich,
@@ -601,6 +616,10 @@ not minimal — there's no drop-in starter.
 React Native example app — and §3.0.7 — example abuse-layer integration.)
 
 ### 2.3.5 Framework-agnostic "abuse layers in your integration" guide
+
+**Status:** ✅ shipped in v2.3.0 (#213) — landed at
+`docs/abuse-layers/integration-guide.md` rather than the proposed
+`docs/integrators/` path.
 
 **Goal:** one referenced pattern for handling abuse layers in an
 integration, instead of each example wiring captcha differently
@@ -622,6 +641,8 @@ missing captcha widget, is a surprise.
 **Estimated effort:** 1 day. (Complements §3.0.7.)
 
 ### 2.3.6 Consistent typed errors across SDKs + uniform server error envelope
+
+**Status:** ✅ shipped in v2.3.0 (#215).
 
 **Goal:** every SDK surfaces failures the same way, and the server
 always responds with the same error shape. Today TS = `FaucetError{status,code}`,
@@ -687,6 +708,82 @@ form. Narrower than §1.8.2 (issue #58, the full config-catalog refactor)
 **Original goal:** close out §1.2.2. The planned `scripts/generate-snippets.mts` never shipped — the work was absorbed into §3.0.3 (the playground SDK showcase, which did ship). Audit `docs/`, `apps/docs/`, and AGENTS.md for any reference to a live `/snippets/<framework>` URL and point it at the playground SDK pages (or drop it).
 
 **Estimated effort:** ~30 min.
+
+---
+
+## 2.4 — Automatic reward mode (June 2026)
+
+Criteria-driven payout amounts, replacing the single static claim
+amount with a baseline plus additive `adjustments[]`. Engine:
+[apps/server/src/rewards/automatic.ts](apps/server/src/rewards/automatic.ts)
+(`calculateAutomaticReward()` — a pure accumulator, floored at 0), with
+identity detection in `firstTime.ts` / `repeatUser.ts`. Every knob is
+env-defaulted and live-overridable from the admin dashboard
+(`runtime_config`). Further factors plug in additively by pushing more
+`RewardAdjustment`s — no claim-handler surgery. Phases 1–4 ship in
+v2.4.0.
+
+### 2.4.1 Baseline payout (Phase 1)
+
+**Status:** ✅ shipped in v2.4.0 (#249). `FAUCET_REWARD_MODE=automatic`,
+baseline amount, `resolvePayout()` seam for `/v1/config` + deny records.
+
+### 2.4.2 Low-balance reward scaling
+
+**Status:** ✅ shipped in v2.4.0 (#252). First `adjustments[]` rule:
+scales rewards down when the faucet wallet balance drops below a
+threshold; both knobs live-configurable from the dashboard.
+
+### 2.4.3 First-time claimant boost
+
+**Status:** ✅ shipped in v2.4.0 (#253). Identity-gated (IP + address
+always; fingerprint is deny-only; `uid` only when the host context is
+HMAC-verified). The boost is suppressed while low-balance scaling or a
+repeat reduction is active.
+
+### 2.4.4 Repeat-user reward reduction
+
+**Status:** ✅ shipped in v2.4.0 (#254). Paid-claim counts over
+24h/7d/30d rolling windows; the largest configured tier wins;
+per-dimension identity toggles (address on by default, IP/fingerprint
+opt-in).
+
+### 2.4.5 Whitelist / bonus reward factor
+
+**Goal:** the last factor named in the original #249 scope
+("first-time boosts, repeat-user reductions, low-balance scaling,
+whitelists/bonuses") — a positive `RewardAdjustment` for
+operator-listed addresses (or HMAC-verified uids), e.g. partner
+integrators or CI wallets that should receive a larger (or exact)
+amount.
+
+**Scope:**
+- New rule in `calculateAutomaticReward()` following the
+  `first-time-boost` pattern: env defaults + `runtime_config` live
+  overrides + dashboard fields + `rewardAdjustmentsTotal{kind}` metric
+  + unit/e2e tests.
+- Storage for the allow-list entries: reuse the blocklist
+  (kind + value) pattern or a dedicated table — decide at
+  implementation time.
+- Interaction rules with §2.4.2–§2.4.4 must be explicit (suggested:
+  whitelist bonus is exclusive with the first-time boost; low-balance
+  scaling still applies).
+
+**Estimated effort:** 1 day.
+
+### 2.4.6 Reward metadata persistence
+
+**Goal:** persist `rewardMode` / `baselineAmount` / `adjustments[]` to
+a dedicated `rewardMetaJson` claims column for richer reporting —
+today the full breakdown is only request-logged and `finalAmount`
+rides the existing `amountLuna` column (`TODO(future)` in
+[apps/server/src/routes/claim.ts](apps/server/src/routes/claim.ts)).
+
+**Scope:** additive migration (SQLite + Postgres) + write path in the
+claim handler; surfacing in the admin claims view / status page is an
+optional follow-on.
+
+**Estimated effort:** 0.5 day.
 
 ---
 
