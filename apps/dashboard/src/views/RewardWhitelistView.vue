@@ -9,6 +9,7 @@ interface WhitelistRow {
   id: string;
   kind: Kind;
   value: string;
+  integratorId: string | null;
   bonusPercent: number | null;
   exactAmountNim: number | null;
   reason: string | null;
@@ -25,9 +26,17 @@ const total = ref<number>(0);
 const loading = ref<boolean>(false);
 const error = ref<string | null>(null);
 
-const form = ref<{ kind: Kind; value: string; bonusPercent: string; exactAmountNim: string; reason: string }>({
+const form = ref<{
+  kind: Kind;
+  value: string;
+  integratorId: string;
+  bonusPercent: string;
+  exactAmountNim: string;
+  reason: string;
+}>({
   kind: 'address',
   value: '',
+  integratorId: '',
   bonusPercent: '',
   exactAmountNim: '',
   reason: '',
@@ -65,6 +74,7 @@ async function onCreate(): Promise<void> {
     const body: {
       kind: Kind;
       value: string;
+      integratorId?: string;
       bonusPercent?: number;
       exactAmountNim?: number;
       reason?: string;
@@ -72,11 +82,15 @@ async function onCreate(): Promise<void> {
       kind: form.value.kind,
       value: form.value.value,
     };
+    if (form.value.kind === 'uid' && form.value.integratorId) {
+      body.integratorId = form.value.integratorId;
+    }
     if (form.value.bonusPercent !== '') body.bonusPercent = Number(form.value.bonusPercent);
     if (form.value.exactAmountNim !== '') body.exactAmountNim = Number(form.value.exactAmountNim);
     if (form.value.reason) body.reason = form.value.reason;
     await api.post('/admin/reward-whitelist', body);
     form.value.value = '';
+    form.value.integratorId = '';
     form.value.bonusPercent = '';
     form.value.exactAmountNim = '';
     form.value.reason = '';
@@ -113,7 +127,9 @@ onMounted(load);
       Allow-listed identities get a bonus percent — or an exact payout — in automatic reward mode.
       Entries only take effect while the whitelist toggle on the Config page is on. An entry without
       its own percent or exact amount uses the global default bonus from the Config page; an exact
-      amount wins over any percent. Uid entries match verified-integrator (HMAC-signed) claims only.
+      amount wins over any percent. Uid entries are bound to one integrator and match only claims
+      carrying that integrator's full request signature (api-key + signed body) — browser-side
+      hostContext signatures are not accepted for payouts.
     </p>
 
     <div class="grid grid-cols-2 gap-3 sm:grid-cols-2">
@@ -143,6 +159,10 @@ onMounted(load);
         <span>Value</span>
         <input v-model="form.value" class="input font-mono" required />
       </label>
+      <label v-if="form.kind === 'uid'" class="flex min-w-[10rem] flex-col gap-1 text-xs">
+        <span>Integrator id</span>
+        <input v-model="form.integratorId" class="input font-mono" required />
+      </label>
       <label class="flex flex-col gap-1 text-xs">
         <span>Bonus (%)</span>
         <input
@@ -161,7 +181,8 @@ onMounted(load);
           v-model="form.exactAmountNim"
           class="input font-mono w-24"
           type="number"
-          min="0"
+          min="0.00001"
+          max="1000000"
           step="any"
           placeholder="—"
         />
@@ -181,6 +202,7 @@ onMounted(load);
           <tr>
             <th>Kind</th>
             <th>Value</th>
+            <th>Integrator</th>
             <th>Bonus</th>
             <th>Exact</th>
             <th>Reason</th>
@@ -192,6 +214,7 @@ onMounted(load);
           <tr v-for="r in rows" :key="r.id" class="!cursor-default hover:!bg-transparent">
             <td>{{ r.kind }}</td>
             <td class="font-mono text-xs">{{ r.value }}</td>
+            <td class="font-mono text-xs">{{ r.integratorId ?? '—' }}</td>
             <td class="font-mono text-xs">{{ r.bonusPercent !== null ? `${r.bonusPercent}%` : 'default' }}</td>
             <td class="font-mono text-xs">{{ r.exactAmountNim !== null ? `${r.exactAmountNim} NIM` : '—' }}</td>
             <td class="text-xs">{{ r.reason ?? '—' }}</td>
@@ -203,7 +226,7 @@ onMounted(load);
             </td>
           </tr>
           <tr v-if="rows.length === 0 && !loading">
-            <td colspan="7" class="muted text-center text-sm">Reward whitelist is empty.</td>
+            <td colspan="8" class="muted text-center text-sm">Reward whitelist is empty.</td>
           </tr>
         </tbody>
       </table>

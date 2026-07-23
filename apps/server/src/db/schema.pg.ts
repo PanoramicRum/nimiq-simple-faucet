@@ -43,6 +43,7 @@ export const rewardWhitelist = pgTable('reward_whitelist', {
   id: text('id').primaryKey(),
   kind: text('kind').notNull(),
   value: text('value').notNull(),
+  integratorId: text('integrator_id'),
   bonusPercent: doublePrecision('bonus_percent'),
   exactAmountNim: doublePrecision('exact_amount_nim'),
   reason: text('reason'),

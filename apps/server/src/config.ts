@@ -116,12 +116,14 @@ export const ServerConfigSchema = z.object({
    * Whitelist bonus (§2.4.5), automatic mode only. When true, each claim also
    * checks the operator-managed reward whitelist (admin dashboard → Reward
    * whitelist, or `POST /admin/reward-whitelist`): an allow-listed address —
-   * or integrator uid, counted only for HMAC-verified host contexts — gets a
-   * percent bonus, or an exact payout when the entry sets one. A whitelist
-   * grant suppresses the first-time boost and the repeat-user reduction; the
-   * percent form still takes low-balance scaling, the exact form does not.
-   * Acts as the kill switch: off skips the per-claim lookup entirely without
-   * clearing the list. Env DEFAULT; admin-overridable live. Default off.
+   * or integrator uid, matched only for claims carrying that integrator's
+   * full request HMAC (uid entries are integrator-bound; browser-side
+   * hostContext signatures never grant payouts) — gets a percent bonus, or an
+   * exact payout when the entry sets one. A whitelist grant suppresses the
+   * first-time boost and the repeat-user reduction; the percent form still
+   * takes low-balance scaling, the exact form does not. Acts as the kill
+   * switch: off skips the per-claim lookup entirely without clearing the
+   * list. Env DEFAULT; admin-overridable live. Default off.
    */
   whitelistRewardsEnabled: z.coerce.boolean().default(false),
   /**

@@ -40,10 +40,14 @@ export const blocklist = sqliteTable('blocklist', {
 // normalizeBlocklistValue on every write path. Per-entry overrides are
 // nullable — an entry with neither falls back to the global
 // `whitelistBonusPercent`; `exact_amount_nim` takes precedence over percents.
+// `integrator_id` is REQUIRED for kind='uid' entries: a uid grant only
+// matches claims authenticated with that integrator's full request HMAC
+// (address-bound + nonce), never the per-field hostContext signature.
 export const rewardWhitelist = sqliteTable('reward_whitelist', {
   id: text('id').primaryKey(),
   kind: text('kind').notNull(), // address | uid
   value: text('value').notNull(),
+  integratorId: text('integrator_id'),
   bonusPercent: real('bonus_percent'),
   exactAmountNim: real('exact_amount_nim'),
   reason: text('reason'),

@@ -120,15 +120,16 @@ output: Array<{ id, kind, value, reason, expiresAt, createdAt }>
 
 #### `faucet.reward_whitelist_add`
 
-Add a reward-whitelist entry (§2.4.5): an allow-listed address — or integrator `uid`, matched only for HMAC-verified claims — receives a bonus percent (or an exact payout) in automatic reward mode. Values are canonicalized on insert. Duplicate `(kind, value)` returns an error payload instead of inserting.
+Add a reward-whitelist entry (§2.4.5): an allow-listed address — or integrator `uid` — receives a bonus percent (or an exact payout) in automatic reward mode. Uid entries are **bound to one integrator** (`integratorId` required) and match only claims authenticated with that integrator's full request HMAC; browser-side per-field hostContext signatures never grant payouts. Values are canonicalized on insert. Duplicate `(kind, value)` returns an error payload instead of inserting.
 
 ```ts
 input:  { kind: 'address' | 'uid',
           value: string,
+          integratorId?: string /* REQUIRED for kind='uid'; forbidden for 'address' */,
           bonusPercent?: number /* 0..500; omit to use the global default */,
           exactAmountNim?: number /* wins over any percent */,
           reason?: string }
-output: { id: string, kind, value } | { error: 'entry already exists', kind, value }
+output: { id: string, kind, value } | { error: string, kind, value }
 ```
 
 #### `faucet.reward_whitelist_remove`
@@ -146,7 +147,7 @@ Enumerate reward-whitelist entries, newest first.
 
 ```ts
 input:  { limit?: number (1..1000, default 100) }
-output: Array<{ id, kind, value, bonusPercent, exactAmountNim, reason, createdAt }>
+output: Array<{ id, kind, value, integratorId, bonusPercent, exactAmountNim, reason, createdAt }>
 ```
 
 #### `faucet.explain_decision`

@@ -76,6 +76,7 @@ export function migrationStatements(dialect: Dialect): string[] {
       id TEXT PRIMARY KEY,
       kind TEXT NOT NULL,
       value TEXT NOT NULL,
+      integrator_id TEXT,
       bonus_percent ${dbl},
       exact_amount_nim ${dbl},
       reason TEXT,

@@ -41,6 +41,19 @@ export async function adminRewardWhitelistRoutes(
     async (req, reply) => {
       const parsed = CreateBody.safeParse(req.body);
       if (!parsed.success) return reply.code(400).send({ error: 'invalid body', code: 'INVALID_BODY' });
+      // Cross-field rule (see RewardWhitelistCreateRequest): uid grants must
+      // be bound to the integrator whose full-HMAC requests they match;
+      // address entries have no integrator dimension.
+      if (parsed.data.kind === 'uid' && !parsed.data.integratorId) {
+        return reply
+          .code(400)
+          .send({ error: 'uid entries require integratorId', code: 'INVALID_BODY' });
+      }
+      if (parsed.data.kind === 'address' && parsed.data.integratorId) {
+        return reply
+          .code(400)
+          .send({ error: 'address entries must not set integratorId', code: 'INVALID_BODY' });
+      }
       const id = nanoid();
       // Canonicalise on insert so the claim-time lookup matches regardless of
       // how the admin typed the value (same rationale as the blocklist, #94).
@@ -61,6 +74,7 @@ export async function adminRewardWhitelistRoutes(
         id,
         kind: parsed.data.kind,
         value: normalizedValue,
+        integratorId: parsed.data.integratorId ?? null,
         bonusPercent: parsed.data.bonusPercent ?? null,
         exactAmountNim: parsed.data.exactAmountNim ?? null,
         reason: parsed.data.reason ?? null,
@@ -73,6 +87,7 @@ export async function adminRewardWhitelistRoutes(
         signals: {
           kind: parsed.data.kind,
           value: normalizedValue,
+          integratorId: parsed.data.integratorId ?? null,
           bonusPercent: parsed.data.bonusPercent ?? null,
           exactAmountNim: parsed.data.exactAmountNim ?? null,
         },

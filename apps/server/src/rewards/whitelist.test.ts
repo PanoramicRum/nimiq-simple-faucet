@@ -21,6 +21,7 @@ let seq = 0;
 async function insertEntry(row: {
   kind: 'address' | 'uid';
   value: string;
+  integratorId?: string | null;
   bonusPercent?: number | null;
   exactAmountNim?: number | null;
 }) {
@@ -29,6 +30,7 @@ async function insertEntry(row: {
     kind: row.kind,
     // Stored canonical, like the admin REST/MCP write paths do.
     value: row.value,
+    integratorId: row.integratorId ?? null,
     bonusPercent: row.bonusPercent ?? null,
     exactAmountNim: row.exactAmountNim ?? null,
   });
@@ -40,53 +42,83 @@ describe('findWhitelistMatch', () => {
     expect(await findWhitelistMatch(db, { address: 'A1' })).toBeNull();
   });
 
-  it('matches an address entry, normalizing the queried address', async () => {
-    await insertEntry({ kind: 'address', value: 'NQ07 0000', bonusPercent: 25 });
-    // Lowercase, extra spaces — must still hit the canonical stored value.
-    const m = await findWhitelistMatch(db, { address: '  nq07  0000 ' });
-    expect(m).toEqual({ bonusPercent: 25, exactAmountNim: null });
+  it('matches an address entry regardless of case/spacing (canonical stored form)', async () => {
+    // Write path stores the space-insensitive canonical form (uppercase, no
+    // spaces); the lookup canonicalizes the same way.
+    await insertEntry({ kind: 'address', value: 'NQ070000', bonusPercent: 25 });
+    // Lowercase, extra spaces on the query — must still hit.
+    expect(await findWhitelistMatch(db, { address: '  nq07  0000 ' })).toEqual({
+      bonusPercent: 25,
+      exactAmountNim: null,
+    });
+    // The unspaced query form also hits (no fail-open on spacing).
+    expect(await findWhitelistMatch(db, { address: 'nq070000' })).toEqual({
+      bonusPercent: 25,
+      exactAmountNim: null,
+    });
   });
 
-  it('matches a uid entry only when a (verified) hostUid is supplied', async () => {
-    await insertEntry({ kind: 'uid', value: 'U1', exactAmountNim: 42 });
+  it('matches a uid entry only with BOTH a verified uid and the bound integrator', async () => {
+    await insertEntry({ kind: 'uid', value: 'U1', integratorId: 'int-1', exactAmountNim: 42 });
+    // No uid / no integrator context → no match.
     expect(await findWhitelistMatch(db, { address: 'A1' })).toBeNull();
-    expect(await findWhitelistMatch(db, { address: 'A1', hostUid: null })).toBeNull();
-    expect(await findWhitelistMatch(db, { address: 'A1', hostUid: 'U1' })).toEqual({
-      bonusPercent: null,
-      exactAmountNim: 42,
-    });
+    expect(await findWhitelistMatch(db, { address: 'A1', hostUid: 'U1' })).toBeNull();
+    expect(await findWhitelistMatch(db, { address: 'A1', hostUid: 'U1', integratorId: null })).toBeNull();
+    // A DIFFERENT integrator presenting the same uid → no match (binding).
+    expect(
+      await findWhitelistMatch(db, { address: 'A1', hostUid: 'U1', integratorId: 'int-2' }),
+    ).toBeNull();
+    // The bound integrator → match.
+    expect(
+      await findWhitelistMatch(db, { address: 'A1', hostUid: 'U1', integratorId: 'int-1' }),
+    ).toEqual({ bonusPercent: null, exactAmountNim: 42 });
   });
 
   it('never matches a uid entry against the address dimension (or vice versa)', async () => {
-    await insertEntry({ kind: 'uid', value: 'SAME' });
+    await insertEntry({ kind: 'uid', value: 'SAME', integratorId: 'int-1' });
     await insertEntry({ kind: 'address', value: 'OTHER' });
     // address=SAME only matches kind='address' entries.
-    expect(await findWhitelistMatch(db, { address: 'same' })).toBeNull();
+    expect(await findWhitelistMatch(db, { address: 'same', integratorId: 'int-1' })).toBeNull();
   });
 
-  it('most generous wins: an exact-amount entry beats a percent-only entry', async () => {
+  it('exact-amount entries are an override class: any exact beats every percent', async () => {
     await insertEntry({ kind: 'address', value: 'A1', bonusPercent: 400 });
-    await insertEntry({ kind: 'uid', value: 'U1', exactAmountNim: 5 });
-    expect(await findWhitelistMatch(db, { address: 'a1', hostUid: 'U1' })).toEqual({
-      bonusPercent: null,
-      exactAmountNim: 5,
-    });
+    await insertEntry({ kind: 'uid', value: 'U1', integratorId: 'int-1', exactAmountNim: 5 });
+    expect(
+      await findWhitelistMatch(db, { address: 'a1', hostUid: 'U1', integratorId: 'int-1' }),
+    ).toEqual({ bonusPercent: null, exactAmountNim: 5 });
   });
 
-  it('most generous wins: larger percent beats smaller, percent-less last', async () => {
-    await insertEntry({ kind: 'address', value: 'A1', bonusPercent: 10 });
-    await insertEntry({ kind: 'uid', value: 'U1', bonusPercent: 30 });
-    expect(await findWhitelistMatch(db, { address: 'a1', hostUid: 'U1' })).toEqual({
-      bonusPercent: 30,
-      exactAmountNim: null,
-    });
+  it('within the percent class, the largest REALIZED percent wins (global default counts)', async () => {
+    // Regression: a percent-less entry realizes the global default, which can
+    // exceed another entry's explicit percent — it must not lose to it.
+    await insertEntry({ kind: 'address', value: 'A1', bonusPercent: 15 });
+    await insertEntry({ kind: 'uid', value: 'U1', integratorId: 'int-1' }); // percent-less
+    expect(
+      await findWhitelistMatch(db, {
+        address: 'a1',
+        hostUid: 'U1',
+        integratorId: 'int-1',
+        globalBonusPercent: 200,
+      }),
+    ).toEqual({ bonusPercent: null, exactAmountNim: null }); // realizes 200% > 15%
 
-    await db.delete(rewardWhitelist);
+    // With a small global default, the explicit percent wins instead.
+    expect(
+      await findWhitelistMatch(db, {
+        address: 'a1',
+        hostUid: 'U1',
+        integratorId: 'int-1',
+        globalBonusPercent: 5,
+      }),
+    ).toEqual({ bonusPercent: 15, exactAmountNim: null });
+  });
+
+  it('with no global default, a percent-less entry realizes 0 and loses to any explicit percent', async () => {
     await insertEntry({ kind: 'address', value: 'A2' }); // percent-less
-    await insertEntry({ kind: 'uid', value: 'U2', bonusPercent: 15 });
-    expect(await findWhitelistMatch(db, { address: 'a2', hostUid: 'U2' })).toEqual({
-      bonusPercent: 15,
-      exactAmountNim: null,
-    });
+    await insertEntry({ kind: 'uid', value: 'U2', integratorId: 'int-1', bonusPercent: 15 });
+    expect(
+      await findWhitelistMatch(db, { address: 'a2', hostUid: 'U2', integratorId: 'int-1' }),
+    ).toEqual({ bonusPercent: 15, exactAmountNim: null });
   });
 });

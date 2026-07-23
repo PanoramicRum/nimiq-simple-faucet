@@ -107,6 +107,78 @@ describe('MCP (/mcp)', () => {
     }
   });
 
+  it('reward-whitelist tool handlers add/list/remove against the DB and enforce the uid binding', async () => {
+    const server = buildMcpServer(ctx, {
+      getAdminPrincipal: () => ({ kind: 'session', userId: 'admin' }),
+    });
+    const registered = (
+      server as unknown as {
+        _registeredTools: Record<
+          string,
+          { callback?: (args: unknown) => Promise<{ content: Array<{ text: string }> }>; handler?: (args: unknown) => Promise<{ content: Array<{ text: string }> }> }
+        >;
+      }
+    )._registeredTools;
+    const call = async (name: string, args: unknown) => {
+      const res = await (registered[name]!.handler ?? registered[name]!.callback)!(args);
+      return JSON.parse(res.content[0]!.text) as Record<string, unknown>;
+    };
+
+    // add (address) → persisted and listable (value canonicalized)
+    const added = await call('faucet.reward_whitelist_add', {
+      kind: 'address',
+      value: 'NQ00 aaaa',
+      bonusPercent: 30,
+    });
+    expect(added.id).toBeTruthy();
+    let list = (await call('faucet.reward_whitelist_list', {})) as unknown as Array<{ value: string }>;
+    expect(list.some((r) => r.value === 'NQ00AAAA')).toBe(true);
+
+    // uid binding rules enforced in the handler
+    const noBinding = await call('faucet.reward_whitelist_add', { kind: 'uid', value: 'u1' });
+    expect(noBinding.error).toMatch(/integratorId/);
+    const withBinding = await call('faucet.reward_whitelist_add', {
+      kind: 'uid',
+      value: 'u1',
+      integratorId: 'int-1',
+    });
+    expect(withBinding.id).toBeTruthy();
+
+    // remove (canonicalizes the lookup value too)
+    await call('faucet.reward_whitelist_remove', { kind: 'address', value: 'nq00 aaaa' });
+    list = (await call('faucet.reward_whitelist_list', {})) as unknown as Array<{ value: string }>;
+    expect(list.some((r) => r.value === 'NQ00AAAA')).toBe(false);
+  });
+
+  it('faucet.block_address canonicalizes the value on insert (matches the REST/claim path)', async () => {
+    const server = buildMcpServer(ctx, {
+      getAdminPrincipal: () => ({ kind: 'session', userId: 'admin' }),
+    });
+    const registered = (
+      server as unknown as {
+        _registeredTools: Record<
+          string,
+          { callback?: (args: unknown) => Promise<{ content: Array<{ text: string }> }>; handler?: (args: unknown) => Promise<{ content: Array<{ text: string }> }> }
+        >;
+      }
+    )._registeredTools;
+    const call = async (name: string, args: unknown) => {
+      const res = await (registered[name]!.handler ?? registered[name]!.callback)!(args);
+      return JSON.parse(res.content[0]!.text) as Record<string, unknown>;
+    };
+
+    // Add a lowercase/spaced address; it must be stored canonical so a claim
+    // sending the canonical form matches (the pre-fix bug stored it raw).
+    const added = await call('faucet.block_address', { kind: 'address', value: 'nq00 bbbb' });
+    expect(added.value).toBe('NQ00BBBB');
+    const listed = (await call('faucet.list_blocks', {})) as unknown as Array<{ value: string }>;
+    expect(listed.some((r) => r.value === 'NQ00BBBB')).toBe(true);
+    // Remove using a differently-formatted value → still matches via canonicalization.
+    await call('faucet.unblock_address', { kind: 'address', value: '  nq00  bbbb ' });
+    const after = (await call('faucet.list_blocks', {})) as unknown as Array<{ value: string }>;
+    expect(after.some((r) => r.value === 'NQ00BBBB')).toBe(false);
+  });
+
   it('admin guard rejects calls when no principal is presented', () => {
     expect(() =>
       requireAdminPrincipal(ADMIN_TOOLS, 'faucet.balance', null),

@@ -312,8 +312,16 @@ export function buildMcpServer(ctx: AppContext, opts: BuildMcpServerOptions = {}
       // /admin/reward-whitelist) so the kind enum and limits stay in sync.
       inputSchema: RewardWhitelistCreateRequest.shape,
     },
-    async ({ kind, value, bonusPercent, exactAmountNim, reason }) => {
+    async ({ kind, value, integratorId, bonusPercent, exactAmountNim, reason }) => {
       await guard('faucet.reward_whitelist_add');
+      // Same cross-field rule as the REST route: uid grants are bound to an
+      // integrator; address entries have no integrator dimension.
+      if (kind === 'uid' && !integratorId) {
+        return ok({ error: 'uid entries require integratorId', kind, value });
+      }
+      if (kind === 'address' && integratorId) {
+        return ok({ error: 'address entries must not set integratorId', kind, value });
+      }
       const id = nanoid();
       const normalizedValue = normalizeBlocklistValue(kind, value);
       const [existing] = await ctx.db
@@ -326,9 +334,24 @@ export function buildMcpServer(ctx: AppContext, opts: BuildMcpServerOptions = {}
         id,
         kind,
         value: normalizedValue,
+        integratorId: integratorId ?? null,
         bonusPercent: bonusPercent ?? null,
         exactAmountNim: exactAmountNim ?? null,
         reason: reason ?? null,
+      });
+      // Detailed audit row (the guard's generic mcp.* row carries no target
+      // identity/amount) — mirrors the REST route's signals.
+      await writeAudit(ctx.db, {
+        actor: 'mcp',
+        action: 'reward-whitelist.add',
+        target: id,
+        signals: {
+          kind,
+          value: normalizedValue,
+          integratorId: integratorId ?? null,
+          bonusPercent: bonusPercent ?? null,
+          exactAmountNim: exactAmountNim ?? null,
+        },
       });
       return ok({ id, kind, value: normalizedValue });
     },
@@ -346,6 +369,12 @@ export function buildMcpServer(ctx: AppContext, opts: BuildMcpServerOptions = {}
       await ctx.db
         .delete(rewardWhitelist)
         .where(and(eq(rewardWhitelist.kind, kind), eq(rewardWhitelist.value, normalizedValue)));
+      await writeAudit(ctx.db, {
+        actor: 'mcp',
+        action: 'reward-whitelist.remove',
+        target: `${kind}:${normalizedValue}`,
+        signals: { kind, value: normalizedValue },
+      });
       return ok({ removed: { kind, value: normalizedValue } });
     },
   );

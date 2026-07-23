@@ -255,6 +255,9 @@ export const RewardWhitelistEntry = registry.register(
     id: z.string(),
     kind: z.enum(['address', 'uid']),
     value: z.string(),
+    // Set (and required) for uid entries — the grant only matches claims
+    // authenticated with this integrator's full request HMAC.
+    integratorId: z.string().nullable(),
     bonusPercent: z.number().nullable(),
     exactAmountNim: z.number().nullable(),
     reason: z.string().nullable(),
@@ -267,10 +270,15 @@ export const RewardWhitelistCreateRequest = registry.register(
   z.object({
     kind: z.enum(['address', 'uid']),
     value: z.string().min(1).max(128),
+    // REQUIRED for kind='uid', forbidden for kind='address' — enforced in the
+    // route/tool handlers (kept out of a .superRefine so `.shape`/`.pick`
+    // stay available for the MCP schema derivation).
+    integratorId: z.string().min(1).max(64).optional(),
     // Percent capped at 500 like the other bonus percents (fat-finger bound);
-    // exact amount is a positive NIM value.
+    // exact amount floored at 1 luna (0.00001 NIM) so a sub-luna value can't
+    // round to 0n and silently degrade the entry to the percent form.
     bonusPercent: z.number().min(0).max(500).optional(),
-    exactAmountNim: z.number().positive().max(1_000_000).optional(),
+    exactAmountNim: z.number().min(0.00001).max(1_000_000).optional(),
     reason: z.string().max(256).optional(),
   }),
 );
