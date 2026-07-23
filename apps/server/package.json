@@ -20,7 +20,7 @@
     "@fastify/cors": "^11.3.0",
     "@fastify/helmet": "^13.1.0",
     "@fastify/rate-limit": "^11.1.0",
-    "@fastify/static": "^9.1.1",
+    "@fastify/static": "^10.1.2",
     "@fastify/websocket": "^11.3.0",
     "@faucet/abuse-ai": "workspace:*",
     "@faucet/abuse-fcaptcha": "workspace:*",
