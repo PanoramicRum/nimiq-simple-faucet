@@ -22,6 +22,7 @@ import {
   resolveRewardSettings,
 } from '../rewards/automatic.js';
 import { isFirstTimeClaimant } from '../rewards/firstTime.js';
+import { findWhitelistMatch, type WhitelistMatch } from '../rewards/whitelist.js';
 import {
   countRepeatClaims,
   effectiveRepeatReductionPercent,
@@ -159,6 +160,14 @@ export async function claimRoutes(app: FastifyInstance, ctx: AppContext): Promis
 
     let integratorId: string | undefined;
     let hostContextVerified = false;
+    // True ONLY for the full integrator request HMAC (api-key + signed
+    // method/path/body + timestamp + single-use nonce). Value-granting
+    // decisions (the reward whitelist's uid entries) key off THIS flag, not
+    // `hostContextVerified`: the per-field hostContext signature below covers
+    // only the context fields, so it is neither bound to the payout address
+    // nor replay-protected — good enough for abuse-pipeline trust signals and
+    // the deny-only first-time uid dimension, not for granting money.
+    let integratorRequestVerified = false;
     const apiKey = req.headers['x-faucet-api-key'];
     if (typeof apiKey === 'string' && apiKey.length > 0) {
       const result = await verifyIntegratorRequest({
@@ -195,6 +204,7 @@ export async function claimRoutes(app: FastifyInstance, ctx: AppContext): Promis
       }
       integratorId = result.integratorId;
       hostContextVerified = true;
+      integratorRequestVerified = true;
     }
 
     // Per-field host-context signature verification (§1.4).
@@ -456,6 +466,21 @@ export async function claimRoutes(app: FastifyInstance, ctx: AppContext): Promis
         repeatReductionPercent = effectiveRepeatReductionPercent(counts, settings);
       }
 
+      // Whitelist bonus (§2.4.5). Only hit the list when the rule is enabled
+      // (zero-cost path otherwise). uid entries demand the STRONG auth path:
+      // only a full-integrator-HMAC request (address-bound + nonce) may
+      // present a uid, and the entry must be bound to that integrator — the
+      // per-field hostContext signature is deliberately not accepted here.
+      let whitelist: WhitelistMatch | null = null;
+      if (settings.whitelistRewardsEnabled) {
+        whitelist = await findWhitelistMatch(ctx.db, {
+          address,
+          hostUid: integratorRequestVerified ? hostUid : null,
+          integratorId: integratorRequestVerified ? integratorId : null,
+          globalBonusPercent: settings.whitelistBonusPercent,
+        });
+      }
+
       const reward = calculateAutomaticReward({
         baselineNim: settings.baselineNim,
         lowBalanceThresholdNim: settings.lowBalanceThresholdNim,
@@ -463,6 +488,8 @@ export async function claimRoutes(app: FastifyInstance, ctx: AppContext): Promis
         firstTimeBoostPercent: settings.firstTimeBoostPercent,
         isFirstTime,
         repeatReductionPercent,
+        whitelist,
+        whitelistBonusPercent: settings.whitelistBonusPercent,
         balanceLuna: balance,
       });
       finalPayout = { amountLuna: reward.amount, reward };
@@ -497,7 +524,13 @@ export async function claimRoutes(app: FastifyInstance, ctx: AppContext): Promis
         await ctx.db.insert(claims).values({
           id,
           address,
-          amountLuna: finalPayout.amountLuna.toString(),
+          // A refused claim paid nothing → record 0, not the would-be amount.
+          // The public /v1/stats/summary + /v1/claims/recent views surface
+          // rejected rows' address+amountLuna; recording the attempted amount
+          // would leak operator config (esp. a whitelist entry's exact payout)
+          // to anonymous callers. The `rejectionReason` (admin-only) and the
+          // structured server log retain the diagnostic amount.
+          amountLuna: '0',
           status: 'rejected',
           ip: req.ip,
           userAgent: claimReq.userAgent ?? null,

@@ -8,6 +8,7 @@ const links: { to: string; label: string; icon: string }[] = [
   { to: '/admin/overview', label: 'Overview', icon: '◉' },
   { to: '/admin/claims', label: 'Claims', icon: '▦' },
   { to: '/admin/abuse', label: 'Abuse', icon: '▲' },
+  { to: '/admin/reward-whitelist', label: 'Reward whitelist', icon: '★' },
   { to: '/admin/account', label: 'Account', icon: '◈' },
   { to: '/admin/integrators', label: 'Integrators', icon: '◎' },
   { to: '/admin/config', label: 'Config', icon: '⚙' },

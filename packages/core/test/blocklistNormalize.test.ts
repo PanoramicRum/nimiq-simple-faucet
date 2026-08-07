@@ -18,14 +18,21 @@ describe('normalizeBlocklistValue (#94)', () => {
   });
 
   describe('address', () => {
-    it('canonicalises NQ addresses to uppercase + single-spaced groups', () => {
-      const lowercase = 'nq07 0000 0000 0000 0000 0000 0000 0000 0000';
-      const expected = 'NQ07 0000 0000 0000 0000 0000 0000 0000 0000';
-      expect(normalizeBlocklistValue('address', lowercase)).toBe(expected);
+    // Space-insensitive canonical form: uppercase + all spaces stripped, so
+    // spaced and unspaced forms of the same address collapse to one key.
+    const canonical = 'NQ0700000000000000000000000000000000';
+    it('canonicalises NQ addresses to uppercase, spaces stripped', () => {
+      expect(normalizeBlocklistValue('address', 'nq07 0000 0000 0000 0000 0000 0000 0000 0000')).toBe(
+        canonical,
+      );
     });
-    it('collapses multiple internal spaces to single spaces', () => {
-      expect(normalizeBlocklistValue('address', 'NQ07  0000   0000 0000 0000 0000 0000 0000 0000'))
-        .toBe('NQ07 0000 0000 0000 0000 0000 0000 0000 0000');
+    it('the unspaced form maps to the SAME canonical value (no fail-open bypass)', () => {
+      expect(normalizeBlocklistValue('address', canonical.toLowerCase())).toBe(canonical);
+    });
+    it('collapses arbitrary internal spacing to the same value', () => {
+      expect(
+        normalizeBlocklistValue('address', 'NQ07  0000   0000 0000 0000 0000 0000 0000 0000'),
+      ).toBe(canonical);
     });
   });
 

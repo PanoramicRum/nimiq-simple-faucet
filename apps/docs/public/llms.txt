@@ -42,7 +42,7 @@ Response: `{ id, status, txId? }`. Poll `GET /v1/claim/:id` or subscribe to `WS 
 
 ## MCP server
 
-`POST /mcp` exposes 9 tools (3 public + 6 admin) for AI coding assistants — claim history, abuse decisions, stats, and with admin auth: blocklist + send-tx. Discovery: `GET /mcp`. See [docs/mcp.md](https://github.com/PanoramicRum/nimiq-simple-faucet/blob/main/docs/mcp.md) for the full tool catalogue, auth model (session+TOTP step-up vs deprecated static token), and client config snippets.
+`POST /mcp` exposes 12 tools (3 public + 9 admin) for AI coding assistants — claim history, abuse decisions, stats, and with admin auth: blocklist, reward whitelist + send-tx. Discovery: `GET /mcp`. See [docs/mcp.md](https://github.com/PanoramicRum/nimiq-simple-faucet/blob/main/docs/mcp.md) for the full tool catalogue, auth model (session+TOTP step-up vs deprecated static token), and client config snippets.
 
 ## Full reference
 

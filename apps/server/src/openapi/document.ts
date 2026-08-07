@@ -17,6 +17,8 @@ import {
   AuditListResponse,
   BlocklistCreateRequest,
   BlocklistEntry,
+  RewardWhitelistCreateRequest,
+  RewardWhitelistEntry,
   ChallengeRequest,
   ClaimListResponse,
   ClaimRequest,
@@ -219,6 +221,35 @@ function registerRoutes(): void {
 
   registry.registerPath({
     method: 'get',
+    path: '/admin/reward-whitelist',
+    tags: ['Admin'],
+    summary: 'List reward-whitelist entries',
+    security: [{ adminSession: [] }],
+    responses: {
+      200: {
+        description: 'Entries',
+        content: jsonContent(
+          z.object({ total: z.number().int(), items: z.array(RewardWhitelistEntry) }),
+        ),
+      },
+    },
+  });
+
+  registry.registerPath({
+    method: 'post',
+    path: '/admin/reward-whitelist',
+    tags: ['Admin'],
+    summary: 'Add a reward-whitelist entry',
+    security: [{ adminSession: [] }],
+    request: { body: { content: jsonContent(RewardWhitelistCreateRequest) } },
+    responses: {
+      201: { description: 'Created', content: jsonContent(z.object({ id: z.string() })) },
+      409: { description: 'Duplicate (kind, value)', content: jsonContent(ErrorResponse) },
+    },
+  });
+
+  registry.registerPath({
+    method: 'get',
     path: '/admin/integrators',
     tags: ['Admin'],
     summary: 'List integrator keys',
@@ -369,6 +400,19 @@ function registerRoutes(): void {
     path: '/admin/blocklist/{id}',
     tags: ['Admin'],
     summary: 'Remove a blocklist entry',
+    security: [{ adminSession: [] }],
+    request: { params: z.object({ id: z.string() }) },
+    responses: {
+      200: { description: 'Removed', content: jsonContent(OkResponse) },
+      404: { description: 'Entry not found', content: jsonContent(ErrorResponse) },
+    },
+  });
+
+  registry.registerPath({
+    method: 'delete',
+    path: '/admin/reward-whitelist/{id}',
+    tags: ['Admin'],
+    summary: 'Remove a reward-whitelist entry',
     security: [{ adminSession: [] }],
     request: { params: z.object({ id: z.string() }) },
     responses: {

@@ -5,7 +5,7 @@
  * with SQLite, so no caller code needs to branch on timestamp handling.
  */
 import { sql } from 'drizzle-orm';
-import { bigint, integer, pgTable, primaryKey, text } from 'drizzle-orm/pg-core';
+import { bigint, doublePrecision, integer, pgTable, primaryKey, text } from 'drizzle-orm/pg-core';
 
 const epochMs = sql`(extract(epoch from now()) * 1000)::bigint`;
 
@@ -37,6 +37,17 @@ export const blocklist = pgTable('blocklist', {
   reason: text('reason'),
   createdAt: bigint('created_at', { mode: 'number' }).notNull().default(epochMs),
   expiresAt: bigint('expires_at', { mode: 'number' }),
+});
+
+export const rewardWhitelist = pgTable('reward_whitelist', {
+  id: text('id').primaryKey(),
+  kind: text('kind').notNull(),
+  value: text('value').notNull(),
+  integratorId: text('integrator_id'),
+  bonusPercent: doublePrecision('bonus_percent'),
+  exactAmountNim: doublePrecision('exact_amount_nim'),
+  reason: text('reason'),
+  createdAt: bigint('created_at', { mode: 'number' }).notNull().default(epochMs),
 });
 
 export const ipCounters = pgTable('ip_counters', {

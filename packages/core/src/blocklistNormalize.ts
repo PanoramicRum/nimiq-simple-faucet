@@ -5,8 +5,14 @@
  *
  *   - IPv6-mapped IPv4: an admin types `1.2.3.4`, the request socket
  *     surfaces `::ffff:1.2.3.4`, the lookup misses.
- *   - NQ address spacing/case: stored as `NQ07 …` with spaces, the
- *     incoming claim sends `nq07…` lowercase no spaces, the lookup misses.
+ *   - NQ address spacing/case: an admin stores `NQ07 …` with spaces while
+ *     the incoming claim sends `nq07…` lowercase no spaces (or vice versa).
+ *     `normalizeNimiqAddress` only uppercases + collapses whitespace runs; it
+ *     never re-chunks, so the two forms stay distinct and the lookup misses.
+ *     For matching we therefore strip ALL spaces — a space-insensitive
+ *     canonical form. (Without this the blocklist is fail-open: removing the
+ *     group spaces bypasses an address block; and a reward-whitelist entry
+ *     silently fails to fire.)
  *   - Country / ASN: case + leading-zero variation.
  *
  * Apply on both sides of the boundary (insert + query). See finding #008
@@ -27,8 +33,12 @@ export function normalizeBlocklistValue(kind: string, value: string): string {
       return noZone.startsWith('::ffff:') ? noZone.slice('::ffff:'.length) : noZone;
     }
     case 'address':
-      // Reuse the existing canonical form: uppercase, single-spaces.
-      return normalizeNimiqAddress(value);
+      // Space-insensitive canonical form: uppercase, then strip every space
+      // so `NQ07 ABCD …` and `nq07abcd…` collapse to the same key on both the
+      // write and the lookup side. Re-chunking into groups would work too but
+      // touches display expectations elsewhere; stripping is the minimal
+      // matching-only canonicalization.
+      return normalizeNimiqAddress(value).replace(/ /g, '');
     case 'country':
       return value.trim().toUpperCase();
     case 'asn': {

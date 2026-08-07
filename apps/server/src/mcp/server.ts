@@ -11,12 +11,14 @@ import { desc, eq, and } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import { z } from 'zod';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { blocklist, claims } from '../db/schema.js';
+import { normalizeBlocklistValue } from '@faucet/core';
+import { blocklist, claims, rewardWhitelist } from '../db/schema.js';
 import type { AppContext } from '../context.js';
 import { writeAudit } from '../auth/audit.js';
 import {
   AdminSendRequest,
   BlocklistCreateRequest,
+  RewardWhitelistCreateRequest,
 } from '../openapi/schemas.js';
 
 /** Identifies who invoked an admin-scoped MCP tool. */
@@ -31,6 +33,9 @@ export const ADMIN_TOOLS: ReadonlySet<string> = new Set([
   'faucet.block_address',
   'faucet.unblock_address',
   'faucet.list_blocks',
+  'faucet.reward_whitelist_add',
+  'faucet.reward_whitelist_remove',
+  'faucet.reward_whitelist_list',
   'faucet.explain_decision',
 ]);
 
@@ -51,6 +56,9 @@ export const ALL_TOOLS: readonly string[] = [
   'faucet.block_address',
   'faucet.unblock_address',
   'faucet.list_blocks',
+  'faucet.reward_whitelist_add',
+  'faucet.reward_whitelist_remove',
+  'faucet.reward_whitelist_list',
   'faucet.explain_decision',
 ];
 
@@ -245,14 +253,17 @@ export function buildMcpServer(ctx: AppContext, opts: BuildMcpServerOptions = {}
     async ({ kind, value, reason, expiresAt }) => {
       await guard('faucet.block_address');
       const id = nanoid();
+      // Canonicalise like the REST POST does (#94) — previously this tool
+      // inserted the raw value, so an MCP-added `nq07…` entry never matched.
+      const normalizedValue = normalizeBlocklistValue(kind, value);
       await ctx.db.insert(blocklist).values({
         id,
         kind,
-        value,
+        value: normalizedValue,
         reason: reason ?? null,
         expiresAt: expiresAt !== undefined ? new Date(expiresAt) : null,
       });
-      return ok({ id, kind, value });
+      return ok({ id, kind, value: normalizedValue });
     },
   );
 
@@ -266,10 +277,12 @@ export function buildMcpServer(ctx: AppContext, opts: BuildMcpServerOptions = {}
     },
     async ({ kind, value }) => {
       await guard('faucet.unblock_address');
+      // Same canonical form as the insert paths, so removal always matches.
+      const normalizedValue = normalizeBlocklistValue(kind, value);
       await ctx.db
         .delete(blocklist)
-        .where(and(eq(blocklist.kind, kind), eq(blocklist.value, value)));
-      return ok({ removed: { kind, value } });
+        .where(and(eq(blocklist.kind, kind), eq(blocklist.value, normalizedValue)));
+      return ok({ removed: { kind, value: normalizedValue } });
     },
   );
 
@@ -285,6 +298,99 @@ export function buildMcpServer(ctx: AppContext, opts: BuildMcpServerOptions = {}
         .select()
         .from(blocklist)
         .orderBy(desc(blocklist.createdAt))
+        .limit(limit ?? 100);
+      return ok(rows);
+    },
+  );
+
+  server.registerTool(
+    'faucet.reward_whitelist_add',
+    {
+      description:
+        'Add a reward-whitelist entry (§2.4.5): an allow-listed address/uid gets a bonus percent or exact payout in automatic reward mode. Admin-scoped.',
+      // Derived from `RewardWhitelistCreateRequest` (REST: POST
+      // /admin/reward-whitelist) so the kind enum and limits stay in sync.
+      inputSchema: RewardWhitelistCreateRequest.shape,
+    },
+    async ({ kind, value, integratorId, bonusPercent, exactAmountNim, reason }) => {
+      await guard('faucet.reward_whitelist_add');
+      // Same cross-field rule as the REST route: uid grants are bound to an
+      // integrator; address entries have no integrator dimension.
+      if (kind === 'uid' && !integratorId) {
+        return ok({ error: 'uid entries require integratorId', kind, value });
+      }
+      if (kind === 'address' && integratorId) {
+        return ok({ error: 'address entries must not set integratorId', kind, value });
+      }
+      const id = nanoid();
+      const normalizedValue = normalizeBlocklistValue(kind, value);
+      const [existing] = await ctx.db
+        .select({ id: rewardWhitelist.id })
+        .from(rewardWhitelist)
+        .where(and(eq(rewardWhitelist.kind, kind), eq(rewardWhitelist.value, normalizedValue)))
+        .limit(1);
+      if (existing) return ok({ error: 'entry already exists', kind, value: normalizedValue });
+      await ctx.db.insert(rewardWhitelist).values({
+        id,
+        kind,
+        value: normalizedValue,
+        integratorId: integratorId ?? null,
+        bonusPercent: bonusPercent ?? null,
+        exactAmountNim: exactAmountNim ?? null,
+        reason: reason ?? null,
+      });
+      // Detailed audit row (the guard's generic mcp.* row carries no target
+      // identity/amount) — mirrors the REST route's signals.
+      await writeAudit(ctx.db, {
+        actor: 'mcp',
+        action: 'reward-whitelist.add',
+        target: id,
+        signals: {
+          kind,
+          value: normalizedValue,
+          integratorId: integratorId ?? null,
+          bonusPercent: bonusPercent ?? null,
+          exactAmountNim: exactAmountNim ?? null,
+        },
+      });
+      return ok({ id, kind, value: normalizedValue });
+    },
+  );
+
+  server.registerTool(
+    'faucet.reward_whitelist_remove',
+    {
+      description: 'Remove reward-whitelist entries matching (kind, value). Admin-scoped.',
+      inputSchema: RewardWhitelistCreateRequest.pick({ kind: true, value: true }).shape,
+    },
+    async ({ kind, value }) => {
+      await guard('faucet.reward_whitelist_remove');
+      const normalizedValue = normalizeBlocklistValue(kind, value);
+      await ctx.db
+        .delete(rewardWhitelist)
+        .where(and(eq(rewardWhitelist.kind, kind), eq(rewardWhitelist.value, normalizedValue)));
+      await writeAudit(ctx.db, {
+        actor: 'mcp',
+        action: 'reward-whitelist.remove',
+        target: `${kind}:${normalizedValue}`,
+        signals: { kind, value: normalizedValue },
+      });
+      return ok({ removed: { kind, value: normalizedValue } });
+    },
+  );
+
+  server.registerTool(
+    'faucet.reward_whitelist_list',
+    {
+      description: 'Enumerate reward-whitelist entries, newest first. Admin-scoped.',
+      inputSchema: { limit: z.number().int().min(1).max(1000).optional() },
+    },
+    async ({ limit }) => {
+      await guard('faucet.reward_whitelist_list');
+      const rows = await ctx.db
+        .select()
+        .from(rewardWhitelist)
+        .orderBy(desc(rewardWhitelist.createdAt))
         .limit(limit ?? 100);
       return ok(rows);
     },

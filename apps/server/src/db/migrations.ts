@@ -15,6 +15,7 @@ export function migrationStatements(dialect: Dialect): string[] {
     dialect === 'sqlite'
       ? 'DEFAULT (unixepoch() * 1000)'
       : 'DEFAULT (extract(epoch from now()) * 1000)::bigint';
+  const dbl = dialect === 'sqlite' ? 'REAL' : 'DOUBLE PRECISION';
 
   return [
     // --- claims ---
@@ -69,6 +70,19 @@ export function migrationStatements(dialect: Dialect): string[] {
     `CREATE UNIQUE INDEX IF NOT EXISTS idx_claims_idempotency_integrator
       ON claims(integrator_id, idempotency_key)
       WHERE idempotency_key IS NOT NULL AND integrator_id IS NOT NULL`,
+
+    // --- reward_whitelist (§2.4.5) ---
+    `CREATE TABLE IF NOT EXISTS reward_whitelist (
+      id TEXT PRIMARY KEY,
+      kind TEXT NOT NULL,
+      value TEXT NOT NULL,
+      integrator_id TEXT,
+      bonus_percent ${dbl},
+      exact_amount_nim ${dbl},
+      reason TEXT,
+      created_at ${ts} NOT NULL ${tsDefault}
+    )`,
+    'CREATE UNIQUE INDEX IF NOT EXISTS idx_reward_whitelist_kv ON reward_whitelist(kind, value)',
 
     // --- blocklist ---
     `CREATE TABLE IF NOT EXISTS blocklist (

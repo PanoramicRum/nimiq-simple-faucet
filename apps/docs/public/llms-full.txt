@@ -125,6 +125,7 @@ Optional: `FAUCET_TURNSTILE_SITE_KEY`, `FAUCET_TURNSTILE_SECRET`,
 - `faucet.status`, `faucet.recent_claims`, `faucet.stats`
 - `faucet.balance`, `faucet.send` (admin + TOTP step-up)
 - `faucet.block_address`, `faucet.unblock_address`, `faucet.list_blocks`
+- `faucet.reward_whitelist_add`, `faucet.reward_whitelist_remove`, `faucet.reward_whitelist_list`
 - `faucet.update_limits`
 - `faucet.explain_decision(claimId)` — full signal bundle for audit / dispute
 

@@ -44,6 +44,8 @@ const LUNA_PER_NIM = 100_000;
 const BASIS_POINTS = 10_000n;
 /** Defensive ceiling on the first-time boost (also enforced by Zod + the admin API). */
 const MAX_FIRST_TIME_BOOST_PERCENT = 500;
+/** Defensive ceiling on the whitelist bonus percent (also enforced by Zod + the admin API). */
+const MAX_WHITELIST_BONUS_PERCENT = 500;
 
 /**
  * Convert an operator-supplied NIM amount to Luna (bigint).
@@ -78,6 +80,15 @@ export interface RewardInput {
    */
   repeatReductionPercent?: number | undefined;
   /**
+   * Winning reward-whitelist entry for this claimant (caller resolves via
+   * `findWhitelistMatch`), or `null`/`undefined` when not listed. An entry's
+   * `exactAmountNim` replaces the whole computation; its `bonusPercent`
+   * overrides the global {@link RewardInput.whitelistBonusPercent} default.
+   */
+  whitelist?: { bonusPercent: number | null; exactAmountNim: number | null } | null | undefined;
+  /** Global whitelist bonus percent (0–500) for entries without their own. */
+  whitelistBonusPercent?: number | undefined;
+  /**
    * Current wallet balance in Luna, or `null`/`undefined` when unknown. When
    * unknown, low-balance scaling is skipped (never reduce on a stale/failed
    * balance read — that would silently halve every payout during an RPC blip),
@@ -105,6 +116,18 @@ export interface RewardInput {
  *    (or no threshold is configured). It is **suppressed while the wallet is low
  *    or its balance is unknown** — a low faucet must not hand out extra — and
  *    **suppressed whenever a repeat reduction fires** (boost ⊥ repeat).
+ *  - **Whitelist bonus** (§2.4.5) fires for allow-listed identities. Two forms:
+ *    an **exact amount** (`whitelist.exactAmountNim > 0`) replaces the whole
+ *    computation — low-balance scaling included — because "exact" means exact
+ *    (the claim handler's final exceeds-balance refusal still backstops the
+ *    wallet); a **percent bonus** (per-entry `bonusPercent`, falling back to
+ *    the global `whitelistBonusPercent`, in `(0, 500]`) is measured against
+ *    the baseline and stacks with low-balance scaling. Either form
+ *    **suppresses the first-time boost and the repeat reduction** — listed
+ *    identities are trusted partners/CI, not farmable accounts. A listed
+ *    identity whose entry grants nothing (no exact, no percent anywhere)
+ *    leaves every other rule untouched. Invalid baseline (≤ 0) disables the
+ *    whitelist like every other rule — a misconfigured faucet refuses.
  */
 export function calculateAutomaticReward(input: RewardInput): RewardResult {
   const baseline = nimToLuna(input.baselineNim);
@@ -128,8 +151,30 @@ export function calculateAutomaticReward(input: RewardInput): RewardResult {
     repeatReduction > 0 &&
     repeatReduction <= 100;
 
+  // Whitelist bonus (§2.4.5) — computed up front because it suppresses the
+  // first-time boost and the repeat reduction, and its exact-amount form also
+  // suppresses low-balance scaling. "Active" means the entry actually grants
+  // something: an exact amount, or a percent that survives rounding to basis
+  // points — a listed identity granting nothing changes no other rule.
+  const wl = input.whitelist ?? null;
+  const wlExactLuna = wl ? nimToLuna(wl.exactAmountNim ?? undefined) : 0n;
+  const wlExactActive = baseline > 0n && wlExactLuna > 0n;
+  const wlPercent = wl ? (wl.bonusPercent ?? input.whitelistBonusPercent) : undefined;
+  const wlPercentBp =
+    wlPercent !== undefined &&
+    Number.isFinite(wlPercent) &&
+    wlPercent > 0 &&
+    wlPercent <= MAX_WHITELIST_BONUS_PERCENT
+      ? BigInt(Math.round(wlPercent * 100))
+      : 0n;
+  const wlPercentActive = !wlExactActive && baseline > 0n && wl !== null && wlPercentBp > 0n;
+  const whitelistActive = wlExactActive || wlPercentActive;
+
   // Low-balance reduction (negative delta) — only while the wallet is low.
-  if (baseline > 0n && walletIsLow) {
+  // An exact-amount whitelist entry replaces the whole computation, scaling
+  // included ("exact" means exact; the handler's exceeds-balance refusal is
+  // the wallet backstop).
+  if (baseline > 0n && walletIsLow && !wlExactActive) {
     const reduction = input.lowBalanceReductionPercent;
     const reductionValid =
       reduction !== undefined && Number.isFinite(reduction) && reduction > 0 && reduction <= 100;
@@ -148,8 +193,10 @@ export function calculateAutomaticReward(input: RewardInput): RewardResult {
 
   // Repeat-user reduction (negative delta) — independent of balance state.
   // Measured against the baseline (like low-balance scaling), so the two
-  // reductions stack additively in the accumulator below.
-  if (baseline > 0n && repeatReductionActive) {
+  // reductions stack additively in the accumulator below. Suppressed for
+  // allow-listed identities (whitelist ⊥ repeat — a listed partner/CI wallet
+  // is expected to claim repeatedly).
+  if (baseline > 0n && repeatReductionActive && !whitelistActive) {
     // repeatReductionActive aliases `repeatReduction !== undefined && …`, so TS
     // narrows repeatReduction to number here — no cast needed.
     const reductionBp = BigInt(Math.round(repeatReduction * 100));
@@ -164,13 +211,15 @@ export function calculateAutomaticReward(input: RewardInput): RewardResult {
   }
 
   // First-time boost (positive delta) — only when the wallet is confidently NOT
-  // low and no repeat reduction is in effect (boost ⊥ repeat).
+  // low and no repeat reduction is in effect (boost ⊥ repeat). Also suppressed
+  // for allow-listed identities (the whitelist bonus wins; they don't stack).
   if (
     baseline > 0n &&
     input.isFirstTime &&
     !walletIsLow &&
     !lowBalanceUncertain &&
-    !repeatReductionActive
+    !repeatReductionActive &&
+    !whitelistActive
   ) {
     const boost = input.firstTimeBoostPercent;
     const boostValid =
@@ -185,6 +234,30 @@ export function calculateAutomaticReward(input: RewardInput): RewardResult {
           reason: `first-time claimant; reward boosted ${boost}%`,
         });
       }
+    }
+  }
+
+  // Whitelist bonus (§2.4.5). Exact form: delta lands the amount exactly on
+  // the entry's NIM value (may be below the baseline — "exact" means exact);
+  // a delta of 0n (exact == baseline) pushes nothing but the suppressions
+  // above still hold. Percent form: measured against the baseline like every
+  // other percentage rule, so it stacks additively with low-balance scaling.
+  if (wlExactActive) {
+    if (wlExactLuna !== baseline) {
+      adjustments.push({
+        kind: 'whitelist-bonus',
+        deltaLuna: wlExactLuna - baseline,
+        reason: `allow-listed identity; exact payout ${wl?.exactAmountNim} NIM`,
+      });
+    }
+  } else if (wlPercentActive) {
+    const boosted = (baseline * (BASIS_POINTS + wlPercentBp)) / BASIS_POINTS;
+    if (boosted !== baseline) {
+      adjustments.push({
+        kind: 'whitelist-bonus',
+        deltaLuna: boosted - baseline,
+        reason: `allow-listed identity; reward boosted ${wlPercent}%`,
+      });
     }
   }
 
@@ -213,6 +286,8 @@ export interface PayoutConfig {
   repeatReductionUseAddress?: boolean | undefined;
   repeatReductionUseIp?: boolean | undefined;
   repeatReductionUseFingerprint?: boolean | undefined;
+  whitelistRewardsEnabled?: boolean | undefined;
+  whitelistBonusPercent?: number | undefined;
   claimAmountLuna: bigint;
 }
 
@@ -255,6 +330,8 @@ export interface EffectiveRewardSettings {
   repeatReductionUseAddress: boolean;
   repeatReductionUseIp: boolean;
   repeatReductionUseFingerprint: boolean;
+  whitelistRewardsEnabled: boolean;
+  whitelistBonusPercent?: number | undefined;
 }
 
 function pickInRange(
@@ -361,6 +438,16 @@ export function resolveRewardSettings(
     repeatReductionUseFingerprint: pickBool(
       overrides.repeatReductionUseFingerprint,
       config.repeatReductionUseFingerprint ?? false,
+    ),
+    whitelistRewardsEnabled: pickBool(
+      overrides.whitelistRewardsEnabled,
+      config.whitelistRewardsEnabled ?? false,
+    ),
+    whitelistBonusPercent: pickInRange(
+      overrides.whitelistBonusPercent,
+      config.whitelistBonusPercent,
+      0,
+      MAX_WHITELIST_BONUS_PERCENT,
     ),
   };
 }

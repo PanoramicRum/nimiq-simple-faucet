@@ -316,6 +316,147 @@ describe('calculateAutomaticReward — repeat-user reduction', () => {
   });
 });
 
+describe('calculateAutomaticReward — whitelist bonus', () => {
+  // baseline 10 NIM = 1_000_000 luna.
+  it('applies the global default percent for an entry without per-entry values', () => {
+    const r = calculateAutomaticReward({
+      baselineNim: 10,
+      whitelist: { bonusPercent: null, exactAmountNim: null },
+      whitelistBonusPercent: 50,
+    });
+    expect(r.amount).toBe(1_500_000n);
+    expect(r.adjustments).toEqual([
+      { kind: 'whitelist-bonus', deltaLuna: 500_000n, reason: 'allow-listed identity; reward boosted 50%' },
+    ]);
+  });
+
+  it('lets a per-entry percent override the global default', () => {
+    const r = calculateAutomaticReward({
+      baselineNim: 10,
+      whitelist: { bonusPercent: 20, exactAmountNim: null },
+      whitelistBonusPercent: 50,
+    });
+    expect(r.amount).toBe(1_200_000n);
+  });
+
+  it('an exact amount replaces the computation (above, below, or equal to baseline)', () => {
+    const above = calculateAutomaticReward({
+      baselineNim: 10,
+      whitelist: { bonusPercent: null, exactAmountNim: 25 },
+    });
+    expect(above.amount).toBe(2_500_000n);
+    expect(above.adjustments).toEqual([
+      { kind: 'whitelist-bonus', deltaLuna: 1_500_000n, reason: 'allow-listed identity; exact payout 25 NIM' },
+    ]);
+
+    const below = calculateAutomaticReward({
+      baselineNim: 10,
+      whitelist: { bonusPercent: null, exactAmountNim: 2 },
+    });
+    expect(below.amount).toBe(200_000n); // "exact" means exact, even below baseline
+    expect(below.adjustments[0]?.deltaLuna).toBe(-800_000n);
+
+    const equal = calculateAutomaticReward({
+      baselineNim: 10,
+      whitelist: { bonusPercent: null, exactAmountNim: 10 },
+    });
+    expect(equal.amount).toBe(1_000_000n);
+    expect(equal.adjustments).toEqual([]); // no-op delta pushes nothing
+  });
+
+  it('exact wins over any percent on the same entry', () => {
+    const r = calculateAutomaticReward({
+      baselineNim: 10,
+      whitelist: { bonusPercent: 400, exactAmountNim: 5 },
+      whitelistBonusPercent: 50,
+    });
+    expect(r.amount).toBe(500_000n);
+    expect(r.adjustments.map((a) => a.kind)).toEqual(['whitelist-bonus']);
+  });
+
+  it('the percent form stacks with low-balance scaling (both measured against baseline)', () => {
+    const r = calculateAutomaticReward({
+      baselineNim: 10,
+      whitelist: { bonusPercent: null, exactAmountNim: null },
+      whitelistBonusPercent: 50,
+      lowBalanceThresholdNim: 20,
+      lowBalanceReductionPercent: 25,
+      balanceLuna: 1_000_000n, // < 20 NIM threshold → low-balance active
+    });
+    // 1_000_000 − 250_000 (low) + 500_000 (whitelist) = 1_250_000
+    expect(r.amount).toBe(1_250_000n);
+    expect(r.adjustments.map((a) => a.kind)).toEqual(['low-balance-scaling', 'whitelist-bonus']);
+  });
+
+  it('the exact form suppresses low-balance scaling too', () => {
+    const r = calculateAutomaticReward({
+      baselineNim: 10,
+      whitelist: { bonusPercent: null, exactAmountNim: 25 },
+      lowBalanceThresholdNim: 20,
+      lowBalanceReductionPercent: 25,
+      balanceLuna: 1_000_000n,
+    });
+    expect(r.amount).toBe(2_500_000n);
+    expect(r.adjustments.map((a) => a.kind)).toEqual(['whitelist-bonus']);
+  });
+
+  it('suppresses the first-time boost (whitelist wins; they do not stack)', () => {
+    const r = calculateAutomaticReward({
+      baselineNim: 10,
+      whitelist: { bonusPercent: null, exactAmountNim: null },
+      whitelistBonusPercent: 50,
+      firstTimeBoostPercent: 100,
+      isFirstTime: true,
+    });
+    expect(r.amount).toBe(1_500_000n);
+    expect(r.adjustments.map((a) => a.kind)).toEqual(['whitelist-bonus']);
+  });
+
+  it('suppresses the repeat-user reduction (whitelist ⊥ repeat)', () => {
+    const r = calculateAutomaticReward({
+      baselineNim: 10,
+      whitelist: { bonusPercent: 20, exactAmountNim: null },
+      repeatReductionPercent: 40,
+    });
+    expect(r.amount).toBe(1_200_000n);
+    expect(r.adjustments.map((a) => a.kind)).toEqual(['whitelist-bonus']);
+  });
+
+  it('a listed identity granting nothing leaves every other rule untouched', () => {
+    const r = calculateAutomaticReward({
+      baselineNim: 10,
+      whitelist: { bonusPercent: null, exactAmountNim: null }, // no per-entry values
+      // no global percent either → whitelist inactive
+      firstTimeBoostPercent: 50,
+      isFirstTime: true,
+    });
+    expect(r.amount).toBe(1_500_000n); // first-time boost still fires
+    expect(r.adjustments.map((a) => a.kind)).toEqual(['first-time-boost']);
+  });
+
+  it('ignores an out-of-range percent (>500) defensively; not listed → nothing fires', () => {
+    const outOfRange = calculateAutomaticReward({
+      baselineNim: 10,
+      whitelist: { bonusPercent: 600, exactAmountNim: null },
+    });
+    expect(outOfRange.amount).toBe(1_000_000n);
+    expect(outOfRange.adjustments).toEqual([]);
+
+    const notListed = calculateAutomaticReward({ baselineNim: 10, whitelistBonusPercent: 50 });
+    expect(notListed.amount).toBe(1_000_000n);
+    expect(notListed.adjustments).toEqual([]);
+  });
+
+  it('an invalid baseline disables the whitelist like every other rule', () => {
+    const r = calculateAutomaticReward({
+      baselineNim: 0,
+      whitelist: { bonusPercent: null, exactAmountNim: 25 },
+    });
+    expect(r.amount).toBe(0n);
+    expect(r.adjustments).toEqual([]);
+  });
+});
+
 describe('resolveRewardSettings', () => {
   const cfg = {
     automaticRewardsEnabled: true,
@@ -407,5 +548,26 @@ describe('resolveRewardSettings', () => {
     expect(s.repeatReductionUseAddress).toBe(true); // default on
     expect(s.repeatReductionUseIp).toBe(true); // override
     expect(s.repeatReductionUseFingerprint).toBe(true); // override
+  });
+
+  it('resolves the whitelist-bonus toggle + percent (override wins; out-of-range falls back)', () => {
+    const withEnv = { ...cfg, whitelistRewardsEnabled: true, whitelistBonusPercent: 25 };
+    const s1 = resolveRewardSettings(withEnv, {
+      whitelistRewardsEnabled: false, // valid boolean override wins
+      whitelistBonusPercent: 80,
+    });
+    expect(s1.whitelistRewardsEnabled).toBe(false);
+    expect(s1.whitelistBonusPercent).toBe(80);
+
+    const s2 = resolveRewardSettings(withEnv, {
+      whitelistRewardsEnabled: 'yes', // not a boolean → env default
+      whitelistBonusPercent: 9999, // > 500 → env default
+    });
+    expect(s2.whitelistRewardsEnabled).toBe(true);
+    expect(s2.whitelistBonusPercent).toBe(25);
+
+    const s3 = resolveRewardSettings({ automaticRewardsEnabled: false, claimAmountLuna: 100_000n }, {});
+    expect(s3.whitelistRewardsEnabled).toBe(false); // default off
+    expect(s3.whitelistBonusPercent).toBeUndefined();
   });
 });

@@ -750,6 +750,20 @@ opt-in).
 
 ### 2.4.5 Whitelist / bonus reward factor
 
+**Status:** ✅ shipped. `reward_whitelist` table (address/uid entries with
+optional per-entry `bonusPercent` / `exactAmountNim`; exact entries are an
+override class, otherwise the largest realized percent wins — a percent-less
+entry realizes the global default), `whitelist-bonus` adjustment in
+[apps/server/src/rewards/automatic.ts](apps/server/src/rewards/automatic.ts)
+(percent form stacks with low-balance scaling; exact form replaces the whole
+computation; either suppresses the first-time boost and repeat reduction),
+`FAUCET_WHITELIST_REWARDS_ENABLED` + `FAUCET_WHITELIST_BONUS_PERCENT`
+env/live config, `/admin/reward-whitelist` CRUD + dashboard management view,
+and 3 MCP tools (`faucet.reward_whitelist_{add,remove,list}`). uid entries
+are integrator-bound and match only full-request-HMAC-authenticated claims
+(address-bound + nonce) — the per-field hostContext signature never grants
+payouts.
+
 **Goal:** the last factor named in the original #249 scope
 ("first-time boosts, repeat-user reductions, low-balance scaling,
 whitelists/bonuses") — a positive `RewardAdjustment` for
