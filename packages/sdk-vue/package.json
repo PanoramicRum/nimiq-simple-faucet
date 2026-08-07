@@ -39,7 +39,7 @@
     "@nimiq-faucet/sdk": "workspace:*"
   },
   "devDependencies": {
-    "typescript": "^6.0.3",
+    "typescript": "^7.0.2",
     "vue": "^3.5.40"
   },
   "keywords": [
