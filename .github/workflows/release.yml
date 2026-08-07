@@ -22,7 +22,13 @@ jobs:
   build-and-publish:
     name: Build, test, publish image + packages + chart
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    # Raised from 45 when the arm64 verification build was added below.
+    # The multi-arch push already builds arm64, and buildx reuses those
+    # layers, so the incremental cost should be small — but arm64 under
+    # QEMU is roughly an order of magnitude slower than native, and a
+    # release that dies on a timeout mid-publish is a far worse failure
+    # than a job that is allowed to run long.
+    timeout-minutes: 75
     permissions:
       contents: read
       packages: write
