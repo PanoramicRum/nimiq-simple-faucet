@@ -51,10 +51,10 @@
   "devDependencies": {
     "@nimiq-faucet/sdk": "workspace:*",
     "@types/better-sqlite3": "^7.6.11",
-    "@types/node": "^26.1.1",
-    "@types/pg": "^8.20.0",
+    "@types/node": "^26.1.2",
+    "@types/pg": "^8.20.3",
     "drizzle-kit": "^0.31.10",
-    "tsx": "^4.23.1",
+    "tsx": "^4.23.5",
     "typescript": "^6.0.3",
     "vitest": "^4.1.10"
   }
