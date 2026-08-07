@@ -44,3 +44,4 @@ Stitch/
 # VitePress build artifacts
 apps/playground/.vitepress/cache/
 apps/playground/.vitepress/dist/
+*.tsbuildinfo

@@ -29,32 +29,40 @@ packages:
 # Security override floors. Transitive bumps go through these overrides
 # rather than audit ignores, so the lockfile stays the source of truth.
 overrides:
-  # Raised 2026-07-22: >=4.12.21 -> >=4.12.25 for CVE-2026-54290 (HIGH,
-  # CORS middleware reflects arbitrary Origin with credentials enabled;
-  # flagged by Trivy on the shipped image). Same
-  # @modelcontextprotocol/sdk / @hono/node-server transitive chain as the
-  # earlier hono floors — full advisory history in the audit notes below.
-  "hono@<4.12.25": ">=4.12.25"
-  # Added 2026-07-22: CVE-2026-12151 / CVE-2026-9675 (WebSocket DoS),
-  # fixed in 8.5.0. undici is a DIRECT dep (^8.3.0) of apps/server and
-  # the driver/abuse packages; their manifests move to ^8.7 via the
-  # weekly dependabot group — this floor guarantees the fix regardless.
-  "undici@<8.5.0": ">=8.5.0"
-  # Raised 2026-07-22: >=3.1.2 -> ~3.1.4 (GHSA-v2hh-gcrm-f6hx +
-  # GHSA-4c8g-83qw-93j6, host confusion via literal/failed-IDN parsing).
-  # Tilde target on purpose: an open ">=3.1.4" resolves to fast-uri 4.x,
-  # a major jump under fastify/ajv's declared ^3 — stay on the 3.x line.
-  "fast-uri@<3.1.4": "~3.1.4"
-  "ip-address@<10.1.1": ">=10.1.1"
-  "postcss@<8.5.10": ">=8.5.10"
+  # Raised 2026-08-07: >=4.12.25 -> >=4.12.34 (GHSA ReDoS in the CORS
+  # middleware origin matcher). Same @modelcontextprotocol/sdk /
+  # @hono/node-server transitive chain as the earlier hono floors — full
+  # advisory history in the audit notes below.
+  "hono@<4.12.34": ">=4.12.34"
+  # Raised 2026-08-07: >=8.5.0 -> >=8.9.0 for a batch of undici advisories
+  # (cross-user information disclosure HIGH, downstream response
+  # smuggling, CRLF injection via blob-like body, cookie attribute
+  # injection). undici is a DIRECT dep of apps/server and the
+  # driver/abuse packages; this floor guarantees the fix regardless of
+  # what the weekly group has moved their manifests to.
+  "undici@<8.9.0": ">=8.9.0"
+  # Raised 2026-08-07: host confusion via backslash affects BOTH lines
+  # (3.x <3.1.5, 4.x <4.1.2). Per-major tilde floors so a consumer
+  # declaring ^3 is not dragged onto 4.x (fastify/ajv still pin ^3).
+  "fast-uri@3": "~3.1.5"
+  "fast-uri@4": "~4.1.2"
+  # Raised 2026-08-07: >=10.1.1 -> >=10.3.1 — Address4 decodes
+  # leading-zero octets as decimal (HIGH; an SSRF/allow-list bypass
+  # primitive), plus CIDR-suffix parsing and IPv4-mapped/NAT64
+  # misclassification. This library backs IP handling in the abuse
+  # layers, so the misclassification bugs are directly reachable.
+  "ip-address@<10.3.1": ">=10.3.1"
+  # Raised 2026-08-07: >=8.5.10 -> >=8.5.23 (incomplete fix of
+  # GHSA-6g55-p6wh-862q).
+  "postcss@<8.5.23": ">=8.5.23"
   "happy-dom@<20.8.9": ">=20.8.9"
   "elliptic@<6.6.1": ">=6.6.1"
   "axios@<1.16.0": ">=1.16.0"
   "underscore@<1.13.8": ">=1.13.8"
   "bn.js@<4.12.3": ">=4.12.3"
-  # Raised 2026-07-22: >=5.0.6 -> >=5.0.7 (GHSA-3jxr-9vmj-r5cp,
-  # exponential-time expansion DoS).
-  "brace-expansion@<5.0.7": ">=5.0.7"
+  # Raised 2026-08-07: >=5.0.7 -> >=5.0.9 — two further DoS advisories
+  # (unbounded expansion length, then unbounded intermediate state).
+  "brace-expansion@<5.0.9": ">=5.0.9"
   "ws@<8.20.1": ">=8.20.1"
   "qs@<=6.15.1": ">=6.15.2"
   # ---- Added 2026-07-22 (first working `pnpm audit` after the 410 gap;
@@ -64,12 +72,13 @@ overrides:
   # line (vitepress/vitest toolchain) cannot take this floor — see the
   # ignoreGhsas entries + note 5.
   "vite@>=8.0.0 <8.0.16": ">=8.0.16"
-  # js-yaml GHSA-52cp-r559-cp3m (high) + GHSA-h67p-54hq-rp68 (moderate),
-  # merge-key quadratic/exponential CPU. Per-major tilde floors — v4
-  # removed the v3 API (safeLoad), so consumers must stay on their line
-  # (3.15.0 / 4.3.0 are the upstream backport releases).
-  "js-yaml@3": "~3.15.0"
-  "js-yaml@4": "~4.3.0"
+  # js-yaml merge-key quadratic/exponential CPU (GHSA-52cp-r559-cp3m +
+  # GHSA-h67p-54hq-rp68), raised 2026-08-07 to pick up the follow-up
+  # !!omap quadratic-CPU advisory. Per-major tilde floors — v4 removed
+  # the v3 API (safeLoad), so consumers must stay on their line
+  # (3.15.1 / 4.3.1 are the upstream backport releases).
+  "js-yaml@3": "~3.15.1"
+  "js-yaml@4": "~4.3.1"
   # shell-quote GHSA-395f-4hp3-45gv quadratic-complexity DoS.
   "shell-quote@<1.8.5": ">=1.8.5"
   # sharp GHSA-f88m-g3jw-g9cj inherited libvips CVEs. Only reached as
@@ -163,43 +172,3 @@ allowBuilds:
   utf-8-validate: true # optional ws native accelerator (multi-arch builds)
   sharp: true # next.js image optimization (nextjs-claim-page example); prebuilt @img/* cover most platforms, script is the fallback
   es5-ext: false # postinstall only prints a message (via websocket@1.0.35); nothing to build — keep blocked
-
-# Exact-version exclusions from the `minimumReleaseAge` (1 day) gate,
-# written by `expo install --fix` during the coordinated expo 57 bump on
-# 2026-07-22 — these releases were <24h old at upgrade time. Safe to
-# delete this whole block once the versions are older than a day; it
-# only matters for fresh (non-frozen) resolutions.
-minimumReleaseAgeExclude:
-  - '@expo/cli@57.0.10'
-  - '@expo/config-plugins@57.0.6'
-  - '@expo/config@57.0.6'
-  - '@expo/fingerprint@0.20.6'
-  - '@expo/image-utils@0.11.4'
-  - '@expo/metro-config@57.0.7'
-  - '@expo/prebuild-config@57.0.9'
-  - '@expo/require-utils@57.0.4'
-  - '@expo/router-server@57.0.4'
-  - babel-preset-expo@57.0.4
-  - expo-asset@57.0.7
-  - expo-constants@57.0.7
-  - expo-modules-autolinking@57.0.9
-  - expo-modules-core@57.0.7
-  - expo-modules-jsi@57.0.4
-  - expo@57.0.8
-  - '@expo/metro-runtime@57.0.7'
-  # These five arrived via the dependabot dev-deps group (#279), which
-  # resolves without pnpm's release-age policy; excluded here so
-  # non-frozen local installs don't reject main's lockfile. All were
-  # published 2026-07-22 — the whole block ages out 2026-07-23.
-  - vue-tsc@3.3.8
-  - '@vue/language-core@3.3.8'
-  - turbo@2.10.6
-  - '@turbo/darwin-64@2.10.6'
-  - '@turbo/darwin-arm64@2.10.6'
-  - '@turbo/linux-64@2.10.6'
-  - '@turbo/linux-arm64@2.10.6'
-  - '@turbo/windows-64@2.10.6'
-  - '@turbo/windows-arm64@2.10.6'
-  - happy-dom@20.11.1
-  - postcss@8.5.22
-  - '@vitejs/plugin-react@6.0.4'
