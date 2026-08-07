@@ -101,6 +101,35 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      # Gate: build arm64 FIRST and prove the native SQLite binding loads
+      # there before anything is pushed. `push: true` below publishes both
+      # architectures in one manifest, so without this an arm64 image whose
+      # binding cannot load (wrong glibc floor, missing prebuild) becomes
+      # publicly pullable and every arm64 operator gets a server that cannot
+      # open its database. The layers are cached, so the multi-arch build
+      # below reuses this work rather than repeating it.
+      - name: Build arm64 image for verification
+        uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7
+        with:
+          context: .
+          file: deploy/docker/Dockerfile
+          push: false
+          load: true
+          platforms: linux/arm64
+          tags: nimiq-faucet:release-arm64-verify
+      - name: Verify the SQLite native binding loads and opens a DB (arm64)
+        run: |
+          set -euo pipefail
+          docker run --rm --platform linux/arm64 --workdir /app/apps/server --entrypoint node \
+            nimiq-faucet:release-arm64-verify \
+            -e "const Database = require('better-sqlite3');
+                const db = new Database(':memory:');
+                db.exec('CREATE TABLE probe (x TEXT)');
+                db.prepare('INSERT INTO probe (x) VALUES (?)').run('ok');
+                const row = db.prepare('SELECT x FROM probe').get();
+                if (row.x !== 'ok') { throw new Error('unexpected row: ' + JSON.stringify(row)); }
+                console.log('arm64 better-sqlite3 binding OK');"
+
       - name: Build and push multi-arch image
         id: docker
         uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7

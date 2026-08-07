@@ -137,6 +137,50 @@ jobs:
           echo "WARN: image boots but did not reach healthz in 120s (likely flaky seed-peer sync)."
           exit 0
 
+  docker-arm64:
+    # The release workflow publishes a linux/amd64 + linux/arm64 manifest,
+    # but every other job here builds amd64 only. A native binding that
+    # fails to load on arm64 is therefore invisible: the whole pipeline
+    # goes green and the broken half ships. That is not hypothetical —
+    # better-sqlite3 13 bundles an arm64 prebuild linked against
+    # GLIBC_2.38 while the pinned runtime base (node:22-bookworm-slim,
+    # Debian 12) provides 2.36, so `openDb()` would fail on every arm64
+    # deployment while amd64 stayed perfectly healthy.
+    #
+    # QEMU-emulating a full boot is slow, so this checks the exact
+    # failure mode instead: load the native binding and open a database.
+    # Runs on pushes to main (and manual dispatch) rather than on every
+    # PR, to keep PR feedback fast — the release job below is the hard
+    # gate that blocks publishing.
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: docker/setup-qemu-action@96fe6ef7f33517b61c61be40b68a1882f3264fb8 # v4
+      - uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4
+      - name: Build arm64 image
+        uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7
+        with:
+          context: .
+          file: deploy/docker/Dockerfile
+          push: false
+          load: true
+          platforms: linux/arm64
+          tags: nimiq-faucet:ci-arm64
+      - name: Verify the SQLite native binding loads and opens a DB (arm64)
+        run: |
+          set -euo pipefail
+          docker run --rm --platform linux/arm64 --workdir /app/apps/server --entrypoint node \
+            nimiq-faucet:ci-arm64 \
+            -e "const Database = require('better-sqlite3');
+                const db = new Database(':memory:');
+                db.exec('CREATE TABLE probe (x TEXT)');
+                db.prepare('INSERT INTO probe (x) VALUES (?)').run('ok');
+                const row = db.prepare('SELECT x FROM probe').get();
+                if (row.x !== 'ok') { throw new Error('unexpected row: ' + JSON.stringify(row)); }
+                console.log('arm64 better-sqlite3 binding OK');"
+
   examples-build:
     # Issue #115 / #116: prove that `docker build` against each example
     # Dockerfile actually completes from the repo root. The two original

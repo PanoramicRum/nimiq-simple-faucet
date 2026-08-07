@@ -19,6 +19,19 @@ updates:
         update-types:
           - minor
           - patch
+    # TypeScript 7 is the native Go port: the npm package no longer ships
+    # the JavaScript compiler API (there is no `typescript/lib/tsc`).
+    # `vue-tsc` resolves the compiler through exactly that path, and it is
+    # used for `build`/`typecheck` in 6 packages (dashboard, claim-ui,
+    # nimiq-pow-ui, and three Vue examples), three of which are also built
+    # inside the Docker image. vue-tsc's peer range is an open-ended
+    # ">=5.0.0", so a TS 7 install resolves cleanly and only fails at build
+    # time — see #294. No TS 7-capable vue-tsc exists yet (latest 3.3.9
+    # still calls require.resolve('typescript/lib/tsc')). Drop this ignore
+    # once vue-tsc ships TS 7 support; until then the weekly PR is pure noise.
+    ignore:
+      - dependency-name: "typescript"
+        update-types: [ "version-update:semver-major" ]
   - package-ecosystem: github-actions
     directory: /
     schedule:
