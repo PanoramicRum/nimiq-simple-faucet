@@ -26,6 +26,22 @@ updates:
     labels:
       - dependencies
       - github-actions
+    # github/codeql-action/* are four sub-actions of ONE action that must
+    # always run at the same version: `init` writes a config file the
+    # later steps read back, so a partial bump fails Analyze with
+    # "Loaded a configuration file for version 'X', but running version 'Y'".
+    # Dependabot treats each sub-path as its own dependency, so without a
+    # group it opens one PR per sub-action and each is individually
+    # un-mergeable (exactly what happened with #291 vs #292). Grouping
+    # moves the SHA atomically. docker/* is grouped for the weaker reason
+    # that those actions are always bumped together in practice.
+    groups:
+      codeql-action:
+        patterns:
+          - "github/codeql-action*"
+      docker-actions:
+        patterns:
+          - "docker/*"
 
   - package-ecosystem: docker
     directory: /deploy/docker
