@@ -13,12 +13,12 @@
     "build:web": "expo export -p web"
   },
   "dependencies": {
-    "@expo/metro-runtime": "~57.0.7",
+    "@expo/metro-runtime": "~57.0.8",
     "@nimiq-faucet/react-native": "workspace:*",
-    "expo": "~57.0.8",
+    "expo": "~57.0.10",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
-    "react-native": "0.86.0",
+    "react-native": "0.86.2",
     "react-native-device-info": "^15.0.2",
     "react-native-web": "^0.21.0"
   },
