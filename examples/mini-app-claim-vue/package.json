@@ -14,7 +14,7 @@
     "@nimiq/mini-app-sdk": "^0.1.0",
     "@nimiq-faucet/mini-app-claim-shared": "workspace:*",
     "@nimiq-faucet/sdk": "workspace:*",
-    "vue": "^3.5.40"
+    "vue": "^3.5.42"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^6.0.8",
